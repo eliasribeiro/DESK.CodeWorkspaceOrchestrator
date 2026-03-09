@@ -1,0 +1,72 @@
+{
+  "name": "desk.codeworkspaceorchestrator",
+  "version": "1.0.0",
+  "description": "Code Workspace Orchestrator - Electron + React Desktop App",
+  "main": "src/main/main.cjs",
+  "type": "module",
+  "author": "",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
+    "dev:vite": "cross-env DEV_SERVER=true vite",
+    "dev:electron": "cross-env DEV_SERVER=true wait-on http://localhost:5173 && electron .",
+    "build": "vite build",
+    "build:electron": "electron-builder",
+    "preview": "vite preview",
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "react",
+    "vite",
+    "tailwindcss",
+    "desktop"
+  ],
+  "dependencies": {
+    "electron": "^40.8.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.27",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "electron-builder": "^26.8.1",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1",
+    "vite": "^7.3.1",
+    "wait-on": "^9.0.4"
+  },
+  "build": {
+    "appId": "com.codeworkspace.orchestrator",
+    "productName": "Code Workspace Orchestrator",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "src/main/**/*",
+      "src/preload/**/*"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "icon": "assets/icon.icns"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "icon": "assets/icon.png"
+    }
+  }
+}

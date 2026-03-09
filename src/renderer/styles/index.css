@@ -1,0 +1,78 @@
+@import "tailwindcss";
+
+/* Estilos globais personalizados */
+@layer base {
+  html {
+    @apply antialiased;
+  }
+
+  body {
+    @apply bg-white dark:bg-slate-900;
+    @apply text-slate-900 dark:text-slate-100;
+    @apply transition-colors duration-200;
+    overflow: hidden; /* Previne scroll na janela do Electron */
+  }
+
+  #root {
+    @apply h-screen w-screen;
+    @apply flex flex-col;
+  }
+}
+
+/* Região arrastável para a barra de título */
+.drag-region {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+/* Elementos clicáveis dentro da região arrastável */
+.no-drag {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+/* Estilos personalizados para scrollbar */
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #94a3b8 transparent;
+  }
+
+  .dark .scrollbar-thin {
+    scrollbar-color: #475569 transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #94a3b8;
+    border-radius: 4px;
+  }
+
+  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: #475569;
+  }
+}
+
+/* Animações */
+@layer utilities {
+  .fade-in {
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
