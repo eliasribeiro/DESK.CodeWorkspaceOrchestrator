@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     commit: (options) => ipcRenderer.invoke('git:commit', options),
     push: (options) => ipcRenderer.invoke('git:push', options),
     commitAndPush: (options) => ipcRenderer.invoke('git:commitAndPush', options),
+    mergeToMain: (options) => ipcRenderer.invoke('git:mergeToMain', options),
   },
 
   shell: {

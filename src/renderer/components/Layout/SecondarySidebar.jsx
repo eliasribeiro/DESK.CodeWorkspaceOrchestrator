@@ -6,7 +6,7 @@ import { useWorkspace } from '@context/WorkspaceContext';
  * Área limpa conforme solicitado.
  */
 export function SecondarySidebar() {
-  const { selectedWorkspace } = useWorkspace();
+  const { selectedWorkspace, projects } = useWorkspace();
   const [changedFiles, setChangedFiles] = useState([]);
   const [isLoadingChanges, setIsLoadingChanges] = useState(false);
   const [changesError, setChangesError] = useState('');
@@ -17,6 +17,7 @@ export function SecondarySidebar() {
   const [pullRequestUrl, setPullRequestUrl] = useState('');
   const [isOpeningPullRequest, setIsOpeningPullRequest] = useState(false);
   const actionsMenuRef = useRef(null);
+  const projectPath = projects.find((project) => project.id === selectedWorkspace?.projectId)?.path || '';
 
   const loadWorktreeChanges = useCallback(async (workspacePath) => {
     if (!workspacePath) {
@@ -125,7 +126,12 @@ export function SecondarySidebar() {
         return;
       }
 
-      setGitFeedback({ type: 'success', text: 'Push realizado com sucesso' });
+      setGitFeedback({
+        type: 'success',
+        text: result?.upstreamWasConfigured
+          ? 'Push realizado com sucesso e branch vinculada ao remoto'
+          : 'Push realizado com sucesso',
+      });
       setPullRequestUrl(result?.pullRequestUrl || '');
       await loadWorktreeChanges(workspacePath);
     } catch (error) {
@@ -166,7 +172,12 @@ export function SecondarySidebar() {
       }
 
       setCommitMessage('');
-      setGitFeedback({ type: 'success', text: 'Commit e push realizados com sucesso' });
+      setGitFeedback({
+        type: 'success',
+        text: result?.upstreamWasConfigured
+          ? 'Commit e push realizados com sucesso, com upstream configurado'
+          : 'Commit e push realizados com sucesso',
+      });
       setPullRequestUrl(result?.pullRequestUrl || '');
       await loadWorktreeChanges(workspacePath);
     } catch (error) {
@@ -195,6 +206,46 @@ export function SecondarySidebar() {
     }
   };
 
+  const handleMergeToMain = async () => {
+    const workspacePath = selectedWorkspace?.workspace?.path;
+    const normalizedMessage = commitMessage.trim();
+
+    if (!workspacePath) {
+      setGitFeedback({ type: 'error', text: 'Workspace nao selecionado' });
+      return;
+    }
+
+    if (!projectPath) {
+      setGitFeedback({ type: 'error', text: 'Projeto principal nao encontrado para este workspace' });
+      return;
+    }
+
+    setActionInProgress('merge');
+    setGitFeedback({ type: '', text: '' });
+    setPullRequestUrl('');
+
+    try {
+      const result = await window.electronAPI.git.mergeToMain({
+        projectPath,
+        worktreePath: workspacePath,
+        message: normalizedMessage,
+      });
+
+      if (!result?.success) {
+        setGitFeedback({ type: 'error', text: result?.error || 'Nao foi possivel executar merge com a main' });
+        return;
+      }
+
+      setCommitMessage('');
+      setGitFeedback({ type: 'success', text: result?.message || 'Merge com a main realizado com sucesso' });
+      await loadWorktreeChanges(workspacePath);
+    } catch (error) {
+      setGitFeedback({ type: 'error', text: error.message || 'Erro ao executar merge com a main' });
+    } finally {
+      setActionInProgress('');
+    }
+  };
+
   return (
     <aside className="h-full flex flex-col bg-background-light dark:bg-background-dark border-l border-border-light dark:border-white/5 overflow-hidden">
       <div className="h-full p-2">
@@ -218,6 +269,15 @@ export function SecondarySidebar() {
             </div>
 
             <div className="h-[calc(100%-41px)] px-2 py-2 flex flex-col gap-2">
+              <button
+                type="button"
+                onClick={handleMergeToMain}
+                disabled={Boolean(actionInProgress)}
+                className="w-full h-9 px-3 rounded-md text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {actionInProgress === 'merge' ? 'Fazendo merge...' : 'Merge'}
+              </button>
+
               <div className="min-h-0 flex-1">
                 {changesError && (
                   <p className="px-1 py-1 text-xs text-red-500">{changesError}</p>

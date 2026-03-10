@@ -3,6 +3,27 @@ import { Terminal as XTerm } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import '@xterm/xterm/css/xterm.css';
 
+async function writeClipboardText(text) {
+  if (!text) {
+    return;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (error) {
+    console.error('Erro ao copiar texto do terminal:', error);
+  }
+}
+
+async function readClipboardText() {
+  try {
+    return await navigator.clipboard.readText();
+  } catch (error) {
+    console.error('Erro ao ler clipboard do terminal:', error);
+    return '';
+  }
+}
+
 export function Terminal({
   session,
   title,
@@ -34,6 +55,7 @@ export function Terminal({
     let fitAddon = null;
     let resizeObserver = null;
     let inputDisposable = null;
+    let contextMenuHandler = null;
     let unsubscribeData = () => {};
     let unsubscribeExit = () => {};
     let unsubscribeError = () => {};
@@ -99,6 +121,62 @@ export function Terminal({
       terminal.focus();
       terminalRef.current = terminal;
 
+      terminal.attachCustomKeyEventHandler((event) => {
+        const isCopyShortcut = (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'c';
+        const isPasteShortcut = (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'v';
+
+        if (event.type !== 'keydown') {
+          return true;
+        }
+
+        if (isCopyShortcut && terminal.hasSelection()) {
+          void writeClipboardText(terminal.getSelection());
+          event.preventDefault();
+          return false;
+        }
+
+        if (isPasteShortcut) {
+          event.preventDefault();
+          void readClipboardText().then((text) => {
+            if (!text) {
+              return;
+            }
+
+            terminal.paste(text);
+            terminal.focus();
+            onFocus?.();
+          });
+          return false;
+        }
+
+        return true;
+      });
+
+      contextMenuHandler = (event) => {
+        event.preventDefault();
+
+        if (terminal.hasSelection()) {
+          void writeClipboardText(terminal.getSelection()).then(() => {
+            terminal.focus();
+            onFocus?.();
+          });
+          return;
+        }
+
+        void readClipboardText().then((text) => {
+          if (!text) {
+            terminal.focus();
+            onFocus?.();
+            return;
+          }
+
+          terminal.paste(text);
+          terminal.focus();
+          onFocus?.();
+        });
+      };
+      containerRef.current.addEventListener('contextmenu', contextMenuHandler);
+
       void window.electronAPI?.terminal?.resize?.({
         sessionId: session.sessionId,
         cols: terminal.cols,
@@ -156,6 +234,9 @@ export function Terminal({
 
     return () => {
       resizeObserver?.disconnect();
+      if (contextMenuHandler && containerRef.current) {
+        containerRef.current.removeEventListener('contextmenu', contextMenuHandler);
+      }
       unsubscribeData();
       unsubscribeExit();
       unsubscribeError();

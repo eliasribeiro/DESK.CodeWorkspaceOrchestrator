@@ -442,30 +442,36 @@ export function WorkspaceChatArea() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark">
-      <header className="h-12 px-6 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-surface-light dark:bg-surface-dark">
-        <div className="flex items-center">
+    <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-[#0a0f18]">
+      <header className="h-16 px-6 flex items-center justify-between border-b border-slate-200/60 bg-white/70 dark:bg-[#111827]/80 backdrop-blur-xl z-40 shadow-sm transition-all">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+          </div>
           <div>
-            <p className="text-sm font-semibold text-slate-900 dark:text-white">
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight">
               {projectLabel}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div
-            className="hidden md:flex max-w-[220px] items-center gap-1 rounded-lg border border-border-light bg-background-light px-2 py-1 text-xs text-slate-500 dark:border-white/10 dark:bg-background-dark dark:text-slate-400"
+            className="hidden md:flex max-w-[280px] items-center gap-2 rounded-full border border-slate-200/80 bg-slate-100/50 px-3.5 py-1.5 text-xs font-medium text-slate-600 shadow-inner group transition-all hover:bg-slate-200/50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
             title={workspace.path}
           >
+            <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors dark:group-hover:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
             <span className="truncate">{workspacePathLabel}</span>
           </div>
           <button
             onClick={() => window.electronAPI.shell.openPath(workspace.path)}
-            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+            className="p-2.5 rounded-full hover:bg-white dark:hover:bg-white/10 transition-all hover:shadow-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transform hover:scale-105 active:scale-95"
             title="Abrir pasta no explorador"
           >
-            <svg className="w-4 h-4 text-slate-600 dark:text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-1.405-1.405A2 2 0 0010 6z" />
             </svg>
           </button>
         </div>
@@ -495,52 +501,56 @@ export function WorkspaceChatArea() {
         sessionCount={sessions.length}
       />
 
-      <div className="flex-1 min-h-0 bg-background-light dark:bg-background-dark">
+      <div className="flex-1 min-h-0 relative">
+        {/* Subtle background gradient pattern for the workspace area */}
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIzIiBmaWxsPSIjOWNhM2FmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L2c+PC9zdmc+')] pointer-events-none" />
+
         {showTerminal ? (
-          <div className="h-full min-h-0 flex flex-col">
-            <div className="flex-1 min-h-0">
+          <div className="h-full min-h-0 flex flex-col relative z-10">
+            <div className="flex-1 min-h-0 p-3">
               {isGridMode ? (
-                <div className={`grid h-full min-h-0 gap-0 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
+                <div className={`grid h-full min-h-0 gap-3 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
                   {sessions.map((session) => (
-                    <Terminal
-                      key={session.sessionId}
-                      session={session}
-                      workspaceName={workspace.name}
-                      workspacePath={workspacePath}
-                      title={getSessionTitle(session)}
-                      statusLabel={getSessionStatusLabel(session)}
-                      errorMessage=""
-                      compact
-                      showClear={false}
-                      zoomLevel={getSessionZoomLevel(session.sessionId)}
-                      onZoomIn={() => handleAdjustTerminalZoom(session.sessionId, 1)}
-                      onZoomOut={() => handleAdjustTerminalZoom(session.sessionId, -1)}
-                      onClose={() => handleCloseTerminal(session.sessionId)}
-                      onSessionExit={() => {}}
-                      onFocus={() => handleFocusSession(session.sessionId)}
-                    />
+                    <div key={session.sessionId} className="rounded-xl overflow-hidden shadow-sm border border-slate-200/80 bg-white/60 dark:border-white/10 dark:bg-[#111827]/80 backdrop-blur-md transition-all duration-300 hover:shadow-md hover:border-indigo-400/30 dark:hover:border-indigo-500/30 flex flex-col">
+                      <Terminal
+                        session={session}
+                        workspaceName={workspace.name}
+                        workspacePath={workspacePath}
+                        title={getSessionTitle(session)}
+                        statusLabel={getSessionStatusLabel(session)}
+                        errorMessage=""
+                        compact
+                        showClear={false}
+                        zoomLevel={getSessionZoomLevel(session.sessionId)}
+                        onZoomIn={() => handleAdjustTerminalZoom(session.sessionId, 1)}
+                        onZoomOut={() => handleAdjustTerminalZoom(session.sessionId, -1)}
+                        onClose={() => handleCloseTerminal(session.sessionId)}
+                        onSessionExit={() => {}}
+                        onFocus={() => handleFocusSession(session.sessionId)}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : activeSession ? (
-                <div className="h-full min-h-0 overflow-hidden border border-border-light bg-surface-light shadow-sm dark:border-white/5 dark:bg-surface-dark dark:shadow-md flex flex-col">
-                  <div className="shrink-0 border-b border-border-light bg-slate-50 px-2 pt-2 dark:border-white/5 dark:bg-black/20">
-                    <div className="flex items-end gap-1 overflow-x-auto">
+                <div className="h-full min-h-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white/60 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#111827]/80 flex flex-col transition-all duration-300 hover:shadow-md">
+                  <div className="shrink-0 border-b border-slate-200/80 bg-slate-50/50 pt-2 px-2 dark:border-white/10 dark:bg-white/5 backdrop-blur-xl">
+                    <div className="flex items-end gap-1.5 overflow-x-auto pb-0 hide-scrollbar">
                       {sessions.map((session) => {
                         const isActive = session.sessionId === activeSession.sessionId;
                         return (
                           <button
                             key={session.sessionId}
                             onClick={() => handleFocusSession(session.sessionId)}
-                            className={`group min-w-0 max-w-xs flex items-center gap-2 border border-b-0 px-3 py-2 text-left text-sm transition-colors ${
+                            className={`group relative min-w-0 max-w-xs flex items-center gap-2.5 rounded-t-lg border-t border-x px-4 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
                               isActive
-                                ? 'border-border-light bg-surface-light text-slate-900 dark:border-white/10 dark:bg-surface-dark dark:text-slate-100'
-                                : 'border-transparent bg-transparent text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'
+                                ? 'border-slate-200/80 bg-white text-indigo-600 dark:border-white/10 dark:bg-[#111827] dark:text-indigo-400 shadow-[0_-2px_10px_rgba(0,0,0,0.02)] z-10'
+                                : 'border-transparent bg-transparent text-slate-500 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-slate-200'
                             }`}
                           >
-                            <span className={`inline-flex h-2 w-2 rounded-full ${
-                              session.status === 'exited' ? 'bg-amber-400' : 'bg-emerald-400'
+                            <span className={`inline-flex h-2 w-2 rounded-full ring-2 ring-white/50 dark:ring-black/50 align-middle transition-colors shadow-sm ${
+                              session.status === 'exited' ? 'bg-amber-400' : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
                             }`} />
-                            <span className="truncate font-medium">
+                            <span className="truncate">
                               {getSessionTitle(session)}
                             </span>
                             <span
@@ -557,22 +567,28 @@ export function WorkspaceChatArea() {
                                   handleCloseTerminal(session.sessionId);
                                 }
                               }}
-                              className={`inline-flex h-5 w-5 items-center justify-center rounded transition-colors ${
+                              className={`ml-1 inline-flex h-5 w-5 items-center justify-center rounded-md transition-all ${
                                 isActive
-                                  ? 'text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white'
-                                  : 'text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200'
+                                  ? 'text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-red-400'
+                                  : 'text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-200 hover:text-red-500 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-red-400'
                               }`}
                               aria-label={`Fechar ${getSessionTitle(session)}`}
                             >
-                              ×
+                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </span>
+                            {isActive && (
+                              <div className="absolute -bottom-[1px] left-0 right-0 h-[3px] bg-white dark:bg-[#111827]" />
+                            )}
+                            {isActive && (
+                              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-t-lg opacity-80" />
+                            )}
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
-                  <div className="flex-1 min-h-0">
+                  <div className="flex-1 min-h-0 relative bg-white/70 dark:bg-transparent">
                     <Terminal
                       key={activeSession.sessionId}
                       session={activeSession}
@@ -595,23 +611,30 @@ export function WorkspaceChatArea() {
             </div>
           </div>
         ) : (
-          <div className="h-full flex items-center justify-center px-6">
-            <div className="max-w-lg text-center rounded-2xl border border-border-light bg-surface-light px-8 py-10 shadow-lg dark:border-white/5 dark:bg-surface-dark">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-primary-light/10 dark:bg-white/5">
-                <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
+          <div className="h-full flex items-center justify-center px-6 relative overflow-hidden">
+            {/* Background elements for empty state */}
+            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-40 dark:opacity-20">
+              <div className="w-[500px] h-[500px] bg-indigo-400/20 rounded-full blur-[100px] absolute -top-20 -left-20 mix-blend-multiply dark:mix-blend-screen" />
+              <div className="w-[400px] h-[400px] bg-purple-400/20 rounded-full blur-[80px] absolute bottom-10 right-10 mix-blend-multiply dark:mix-blend-screen" />
+            </div>
+            
+            <div className="max-w-md text-center rounded-3xl border border-white/60 bg-white/60 px-10 py-12 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-[#111827]/60 relative z-10 duration-500 hover:shadow-indigo-500/10 hover:border-white/80 transition-all dark:hover:border-white/20">
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
+                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
                 </svg>
               </div>
-              <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+              <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 tracking-tight">
                 Sessões inline do workspace
               </h3>
-              <p className="mt-3 text-sm leading-6 text-slate-500 dark:text-slate-400">
-                Escolha o editor, defina o layout em abas ou grade e clique em <span className="font-medium text-slate-700 dark:text-slate-200">Executar</span>. Cada novo launch abre um terminal embutido nesta área, sem criar janelas externas.
+              <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                Escolha o editor, defina o layout em abas ou grade e clique em <span className="font-semibold text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10">Executar</span>. 
+                Cada novo launch abre um terminal embutido nesta área, sem criar janelas externas.
               </p>
               {terminalError && (
-                <p className="mt-5 text-sm text-red-500 dark:text-red-400">
+                <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-600 dark:text-red-400 animate-pulse">
                   {terminalError}
-                </p>
+                </div>
               )}
             </div>
           </div>

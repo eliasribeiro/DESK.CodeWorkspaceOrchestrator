@@ -205,6 +205,38 @@ function buildPullRequestUrl(repositoryUrl, branchName) {
   }
 }
 
+async function resolveCurrentBranch(git) {
+  const branchName = String((await git.raw(['rev-parse', '--abbrev-ref', 'HEAD'])).trim());
+  if (!branchName || branchName === 'HEAD') {
+    throw new Error('Workspace nao esta em uma branch valida');
+  }
+
+  return branchName;
+}
+
+async function pushCurrentBranch(git) {
+  const status = await git.status();
+  const currentBranch = String(status.current || '').trim() || await resolveCurrentBranch(git);
+  const trackingBranch = String(status.tracking || '').trim();
+
+  if (trackingBranch) {
+    await git.push();
+    return {
+      currentBranch,
+      statusAfterPush: await git.status(),
+      upstreamWasConfigured: false,
+    };
+  }
+
+  await git.push(['--set-upstream', 'origin', currentBranch]);
+
+  return {
+    currentBranch,
+    statusAfterPush: await git.status(),
+    upstreamWasConfigured: true,
+  };
+}
+
 function getUserPreferencesPath() {
   return path.join(app.getPath('userData'), USER_PREFERENCES_FILENAME);
 }
@@ -1169,14 +1201,18 @@ function setupIpcHandlers() {
         return { success: false, error: 'Workspace nao e um repositorio Git valido' };
       }
 
-      await git.push();
-      const status = await git.status();
+      const pushResult = await pushCurrentBranch(git);
+      const status = pushResult.statusAfterPush;
       const remotes = await git.getRemotes(true);
       const preferredRemote = remotes.find((entry) => entry.name === 'origin') || remotes[0];
       const repositoryUrl = preferredRemote?.refs?.push || preferredRemote?.refs?.fetch || '';
       const pullRequestUrl = buildPullRequestUrl(repositoryUrl, status.current);
 
-      return { success: true, pullRequestUrl };
+      return {
+        success: true,
+        pullRequestUrl,
+        upstreamWasConfigured: pushResult.upstreamWasConfigured,
+      };
     } catch (error) {
       return {
         success: false,
@@ -1213,8 +1249,8 @@ function setupIpcHandlers() {
       }
 
       const result = await git.commit(commitMessage);
-      await git.push();
-      const statusAfterPush = await git.status();
+      const pushResult = await pushCurrentBranch(git);
+      const statusAfterPush = pushResult.statusAfterPush;
       const remotes = await git.getRemotes(true);
       const preferredRemote = remotes.find((entry) => entry.name === 'origin') || remotes[0];
       const repositoryUrl = preferredRemote?.refs?.push || preferredRemote?.refs?.fetch || '';
@@ -1227,11 +1263,90 @@ function setupIpcHandlers() {
           summary: result.summary,
         },
         pullRequestUrl,
+        upstreamWasConfigured: pushResult.upstreamWasConfigured,
       };
     } catch (error) {
       return {
         success: false,
         error: error.message || 'Erro ao realizar commit e push',
+      };
+    }
+  });
+
+  ipcMain.handle('git:mergeToMain', async (_event, { projectPath, worktreePath, message }) => {
+    try {
+      if (!projectPath || !worktreePath) {
+        return { success: false, error: 'Caminho do projeto ou do workspace nao fornecido' };
+      }
+
+      if (!fs.existsSync(projectPath)) {
+        return { success: false, error: 'Projeto principal nao encontrado no disco' };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco' };
+      }
+
+      const commitMessage = String(message || '').trim();
+      const worktreeGit = simpleGit(worktreePath);
+      const mainGit = simpleGit(projectPath);
+      const [isWorktreeRepo, isMainRepo] = await Promise.all([
+        worktreeGit.checkIsRepo(),
+        mainGit.checkIsRepo(),
+      ]);
+
+      if (!isWorktreeRepo || !isMainRepo) {
+        return { success: false, error: 'Projeto ou workspace nao e um repositorio Git valido' };
+      }
+
+      const sourceBranch = await resolveCurrentBranch(worktreeGit);
+      if (sourceBranch === 'main') {
+        return { success: false, error: 'O workspace ja esta na branch main' };
+      }
+
+      await worktreeGit.add(['-A']);
+      const worktreeStatus = await worktreeGit.status();
+      if (!worktreeStatus.isClean()) {
+        if (!commitMessage) {
+          return { success: false, error: 'Digite uma mensagem de commit para fazer o merge' };
+        }
+
+        await worktreeGit.commit(commitMessage);
+      }
+
+      const statusBeforePush = await worktreeGit.status();
+      const pushArgs = statusBeforePush.tracking
+        ? ['origin', sourceBranch]
+        : ['-u', 'origin', sourceBranch];
+      await worktreeGit.push(pushArgs);
+
+      const mainStatus = await mainGit.status();
+      if (!mainStatus.isClean()) {
+        return {
+          success: false,
+          error: 'O projeto principal possui alteracoes locais. Limpe a main antes de executar o merge automatico',
+        };
+      }
+
+      const currentMainBranch = await resolveCurrentBranch(mainGit);
+      if (currentMainBranch !== 'main') {
+        await mainGit.checkout('main');
+      }
+
+      await mainGit.pull('origin', 'main');
+      await mainGit.merge(['--no-ff', sourceBranch, '-m', `Merge branch '${sourceBranch}' into main`]);
+      await mainGit.push('origin', 'main');
+
+      return {
+        success: true,
+        mergedBranch: sourceBranch,
+        targetBranch: 'main',
+        message: `Branch ${sourceBranch} enviada e mesclada com main`,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao executar merge automatico com a main',
       };
     }
   });
