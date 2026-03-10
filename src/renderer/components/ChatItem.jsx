@@ -80,8 +80,8 @@ export function ChatItem({ chat, projectId, isSelected }) {
       className={`group flex items-center gap-2 px-2 py-1.5 mx-2 rounded-lg
                   cursor-pointer transition-colors duration-150
                   ${isSelected 
-                    ? 'bg-slate-200 dark:bg-slate-800/30 border-l-2 border-slate-900 dark:border-white' 
-                    : 'hover:bg-slate-100 dark:hover:bg-slate-800 border-l-2 border-transparent'}`}
+                    ? 'bg-slate-200 dark:bg-white/10 border-l-2 border-slate-900 dark:border-white' 
+                    : 'hover:bg-slate-100 dark:hover:bg-white/5 border-l-2 border-transparent'}`}
       onClick={handleSelect}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
@@ -109,9 +109,9 @@ export function ChatItem({ chat, projectId, isSelected }) {
           onClick={(e) => e.stopPropagation()}
           autoFocus
           className="flex-1 px-1 py-0.5 text-sm rounded
-                     bg-white dark:bg-slate-700
-                     border border-slate-300 dark:border-slate-600
-                     focus:outline-none focus:ring-1 focus:ring-slate-700
+                     bg-white dark:bg-surface-dark
+                     border border-border-light dark:border-white/10
+                     focus:outline-none focus:ring-1 focus:ring-primary-light
                      text-slate-900 dark:text-slate-100"
         />
       ) : (
@@ -125,7 +125,7 @@ export function ChatItem({ chat, projectId, isSelected }) {
         {/* Renomear */}
         <button
           onClick={startEditing}
-          className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+          className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10"
           title="Renomear"
           aria-label="Renomear chat"
         >
@@ -139,7 +139,7 @@ export function ChatItem({ chat, projectId, isSelected }) {
         {/* Remover */}
         <button
           onClick={handleRemove}
-          className="p-1 rounded hover:bg-red-500 hover:text-white"
+          className="p-1 rounded-md hover:bg-red-500 hover:text-white"
           title="Remover"
           aria-label="Remover chat"
         >

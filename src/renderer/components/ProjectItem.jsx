@@ -208,8 +208,8 @@ export function ProjectItem({ project }) {
         className={`group flex items-center gap-1 px-2 py-2 mx-2 rounded-lg
                     cursor-pointer transition-colors duration-150
                     ${project.isExpanded 
-                      ? 'bg-slate-100 dark:bg-slate-800' 
-                      : 'hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                      ? 'bg-slate-100 dark:bg-white/10' 
+                      : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}
         onClick={handleHeaderClick}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
@@ -255,9 +255,9 @@ export function ProjectItem({ project }) {
             onClick={(e) => e.stopPropagation()}
             autoFocus
             className="flex-1 px-1 py-0.5 text-sm rounded
-                       bg-white dark:bg-slate-700
-                       border border-slate-300 dark:border-slate-600
-                       focus:outline-none focus:ring-1 focus:ring-slate-700
+                       bg-white dark:bg-surface-dark
+                       border border-border-light dark:border-white/10
+                       focus:outline-none focus:ring-1 focus:ring-primary-light
                        text-slate-900 dark:text-slate-100"
           />
         ) : (
@@ -274,7 +274,7 @@ export function ProjectItem({ project }) {
               e.stopPropagation();
               setShowNewChatInput(true);
             }}
-            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10"
             title="Novo Chat"
             aria-label="Adicionar chat"
           >
@@ -287,7 +287,7 @@ export function ProjectItem({ project }) {
           {/* Renomear */}
           <button
             onClick={startEditing}
-            className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10"
             title="Renomear"
             aria-label="Renomear projeto"
           >
@@ -301,14 +301,13 @@ export function ProjectItem({ project }) {
           {/* Remover */}
           <button
             onClick={handleRemove}
-            className="p-1 rounded hover:bg-red-500 hover:text-white"
+            className="p-1 rounded-md hover:bg-red-500 hover:text-white"
             title="Remover"
             aria-label="Remover projeto"
           >
             <svg className="w-3.5 h-3.5" 
                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
         </div>
@@ -329,12 +328,12 @@ export function ProjectItem({ project }) {
             }}
             placeholder="Nome do chat..."
             autoFocus
-            className="w-full px-2 py-1 text-sm rounded
-                       bg-white dark:bg-slate-800
-                       border border-slate-300 dark:border-slate-600
-                       focus:outline-none focus:ring-1 focus:ring-slate-700
+            className="w-full px-2 py-1.5 text-sm rounded-md
+                       bg-background-light dark:bg-background-dark
+                       border border-border-light dark:border-white/10
+                       focus:outline-none focus:ring-1 focus:ring-primary-light
                        text-slate-900 dark:text-slate-100
-                       placeholder-slate-400"
+                       placeholder-slate-400 shadow-sm"
           />
         </div>
       )}
@@ -359,10 +358,10 @@ export function ProjectItem({ project }) {
           <button
             onClick={handleCreateWorkspace}
             disabled={isCreatingWorkspace}
-            className="flex items-center gap-2 px-2 py-1.5 text-xs
-                       text-slate-900 dark:text-slate-600
-                       hover:bg-slate-100 dark:hover:bg-slate-800/20
-                       rounded transition-colors
+            className="flex items-center gap-2 px-2 py-1.5 text-xs font-semibold
+                       text-slate-700 dark:text-slate-300
+                       hover:bg-slate-100 dark:hover:bg-white/5
+                       rounded-md transition-colors
                        disabled:opacity-50 disabled:cursor-not-allowed"
             title="Criar novo workspace com git worktree"
           >

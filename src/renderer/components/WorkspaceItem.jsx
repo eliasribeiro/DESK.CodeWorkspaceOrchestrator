@@ -66,9 +66,9 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted }) 
     <li
       className={`group flex items-center gap-2 px-2 py-1.5 mx-2 rounded-lg
                   cursor-pointer transition-colors duration-150
-                  hover:bg-slate-100 dark:hover:bg-slate-800 border-l-2 
+                  hover:bg-slate-100 dark:hover:bg-white/5 border-l-2 
                   ${workspace.isSelected
-                    ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-slate-800/20' 
+                    ? 'border-slate-900 dark:border-white bg-slate-100 dark:bg-white/10' 
                     : 'border-transparent'}`}
       onClick={handleSelect}
       onMouseEnter={() => setShowActions(true)}
@@ -104,7 +104,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted }) 
         <button
           onClick={handleRemove}
           disabled={isRemoving}
-          className="p-1 rounded hover:bg-red-500 hover:text-white
+          className="p-1 rounded-md hover:bg-red-500 hover:text-white
                      disabled:opacity-50 disabled:cursor-not-allowed"
           title="Remover"
           aria-label="Remover workspace"

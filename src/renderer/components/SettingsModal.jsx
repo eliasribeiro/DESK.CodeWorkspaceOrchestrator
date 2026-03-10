@@ -9,9 +9,9 @@ export function SettingsModal() {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800">
+      <div className="bg-surface-light dark:bg-surface-dark w-full max-w-4xl h-[80vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border-light dark:border-white/5">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+        <div className="px-6 py-4 border-b border-border-light dark:border-white/5 flex items-center justify-between bg-background-light dark:bg-background-dark/95">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <svg className="w-5 h-5 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -21,7 +21,7 @@ export function SettingsModal() {
           </h2>
           <button 
             onClick={() => setIsSettingsOpen(false)}
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -30,7 +30,7 @@ export function SettingsModal() {
         </div>
 
         {/* Tabs */}
-        <div className="flex px-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex px-6 bg-surface-light dark:bg-surface-dark/95 border-b border-border-light dark:border-white/5">
           <button 
             onClick={() => setActiveTab('geral')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'geral' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
@@ -51,7 +51,7 @@ export function SettingsModal() {
             <div className="space-y-6 animate-in slide-in-from-left-2 duration-200">
               <section className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Interface</h3>
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="p-4 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-white/5">
                    <p className="text-sm text-slate-600 dark:text-slate-400 italic">Configurações gerais da interface em breve...</p>
                 </div>
               </section>
@@ -73,7 +73,7 @@ export function SettingsModal() {
 
               <div className="space-y-4">
                 {aiProviders.map((provider) => (
-                  <div key={provider.id} className="p-5 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4 relative group">
+                  <div key={provider.id} className="p-5 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-white/5 space-y-4 relative group shadow-sm">
                     <button 
                       onClick={() => removeProvider(provider.id)}
                       className="absolute top-4 right-4 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all opacity-0 group-hover:opacity-100"
@@ -89,7 +89,7 @@ export function SettingsModal() {
                           value={provider.name}
                           onChange={(e) => updateProvider(provider.id, { name: e.target.value })}
                           placeholder="Ex: Local LLM, Anthropic..."
-                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 outline-none transition-all text-sm"
+                          className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
                         />
                       </div>
                       <div className="space-y-1.5">
@@ -99,7 +99,7 @@ export function SettingsModal() {
                           value={provider.baseUrl}
                           onChange={(e) => updateProvider(provider.id, { baseUrl: e.target.value })}
                           placeholder="Ex: http://localhost:11434/v1"
-                          className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 outline-none transition-all text-sm"
+                          className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
                         />
                       </div>
                     </div>
@@ -111,7 +111,7 @@ export function SettingsModal() {
                         value={provider.apiKey}
                         onChange={(e) => updateProvider(provider.id, { apiKey: e.target.value })}
                         placeholder="sk-..."
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 outline-none transition-all text-sm"
+                        className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
                       />
                     </div>
 
@@ -129,14 +129,14 @@ export function SettingsModal() {
                         value={provider.models}
                         onChange={(e) => updateProvider(provider.id, { models: e.target.value })}
                         placeholder="gpt-4o, gpt-4-turbo..."
-                        className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 outline-none transition-all text-sm h-20 resize-none scrollbar-thin"
+                        className="w-full px-3 py-2 bg-surface-light dark:bg-surface-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm h-20 resize-none scrollbar-thin shadow-sm"
                       />
                     </div>
                   </div>
                 ))}
 
                 {aiProviders.length === 0 && (
-                  <div className="p-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center">
+                  <div className="p-12 border-2 border-dashed border-border-light dark:border-white/10 rounded-2xl flex flex-col items-center justify-center text-center">
                     <p className="text-slate-500 dark:text-slate-400 text-sm">Nenhum provedor configurado.</p>
                   </div>
                 )}
@@ -146,7 +146,7 @@ export function SettingsModal() {
         </div>
         
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900/50">
+        <div className="px-6 py-4 border-t border-border-light dark:border-white/5 flex justify-end bg-surface-light dark:bg-surface-dark/95">
            <button 
              onClick={() => setIsSettingsOpen(false)}
              className="px-6 py-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-colors shadow-lg"

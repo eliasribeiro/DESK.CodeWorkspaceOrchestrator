@@ -74,7 +74,7 @@ export function SettingsScreen() {
   return (
     <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark overflow-hidden">
       {/* Header */}
-      <div className="h-14 px-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-background-light dark:bg-background-dark">
+      <div className="h-14 px-6 flex items-center justify-between border-b border-border-light dark:border-white/5 bg-background-light dark:bg-background-dark/95">
         <div className="flex items-center gap-3">
           <button
             onClick={() => setIsSettingsOpen(false)}
@@ -89,7 +89,7 @@ export function SettingsScreen() {
       </div>
 
       {/* Tabs */}
-      <div className="px-6 flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 bg-surface-light/50 dark:bg-surface-dark/50">
+      <div className="px-6 flex items-center gap-2 border-b border-border-light dark:border-white/5 bg-surface-light dark:bg-surface-dark/95">
         <button
           onClick={() => setActiveTab('geral')}
           className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
@@ -134,7 +134,7 @@ export function SettingsScreen() {
                   </div>
                 </div>
 
-                <div className="p-8 bg-surface-light dark:bg-surface-dark rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <div className="p-8 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-white/5 shadow-sm">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                     <div>
                       <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">
@@ -150,11 +150,10 @@ export function SettingsScreen() {
                         <select
                           value={theme}
                           onChange={(e) => setTheme(e.target.value)}
-                          className="w-full h-11 px-4 pr-10 bg-white dark:bg-slate-900/50 
+                          className="w-full h-11 px-4 pr-10 bg-background-light dark:bg-background-dark 
                                      text-slate-900 dark:text-white text-sm font-medium
-                                     border border-slate-200 dark:border-slate-700 rounded-xl
-                                     appearance-none cursor-pointer focus:outline-none focus:ring-2 
-                                     focus:ring-slate-400 dark:focus:ring-white/20 transition-all shadow-sm"
+                                     border border-border-light dark:border-white/10 rounded-xl
+                                     appearance-none cursor-pointer focus:outline-none focus:border-primary-light transition-all shadow-sm"
                         >
                           <option value="dark">Tons mais escuros</option>
                           <option value="light">White</option>
@@ -202,7 +201,7 @@ export function SettingsScreen() {
                     return (
                       <div
                         key={provider.id}
-                        className="p-5 bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-600 dark:hover:border-slate-900 transition-all group"
+                        className="p-5 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20 transition-all group shadow-sm"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
@@ -243,7 +242,7 @@ export function SettingsScreen() {
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                             <button
                               onClick={() => handleEditProvider(provider)}
-                              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/20 rounded-lg transition-all"
+                              className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-all"
                               title="Editar provedor"
                             >
                               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
@@ -265,7 +264,7 @@ export function SettingsScreen() {
                             displayedModels.map((model, idx) => (
                               <span
                                 key={idx}
-                                className="px-3 py-1 bg-slate-200 dark:bg-slate-800/30 text-black dark:text-slate-500 rounded-full text-xs font-medium"
+                                className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-black dark:text-slate-300 rounded-full text-xs font-medium"
                               >
                                 {model.trim()}
                               </span>
@@ -296,7 +295,7 @@ export function SettingsScreen() {
                         )}
 
                         {/* Ações */}
-                        <div className="flex items-center gap-2 pt-4 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center gap-2 pt-4 border-t border-border-light dark:border-white/5">
                           <button
                             onClick={() => handleFetchModels(provider)}
                             disabled={isFetchingModels}
@@ -318,8 +317,8 @@ export function SettingsScreen() {
                   })}
 
                   {aiProviders.length === 0 && (
-                    <div className="p-16 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center bg-surface-light dark:bg-surface-dark">
-                      <div className="w-20 h-20 rounded-full bg-gradient-to-br from-slate-200 to-slate-100 dark:from-slate-800/20 dark:to-slate-800/10 flex items-center justify-center mb-6">
+                    <div className="p-16 border-2 border-dashed border-border-light dark:border-white/10 rounded-2xl flex flex-col items-center justify-center text-center bg-surface-light dark:bg-surface-dark">
+                      <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-6">
                         <svg className="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                         </svg>

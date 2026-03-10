@@ -42,8 +42,8 @@ export function ChatArea() {
     <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark">
       {/* Header do Chat */}
       <header className="h-14 flex items-center justify-between px-6
-                         border-b border-slate-200 dark:border-slate-700
-                         bg-surface-light dark:bg-surface-dark">
+                         border-b border-border-light dark:border-white/5
+                         bg-surface-light dark:bg-surface-dark/95">
         <div>
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             {chat.name}
@@ -72,11 +72,11 @@ export function ChatArea() {
       <div className="flex-1 overflow-y-auto scrollbar-thin p-6">
         <div className="w-full space-y-4">
           {/* Mensagem de boas-vindas */}
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700
+          <div className="flex gap-4">
+            <div className="w-8 h-8 rounded-full bg-primary-light/10 dark:bg-white/10
                              flex items-center justify-center flex-shrink-0">
-               <span className="text-slate-600 dark:text-slate-300 text-sm font-bold">AI</span>
-            </div>            <div className="flex-1">
+               <span className="text-primary-light dark:text-slate-300 text-[10px] font-bold">AI</span>
+            </div>            <div className="flex-1 mt-1">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-sm font-medium text-slate-900 dark:text-white">
                   Assistente
@@ -95,23 +95,24 @@ export function ChatArea() {
       </div>
 
       {/* Área de input */}
-      <div className="p-4 border-t border-slate-200 dark:border-slate-700 
+      <div className="p-4 border-t border-border-light dark:border-white/5 
                       bg-surface-light dark:bg-surface-dark">
         <div className="w-full">
           <div className="flex gap-2">
             <input
               type="text"
               placeholder="Digite sua mensagem..."
-              className="flex-1 px-4 py-2.5 rounded-lg
-                         bg-white dark:bg-slate-800
-                         border border-slate-300 dark:border-slate-600
-                         focus:outline-none focus:ring-2 focus:ring-slate-700
+              className="flex-1 px-4 py-3 rounded-lg
+                         bg-background-light dark:bg-background-dark
+                         border border-border-light dark:border-white/10
+                         focus:outline-none focus:border-primary-light dark:focus:border-white/20
                          text-slate-900 dark:text-slate-100
-                         placeholder-slate-400"
+                         placeholder-slate-400 dark:placeholder-slate-500 transition-colors shadow-sm"
             />
             <button
-              className="px-4 py-2.5 rounded-lg bg-slate-900 hover:bg-black 
-                         text-white font-medium transition-colors duration-150"
+              className="px-6 py-3 rounded-lg bg-black hover:bg-slate-900 
+                         dark:bg-white dark:text-black dark:hover:bg-slate-200
+                         text-white font-medium transition-colors duration-150 shadow-sm"
             >
               Enviar
             </button>

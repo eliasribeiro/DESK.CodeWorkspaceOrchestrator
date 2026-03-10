@@ -144,14 +144,14 @@ export function Terminal({
 
   return (
     <div
-      className={`h-full min-h-0 overflow-hidden rounded-[24px] border border-white/10 bg-[#0A0A0A] text-slate-300 shadow-[0_24px_80px_rgba(0,0,0,0.28)] ${compact ? 'flex flex-col' : 'flex flex-col'}`}
+      className={`h-full min-h-0 overflow-hidden rounded-xl border border-border-light bg-surface-light text-slate-700 shadow-sm dark:border-white/5 dark:bg-surface-dark dark:text-slate-300 dark:shadow-md ${compact ? 'flex flex-col' : 'flex flex-col'}`}
       onMouseDown={() => onFocus?.()}
     >
-      <header className={`shrink-0 border-b border-white/10 bg-[linear-gradient(180deg,#111827,#0A0A0A)] ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}>
+      <header className={`shrink-0 border-b border-border-light bg-slate-50 dark:border-white/5 dark:bg-black/20 ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}>
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className={`truncate font-semibold text-slate-100 ${compact ? 'text-xs' : 'text-sm'}`}>
+              <span className={`truncate font-semibold text-slate-900 dark:text-slate-100 ${compact ? 'text-xs' : 'text-sm'}`}>
                 {title || workspaceName}
               </span>
               <span className={`rounded-full border px-2 py-0.5 uppercase tracking-wide ${statusClassName} ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
@@ -170,13 +170,13 @@ export function Terminal({
                 terminalRef.current?.focus();
                 onFocus?.();
               }}
-              className={`rounded-lg border border-white/10 text-slate-300 transition-colors hover:bg-white/5 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+              className={`rounded-md border border-border-light text-slate-600 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
             >
               Limpar
             </button>
             <button
               onClick={onClose}
-              className={`rounded-lg border border-rose-500/20 bg-rose-500/15 text-rose-200 transition-colors hover:bg-rose-500/25 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+              className={`rounded-md border border-rose-500/20 bg-rose-50 text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
             >
               Encerrar
             </button>
@@ -190,10 +190,10 @@ export function Terminal({
         </div>
       )}
 
-      <div className={`flex-1 min-h-0 ${compact ? 'p-2.5' : 'p-3'}`}>
+      <div className={`flex-1 min-h-0 ${compact ? 'p-2' : 'p-3'}`}>
         <div
           ref={containerRef}
-          className="h-full w-full overflow-hidden rounded-[18px] border border-white/10 bg-[#050505]"
+          className="h-full w-full overflow-hidden rounded-lg bg-background-light dark:bg-background-dark"
         />
       </div>
     </div>

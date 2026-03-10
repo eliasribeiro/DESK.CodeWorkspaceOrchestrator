@@ -11,8 +11,8 @@
   }
 
   body {
-    @apply bg-white dark:bg-[#161111];
-    @apply text-slate-900 dark:text-slate-100;
+    @apply bg-background-light dark:bg-background-dark;
+    @apply text-slate-800 dark:text-slate-200 font-sans;
     @apply transition-colors duration-200;
     overflow: hidden; /* Previne scroll na janela do Electron */
   }

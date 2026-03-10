@@ -17,7 +17,7 @@ export function WorkspaceProvider({ children }) {
   const [activeScreen, setActiveScreen] = useState('home');
   const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
   const [showPrimarySidebar, setShowPrimarySidebar] = useState(true);
-  const [showSecondarySidebar, setShowSecondarySidebar] = useState(true);
+  const [showSecondarySidebar, setShowSecondarySidebar] = useState(false);
   const [workspaceViewMode, setWorkspaceViewMode] = useState('chat');
   const [selectedModel, setSelectedModel] = useState('');
   const [selectedEditor, setSelectedEditor] = useState('claude-code');
@@ -25,6 +25,7 @@ export function WorkspaceProvider({ children }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [aiProviders, setAiProviders] = useState([]);
   const [theme, setTheme] = useState('dark');
+  const [activeSessionsCount, setActiveSessionsCount] = useState(0);
 
   const normalizeProvider = useCallback((provider = {}) => ({
     ...provider,
@@ -273,6 +274,8 @@ export function WorkspaceProvider({ children }) {
     removeWorkspace,
     selectWorkspace,
     setSelectedWorkspace,
+    activeSessionsCount,
+    setActiveSessionsCount,
   };
 
   return (

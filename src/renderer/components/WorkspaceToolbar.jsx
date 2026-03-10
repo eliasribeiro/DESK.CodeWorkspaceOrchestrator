@@ -62,17 +62,19 @@ export function WorkspaceToolbar({
         : 'Abrir Terminal';
 
   return (
-    <div className="border-b border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.9),rgba(248,250,252,0.82))] px-6 py-3 backdrop-blur dark:border-slate-800 dark:bg-[linear-gradient(180deg,rgba(2,6,23,0.94),rgba(2,6,23,0.82))]">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="flex min-w-[180px] flex-col gap-1">
-          <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+    <div className="border-b border-border-light bg-surface-light/95 px-6 py-3 backdrop-blur dark:border-white/5 dark:bg-surface-dark/95">
+      <div className="flex flex-col gap-4">
+        {/* Linha 1 */}
+        <div className="flex flex-wrap items-end gap-3">
+          <div className="flex min-w-[180px] flex-col gap-1">
+            <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
             Editor
           </label>
           <div className="relative">
             <select
               value={editor}
               onChange={(event) => onEditorChange?.(event.target.value)}
-              className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+              className="h-10 w-full appearance-none rounded-xl border border-border-light bg-background-light px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition focus:border-primary-light dark:border-white/10 dark:bg-background-dark dark:text-slate-100"
             >
               {editorOptions.map((editorOption) => (
                 <option key={editorOption.value} value={editorOption.value}>
@@ -86,57 +88,7 @@ export function WorkspaceToolbar({
           </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-            Layout
-          </label>
-          <div className="inline-flex rounded-2xl border border-slate-200 bg-white/85 p-1 shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:border-slate-700 dark:bg-slate-900/90">
-            {layoutOptions.map((option) => {
-              const isActive = layoutMode === option.value;
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => onLayoutChange?.(option.value)}
-                  className={`inline-flex h-10 items-center gap-2 rounded-xl px-3 text-sm font-semibold transition ${
-                    isActive
-                      ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
-                  }`}
-                  title={option.label}
-                >
-                  {option.value === 'tabs' ? (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h6l2 2h8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
-                    </svg>
-                  ) : (
-                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
-                    </svg>
-                  )}
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
 
-        {showYolo && (
-          <div className="flex flex-col gap-1">
-            <label className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-              YOLO
-            </label>
-            <button
-              onClick={onToggleYolo}
-              className={`h-10 rounded-xl px-4 text-sm font-bold transition ${
-                yoloMode
-                  ? 'bg-[linear-gradient(135deg,#dc2626,#f97316)] text-white shadow-[0_10px_30px_rgba(249,115,22,0.28)]'
-                  : 'border border-slate-200 bg-white/85 text-slate-500 shadow-[0_10px_30px_rgba(15,23,42,0.06)] hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300'
-              }`}
-            >
-              YOLO
-            </button>
-          </div>
-        )}
 
         {requiresProvider && (
           <div className="flex min-w-[200px] flex-col gap-1">
@@ -148,7 +100,7 @@ export function WorkspaceToolbar({
                 value={selectedProvider}
                 onChange={(event) => onProviderChange?.(event.target.value)}
                 disabled={providerOptions.length === 0}
-                className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full appearance-none rounded-xl border border-border-light bg-background-light px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-primary-light dark:border-white/10 dark:bg-background-dark dark:text-slate-100"
               >
                 {providerOptions.length === 0 ? (
                   <option value="">Nenhum provedor</option>
@@ -177,7 +129,7 @@ export function WorkspaceToolbar({
                 value={selectedModel}
                 onChange={(event) => onModelChange?.(event.target.value)}
                 disabled={!currentProvider || currentProvider.models.length === 0}
-                className="h-10 w-full appearance-none rounded-xl border border-slate-200 bg-white/90 px-3 text-sm font-medium text-slate-900 shadow-[0_10px_30px_rgba(15,23,42,0.06)] outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-slate-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100"
+                className="h-10 w-full appearance-none rounded-xl border border-border-light bg-background-light px-3 text-sm font-medium text-slate-900 shadow-sm outline-none transition disabled:cursor-not-allowed disabled:opacity-50 focus:border-primary-light dark:border-white/10 dark:bg-background-dark dark:text-slate-100"
               >
                 {!currentProvider || currentProvider.models.length === 0 ? (
                   <option value="">Nenhum modelo</option>
@@ -197,20 +149,11 @@ export function WorkspaceToolbar({
         )}
 
         <div className="ml-auto flex items-end gap-3">
-          <div className="hidden rounded-2xl border border-slate-200 bg-white/80 px-3 py-2 text-right shadow-[0_10px_30px_rgba(15,23,42,0.06)] dark:border-slate-700 dark:bg-slate-900/90 md:block">
-            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-400">
-              Sessões
-            </p>
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">
-              {sessionCount}/6
-            </p>
-          </div>
-
           <button
             onClick={onLaunch}
-            disabled={isRunning || sessionCount >= 6 || (requiresProvider ? !selectedProvider || !selectedModel : false)}
+            disabled={isRunning || sessionCount >= 8 || (requiresProvider ? !selectedProvider || !selectedModel : false)}
             className={`inline-flex h-10 items-center gap-2 rounded-xl px-4 text-sm font-semibold shadow-[0_14px_40px_rgba(15,23,42,0.18)] transition ${
-              isRunning || sessionCount >= 6
+              isRunning || sessionCount >= 8
                 ? 'cursor-not-allowed bg-slate-300 text-slate-500 dark:bg-slate-800 dark:text-slate-500'
                 : isCodexSelected
                   ? 'bg-[linear-gradient(135deg,#059669,#22c55e)] text-white'
@@ -238,6 +181,62 @@ export function WorkspaceToolbar({
               </>
             )}
           </button>
+        </div>
+        </div>
+
+        {/* Linha 2 */}
+        <div className="flex flex-wrap items-center gap-4 border-t border-border-light dark:border-white/5 pt-3">
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+              Layout:
+            </span>
+            <div className="inline-flex rounded-xl border border-border-light bg-background-light p-1 shadow-sm dark:border-white/10 dark:bg-background-dark">
+              {layoutOptions.map((option) => {
+                const isActive = layoutMode === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    onClick={() => onLayoutChange?.(option.value)}
+                    className={`inline-flex h-7 items-center gap-2 rounded-lg px-3 text-xs font-semibold transition ${
+                      isActive
+                        ? 'bg-surface-dark text-white shadow-sm dark:bg-surface-light dark:text-slate-900'
+                        : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+                    }`}
+                    title={option.label}
+                  >
+                    {option.value === 'tabs' ? (
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h6l2 2h8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
+                      </svg>
+                    ) : (
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
+                      </svg>
+                    )}
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {showYolo && (
+            <div className="flex items-center gap-2 ml-2">
+              <span className="text-[10px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                Ação Direta:
+              </span>
+              <button
+                onClick={onToggleYolo}
+                className={`h-9 rounded-xl px-4 text-xs font-bold transition shadow-sm ${
+                  yoloMode
+                    ? 'bg-orange-500 text-white shadow-orange-500/20'
+                    : 'border border-border-light bg-background-light text-slate-500 hover:text-slate-900 dark:border-white/10 dark:bg-background-dark dark:text-slate-300'
+                }`}
+              >
+                YOLO MODE
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

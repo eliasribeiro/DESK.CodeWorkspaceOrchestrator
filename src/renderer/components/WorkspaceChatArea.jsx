@@ -3,7 +3,7 @@ import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceToolbar } from '@components/WorkspaceToolbar';
 import { Terminal } from '@components/Terminal';
 
-const MAX_TERMINAL_SESSIONS = 6;
+const MAX_TERMINAL_SESSIONS = 8;
 
 function getDefaultWorkspaceView() {
   return {
@@ -51,6 +51,7 @@ export function WorkspaceChatArea() {
     projects,
     aiProviders,
     setSelectedModel,
+    setActiveSessionsCount,
   } = useWorkspace();
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [selectedEditor, setSelectedEditor] = useState('claude-code');
@@ -85,6 +86,10 @@ export function WorkspaceChatArea() {
   const showTerminal = sessions.length > 0;
   const terminalError = currentWorkspaceView.terminalError || '';
   const isGridMode = currentWorkspaceView.layoutMode === 'grid';
+
+  useEffect(() => {
+    setActiveSessionsCount(sessions.length);
+  }, [sessions.length, setActiveSessionsCount]);
 
   useEffect(() => {
     if (!selectedProviderId && aiProviders.length > 0) {
@@ -309,7 +314,7 @@ export function WorkspaceChatArea() {
     if (sessions.length >= MAX_TERMINAL_SESSIONS) {
       updateWorkspaceView((currentView) => ({
         ...currentView,
-        terminalError: 'Limite de 6 terminais por workspace atingido. Encerre um terminal para abrir outro.',
+        terminalError: `Limite de ${MAX_TERMINAL_SESSIONS} terminais por workspace atingido. Encerre um terminal para abrir outro.`,
       }));
       return;
     }
@@ -383,7 +388,7 @@ export function WorkspaceChatArea() {
 
   return (
     <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark">
-      <header className="h-12 px-6 flex items-center justify-between border-b border-slate-200 dark:border-slate-800 bg-surface-light dark:bg-surface-dark">
+      <header className="h-12 px-6 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-surface-light dark:bg-surface-dark">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -447,17 +452,17 @@ export function WorkspaceChatArea() {
           <div className="h-full min-h-0 flex flex-col">
             {!isGridMode && (
               <div className="px-4 pt-4">
-                <div className="flex items-center gap-2 overflow-x-auto rounded-2xl border border-slate-200 bg-white/85 p-2 shadow-[0_10px_30px_rgba(15,23,42,0.07)] dark:border-slate-800 dark:bg-slate-950/80">
+                <div className="flex items-center gap-2 overflow-x-auto rounded-xl border border-border-light dark:border-white/5 bg-surface-light dark:bg-surface-dark p-2 shadow-sm">
                   {sessions.map((session) => {
                     const isActive = session.sessionId === activeSession?.sessionId;
                     return (
                       <button
                         key={session.sessionId}
                         onClick={() => handleFocusSession(session.sessionId)}
-                        className={`group min-w-0 flex items-center gap-3 rounded-xl border px-3 py-2 text-left transition-all ${
+                        className={`group min-w-0 flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
                           isActive
-                            ? 'border-slate-900 bg-slate-900 text-white shadow-lg dark:border-slate-100 dark:bg-slate-100 dark:text-slate-900'
-                            : 'border-slate-200 bg-slate-50 text-slate-600 hover:border-slate-300 hover:bg-white dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:border-slate-700'
+                            ? 'border-primary-light bg-primary-light/10 text-primary-light shadow-sm dark:border-white/20 dark:bg-white/10 dark:text-white'
+                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'
                         }`}
                       >
                         <span className={`inline-flex h-2.5 w-2.5 rounded-full ${
@@ -516,8 +521,8 @@ export function WorkspaceChatArea() {
           </div>
         ) : (
           <div className="h-full flex items-center justify-center px-6">
-            <div className="max-w-lg text-center rounded-[28px] border border-slate-200 bg-white/80 px-8 py-10 shadow-[0_24px_80px_rgba(15,23,42,0.08)] backdrop-blur dark:border-slate-800 dark:bg-slate-950/70">
-              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-[22px] bg-[radial-gradient(circle_at_top,#22c55e,transparent_58%),linear-gradient(135deg,#111827,#1f2937)] shadow-[0_16px_50px_rgba(34,197,94,0.25)]">
+            <div className="max-w-lg text-center rounded-2xl border border-border-light bg-surface-light px-8 py-10 shadow-lg dark:border-white/5 dark:bg-surface-dark">
+              <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-xl bg-primary-light/10 dark:bg-white/5">
                 <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.8">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
                 </svg>

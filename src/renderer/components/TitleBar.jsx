@@ -54,9 +54,9 @@ export function TitleBar({
 
   return (
     <header 
-      className="drag-region flex items-center justify-between h-10 px-3 
+      className="drag-region flex items-center justify-between h-11 px-4 
                  bg-background-light dark:bg-background-dark
-                 border-b border-slate-200 dark:border-slate-800
+                 border-b border-border-light dark:border-white/5
                  select-none z-50"
     >
       {/* Lado esquerdo: Espaço vazio ou botões extras */}
@@ -77,8 +77,8 @@ export function TitleBar({
           onClick={onTogglePrimary}
           className={`p-1.5 rounded-md transition-colors duration-150 mx-0.5 ${
             showPrimary 
-              ? 'text-slate-900 bg-slate-100 dark:bg-slate-800/20 dark:text-white' 
-              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-slate-900 bg-slate-200 dark:bg-white/10 dark:text-white' 
+              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'
           }`}
           title="Toggle Primary Sidebar (Ctrl+B)"
         >
@@ -90,42 +90,49 @@ export function TitleBar({
           onClick={onToggleSecondary}
           className={`p-1.5 rounded-md transition-colors duration-150 mx-0.5 ${
             showSecondary 
-              ? 'text-slate-900 bg-slate-100 dark:bg-slate-800/20 dark:text-white' 
-              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+              ? 'text-slate-900 bg-slate-200 dark:bg-white/10 dark:text-white' 
+              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-white/5'
           }`}
           title="Toggle Secondary Sidebar"
         >
           <SecondarySidebarIcon />
         </button>
 
-        <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
+        <div className="w-[1px] h-4 bg-border-light dark:bg-white/10 mx-1" />
 
         {/* Botão Minimizar */}
         <button
           onClick={handleMinimize}
-          className="w-10 h-8 flex items-center justify-center rounded
-                     hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors group"
+          className="w-10 h-8 flex items-center justify-center rounded-md
+                     hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group"
         >
-          <svg className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" />
+          <svg className="w-[10px] h-[10px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" fill="none" viewBox="0 0 10 10" stroke="currentColor" strokeWidth="1">
+            <line x1="0" y1="5" x2="10" y2="5" />
           </svg>
         </button>
 
-        {/* Botão Maximizar */}
+        {/* Botão Maximizar/Restaurar */}
         <button
           onClick={handleMaximize}
-          className="w-10 h-8 flex items-center justify-center rounded
-                     hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors group"
+          className="w-10 h-8 flex items-center justify-center rounded-md
+                     hover:bg-slate-200 dark:hover:bg-white/5 transition-colors group"
         >
-          <svg className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <rect x="4" y="4" width="16" height="16" rx="1" />
-          </svg>
+          {isMaximized ? (
+            <svg className="w-[10px] h-[10px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" fill="none" viewBox="0 0 10 10" stroke="currentColor" strokeWidth="1">
+              <path d="M2.5 2.5v-2h7v7h-2" />
+              <rect x="0.5" y="2.5" width="7" height="7" />
+            </svg>
+          ) : (
+            <svg className="w-[10px] h-[10px] text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white" fill="none" viewBox="0 0 10 10" stroke="currentColor" strokeWidth="1">
+              <rect x="0.5" y="0.5" width="9" height="9" />
+            </svg>
+          )}
         </button>
 
         {/* Botão Fechar */}
         <button
           onClick={handleClose}
-          className="w-10 h-8 flex items-center justify-center rounded
+          className="w-10 h-8 flex items-center justify-center rounded-md
                      hover:bg-red-500 hover:text-white transition-colors group"
         >
           <svg className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">

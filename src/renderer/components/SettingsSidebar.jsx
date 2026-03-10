@@ -18,9 +18,9 @@ export function SettingsSidebar() {
       />
 
       {/* Sidebar de Configurações */}
-      <aside className="fixed top-0 right-0 h-full w-[480px] z-[91] bg-white dark:bg-slate-900 shadow-2xl border-l border-slate-200 dark:border-slate-800 animate-in slide-in-from-right duration-300 flex flex-col">
+      <aside className="fixed top-0 right-0 h-full w-[480px] z-[91] bg-surface-light dark:bg-surface-dark shadow-2xl border-l border-border-light dark:border-white/5 animate-in slide-in-from-right duration-300 flex flex-col">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+        <div className="px-6 py-4 border-b border-border-light dark:border-white/5 flex items-center justify-between bg-surface-light dark:bg-surface-dark">
           <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <svg className="w-5 h-5 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -39,7 +39,7 @@ export function SettingsSidebar() {
         </div>
 
         {/* Tabs */}
-        <div className="flex px-6 bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200 dark:border-slate-800">
+        <div className="flex px-6 bg-surface-light dark:bg-surface-dark border-b border-border-light dark:border-white/5">
           <button
             onClick={() => setActiveTab('geral')}
             className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'geral' ? 'border-slate-900 text-slate-900' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
@@ -60,7 +60,7 @@ export function SettingsSidebar() {
             <div className="space-y-6 animate-in slide-in-from-left-2 duration-200">
               <section className="space-y-4">
                 <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Interface</h3>
-                <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">
+                <div className="p-4 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-white/5">
                    <p className="text-sm text-slate-600 dark:text-slate-400 italic">Configurações gerais da interface em breve...</p>
                 </div>
               </section>
@@ -85,7 +85,7 @@ export function SettingsSidebar() {
                 {aiProviders.map((provider) => (
                   <div 
                     key={provider.id} 
-                    className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-600 dark:hover:border-slate-900 transition-all group"
+                    className="p-4 bg-background-light dark:bg-background-dark rounded-xl border border-border-light dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20 transition-all group"
                   >
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -116,7 +116,7 @@ export function SettingsSidebar() {
                         provider.models.split(',').slice(0, 5).map((model, idx) => (
                           <span 
                             key={idx}
-                            className="px-2 py-0.5 bg-slate-200 dark:bg-slate-800/30 text-black dark:text-slate-500 rounded text-[10px] font-medium"
+                            className="px-2 py-0.5 bg-slate-100 dark:bg-white/5 text-black dark:text-slate-300 rounded text-[10px] font-medium"
                           >
                             {model.trim()}
                           </span>
@@ -158,8 +158,8 @@ export function SettingsSidebar() {
                 ))}
 
                 {aiProviders.length === 0 && (
-                  <div className="p-12 border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-2xl flex flex-col items-center justify-center text-center">
-                    <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
+                  <div className="p-12 border-2 border-dashed border-border-light dark:border-white/10 rounded-2xl flex flex-col items-center justify-center text-center">
+                    <div className="w-16 h-16 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-4">
                       <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
@@ -179,7 +179,7 @@ export function SettingsSidebar() {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-end bg-slate-50 dark:bg-slate-900/50">
+        <div className="px-6 py-4 border-t border-border-light dark:border-white/5 flex justify-end bg-surface-light dark:bg-surface-dark">
            <button
              onClick={() => setIsSettingsOpen(false)}
              className="px-6 py-2 bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white rounded-xl text-sm font-medium transition-colors shadow-lg"

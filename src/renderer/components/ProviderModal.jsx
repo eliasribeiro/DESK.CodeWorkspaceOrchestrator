@@ -83,9 +83,9 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-slate-200 dark:border-slate-800 animate-in zoom-in-95 duration-200">
+      <div className="bg-surface-light dark:bg-surface-dark w-full max-w-lg rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-border-light dark:border-white/5 animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+        <div className="px-6 py-4 border-b border-border-light dark:border-white/5 flex items-center justify-between bg-background-light dark:bg-background-dark">
           <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
             <svg className="w-5 h-5 text-slate-900" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               {editingProvider ? (
@@ -98,7 +98,7 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
           </h3>
           <button
             onClick={onClose}
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -117,7 +117,7 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
               placeholder="Ex: Local LLM, Anthropic, OpenAI..."
-              className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 focus:border-slate-700 outline-none transition-all text-sm"
+              className="w-full px-3 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
               required
             />
           </div>
@@ -131,7 +131,7 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
               value={formData.baseUrl}
               onChange={(e) => handleChange('baseUrl', e.target.value)}
               placeholder="Ex: http://localhost:11434/v1"
-              className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 focus:border-slate-700 outline-none transition-all text-sm"
+              className="w-full px-3 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
               required
             />
           </div>
@@ -145,7 +145,7 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
               value={formData.apiKey}
               onChange={(e) => handleChange('apiKey', e.target.value)}
               placeholder="sk-..."
-              className="w-full px-3 py-2.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 focus:border-slate-700 outline-none transition-all text-sm"
+              className="w-full px-3 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
             />
           </div>
 
@@ -172,7 +172,7 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
               value={formData.models}
               onChange={(e) => handleChange('models', e.target.value)}
               placeholder="gpt-4o, gpt-4-turbo, llama-3..."
-              className="w-full px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-slate-700/20 focus:border-slate-700 outline-none transition-all text-sm h-24 resize-none scrollbar-thin"
+              className="w-full px-3 py-2 bg-background-light dark:bg-background-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm h-24 resize-none scrollbar-thin shadow-sm"
             />
             <p className="text-xs text-slate-400 dark:text-slate-500 ml-1">
               Separe os modelos por vírgula ou use "Buscar Modelos" para carregar automaticamente.
@@ -180,11 +180,11 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800 mt-6">
+          <div className="flex items-center justify-end gap-2 pt-4 border-t border-border-light dark:border-white/5 mt-6">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+              className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-colors"
             >
               Cancelar
             </button>

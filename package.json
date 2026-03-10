@@ -8,8 +8,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "concurrently \"npm run dev:vite\" \"npm run dev:electron\"",
-    "dev:vite": "cross-env DEV_SERVER=true vite",
-    "dev:electron": "cross-env DEV_SERVER=true wait-on http://localhost:5173 && electron .",
+    "dev:vite": "cross-env DEV_SERVER=true vite --host 127.0.0.1",
+    "dev:electron": "node scripts/dev-electron.cjs",
     "build": "vite build",
     "build:electron": "electron-builder",
     "preview": "vite preview",

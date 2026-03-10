@@ -25,7 +25,8 @@ function WorkspaceContent() {
     setSecondarySidebarWidth,
     isSettingsOpen,
     setIsSettingsOpen,
-    selectedWorkspace
+    selectedWorkspace,
+    activeSessionsCount
   } = useWorkspace();
   const [showCloneModal, setShowCloneModal] = useState(false);
   const [isResizingSecondary, setIsResizingSecondary] = useState(false);
@@ -102,7 +103,7 @@ function WorkspaceContent() {
       />
 
       {/* Área de trabalho principal */}
-      <div className="flex-1 flex overflow-hidden relative bg-[#0A0A0A]">
+      <div className="flex-1 flex overflow-hidden relative bg-background-light dark:bg-background-dark">
         {/* Sidebar esquerda - Home e Projetos */}
         {showPrimarySidebar && <Sidebar />}
 
@@ -128,11 +129,19 @@ function WorkspaceContent() {
       </div>
 
       {/* Barra de status inferior */}
-      <footer className="h-6 px-3 flex items-center justify-between 
-                         bg-background-light dark:bg-background-dark
-                         border-t border-slate-200 dark:border-slate-700
-                         text-xs text-slate-500 dark:text-slate-400">
-        <span>Pronto</span>
+      <footer className="h-7 px-4 flex items-center justify-between 
+                         bg-surface-light dark:bg-surface-dark
+                         border-t border-slate-200 dark:border-white/5
+                         text-[11px] font-medium text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-4">
+          <span>Pronto</span>
+          {activeScreen === 'workspace' && (
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-slate-300">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              Sessões: {activeSessionsCount}/8
+            </span>
+          )}
+        </div>
         <span className="flex items-center gap-2">
           <span>v1.0.0</span>
         </span>
