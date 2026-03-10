@@ -77,7 +77,7 @@ export function ChatItem({ chat, projectId, isSelected }) {
 
   return (
     <li
-      className={`group flex items-center gap-2 px-2 py-1.5 mx-2 rounded-lg
+      className={`group w-full min-h-9 flex items-center gap-2 px-3 text-sm rounded-md
                   cursor-pointer transition-colors duration-150
                   ${isSelected 
                     ? 'bg-slate-200 dark:bg-white/10 border-l-2 border-slate-900 dark:border-white' 

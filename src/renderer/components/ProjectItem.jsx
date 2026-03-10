@@ -16,18 +16,12 @@ export function ProjectItem({ project }) {
   const {
     toggleProjectExpanded,
     removeProject,
-    renameProject,
-    addChat,
     addWorkspace,
     selectedChatId,
     selectedWorkspace
   } = useWorkspace();
   
   const [showActions, setShowActions] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editName, setEditName] = useState(project.name);
-  const [showNewChatInput, setShowNewChatInput] = useState(false);
-  const [newChatName, setNewChatName] = useState('');
   const [workspaces, setWorkspaces] = useState([]);
   const [isCreatingWorkspace, setIsCreatingWorkspace] = useState(false);
   const [showWorkspaces, setShowWorkspaces] = useState(false);
@@ -85,75 +79,12 @@ export function ProjectItem({ project }) {
   };
 
   /**
-   * Handler para iniciar edição do nome
-   */
-  const startEditing = (e) => {
-    e.stopPropagation();
-    setIsEditing(true);
-    setEditName(project.name);
-  };
-
-  /**
-   * Handler para salvar edição
-   */
-  const saveEdit = () => {
-    if (editName.trim()) {
-      renameProject(project.id, editName.trim());
-    } else {
-      setEditName(project.name);
-    }
-    setIsEditing(false);
-  };
-
-  /**
-   * Handler para cancelar edição
-   */
-  const cancelEdit = () => {
-    setEditName(project.name);
-    setIsEditing(false);
-  };
-
-  /**
-   * Handler para tecla Enter/Escape na edição
-   */
-  const handleEditKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      saveEdit();
-    } else if (e.key === 'Escape') {
-      cancelEdit();
-    }
-  };
-
-  /**
    * Handler para remover projeto
    */
   const handleRemove = (e) => {
     e.stopPropagation();
     if (confirm(`Tem certeza que deseja remover "${project.name}" e todos os seus chats?`)) {
       removeProject(project.id);
-    }
-  };
-
-  /**
-   * Handler para criar novo chat
-   */
-  const handleCreateChat = () => {
-    if (newChatName.trim()) {
-      addChat(project.id, newChatName.trim());
-      setNewChatName('');
-      setShowNewChatInput(false);
-    }
-  };
-
-  /**
-   * Handler para tecla Enter/Escape no input de chat
-   */
-  const handleChatKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleCreateChat();
-    } else if (e.key === 'Escape') {
-      setShowNewChatInput(false);
-      setNewChatName('');
     }
   };
 
@@ -202,14 +133,12 @@ export function ProjectItem({ project }) {
   };
 
   return (
-    <li className="select-none">
+    <li className="select-none w-full border-b border-slate-200/50 dark:border-white/10 last:border-b-0 py-1">
       {/* Header do Projeto */}
       <div
-        className={`group flex items-center gap-1 px-2 py-2 mx-2 rounded-lg
+        className="group w-full min-h-9 flex items-center gap-1 px-3 text-sm rounded-md
                     cursor-pointer transition-colors duration-150
-                    ${project.isExpanded 
-                      ? 'bg-slate-100 dark:bg-white/10' 
-                      : 'hover:bg-slate-100 dark:hover:bg-white/5'}`}
+                    hover:bg-slate-100 dark:hover:bg-white/5"
         onClick={handleHeaderClick}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
@@ -245,59 +174,12 @@ export function ProjectItem({ project }) {
         </button>
 
         {/* Nome do Projeto */}
-        {isEditing ? (
-          <input
-            type="text"
-            value={editName}
-            onChange={(e) => setEditName(e.target.value)}
-            onBlur={saveEdit}
-            onKeyDown={handleEditKeyDown}
-            onClick={(e) => e.stopPropagation()}
-            autoFocus
-            className="flex-1 px-1 py-0.5 text-sm rounded
-                       bg-white dark:bg-surface-dark
-                       border border-border-light dark:border-white/10
-                       focus:outline-none focus:ring-1 focus:ring-primary-light
-                       text-slate-900 dark:text-slate-100"
-          />
-        ) : (
-          <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
-            {project.name}
-          </span>
-        )}
+        <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+          {project.name}
+        </span>
 
         {/* Ações do Projeto */}
         <div className={`flex items-center gap-0.5 ${showActions ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
-          {/* Adicionar Chat */}
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowNewChatInput(true);
-            }}
-            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10"
-            title="Novo Chat"
-            aria-label="Adicionar chat"
-          >
-            <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" 
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </button>
-
-          {/* Renomear */}
-          <button
-            onClick={startEditing}
-            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10"
-            title="Renomear"
-            aria-label="Renomear projeto"
-          >
-            <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" 
-                  fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" 
-                    d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-            </svg>
-          </button>
-
           {/* Remover */}
           <button
             onClick={handleRemove}
@@ -312,31 +194,6 @@ export function ProjectItem({ project }) {
           </button>
         </div>
       </div>
-
-      {/* Input para novo chat */}
-      {showNewChatInput && (
-        <div className="px-2 py-1 ml-4">
-          <input
-            type="text"
-            value={newChatName}
-            onChange={(e) => setNewChatName(e.target.value)}
-            onKeyDown={handleChatKeyDown}
-            onBlur={() => {
-              if (!newChatName.trim()) {
-                setShowNewChatInput(false);
-              }
-            }}
-            placeholder="Nome do chat..."
-            autoFocus
-            className="w-full px-2 py-1.5 text-sm rounded-md
-                       bg-background-light dark:bg-background-dark
-                       border border-border-light dark:border-white/10
-                       focus:outline-none focus:ring-1 focus:ring-primary-light
-                       text-slate-900 dark:text-slate-100
-                       placeholder-slate-400 shadow-sm"
-          />
-        </div>
-      )}
 
       {/* Lista de Chats */}
       {project.isExpanded && project.chats.length > 0 && (
@@ -354,11 +211,11 @@ export function ProjectItem({ project }) {
 
       {/* Seção de Workspaces */}
       {project.isExpanded && (
-        <div className="mt-2 ml-4">
+        <div className="mt-2">
           <button
             onClick={handleCreateWorkspace}
             disabled={isCreatingWorkspace}
-            className="flex items-center gap-2 px-2 py-1.5 text-xs font-semibold
+            className="w-full min-h-9 flex items-center gap-2 px-3 text-sm font-medium
                        text-slate-700 dark:text-slate-300
                        hover:bg-slate-100 dark:hover:bg-white/5
                        rounded-md transition-colors
@@ -394,6 +251,7 @@ export function ProjectItem({ project }) {
                   projectId={project.id}
                   projectPath={project.path}
                   onDeleted={loadWorkspaces}
+                  onRenamed={loadWorkspaces}
                 />
               ))}
             </ul>

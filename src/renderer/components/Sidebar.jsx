@@ -16,11 +16,9 @@ export function Sidebar() {
     setSidebarWidth,
     activeScreen,
     setActiveScreen,
-    setIsCloneModalOpen,
     setIsSettingsOpen,
     setSelectedWorkspace
   } = useWorkspace();
-
   const [isResizing, setIsResizing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -99,9 +97,9 @@ export function Sidebar() {
       style={{ width: sidebarWidth }}
     >
       {/* Link Home e Ações Rápidas */}
-      <div className="flex items-center justify-between px-3 py-2 mt-2">
+      <div className="flex items-center justify-between py-2 mt-2">
         <div
-          className={`flex-1 flex items-center gap-2 px-2 py-1.5 rounded-md transition-colors cursor-pointer
+          className={`w-full min-h-9 flex items-center gap-2 px-3 text-sm rounded-md transition-colors cursor-pointer
                       ${activeScreen === 'home'
               ? 'bg-slate-200 dark:bg-white/10 text-slate-900 dark:text-white'
               : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'}`}
@@ -116,13 +114,13 @@ export function Sidebar() {
       </div>
 
       {/* Lista de Projetos */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin py-2 px-2 mt-2">
+      <div className="flex-1 overflow-y-auto scrollbar-thin py-2 mt-2">
         {projects.length === 0 ? (
           <div className="px-4 py-8 text-center opacity-50">
             <p className="text-xs text-slate-500 mb-2">Nenhum repositório</p>
           </div>
         ) : (
-          <ul className="divide-y divide-slate-200/60 dark:divide-white/5">
+          <ul className="w-full border-t border-slate-200/60 dark:border-white/10 pt-2">
             {projects.map(project => (
               <ProjectItem key={project.id} project={project} />
             ))}

@@ -16,6 +16,23 @@ let mainWindow = null;
 const terminalProcesses = [];
 const embeddedTerminalSessions = new Map();
 const embeddedTerminalSessionsById = new Map();
+const USER_PREFERENCES_FILENAME = 'preferences.json';
+
+const defaultUserPreferences = {
+  projects: [],
+  aiProviders: [],
+  theme: 'dark',
+  sidebarWidth: 280,
+  secondarySidebarWidth: 450,
+  showPrimarySidebar: true,
+  showSecondarySidebar: false,
+  workspaceViewMode: 'chat',
+  selectedModel: '',
+  selectedEditor: 'claude-code',
+  selectedProvider: '',
+  selectedChatId: null,
+  selectedWorkspace: null,
+};
 
 function generateSessionId() {
   return `term-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -67,6 +84,60 @@ function readJsonFile(filePath) {
 
 function writeJsonFile(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+function getUserPreferencesPath() {
+  return path.join(app.getPath('userData'), USER_PREFERENCES_FILENAME);
+}
+
+function normalizeUserPreferences(value = {}) {
+  return {
+    ...defaultUserPreferences,
+    ...(value && typeof value === 'object' ? value : {}),
+    projects: Array.isArray(value?.projects) ? value.projects : defaultUserPreferences.projects,
+    aiProviders: Array.isArray(value?.aiProviders) ? value.aiProviders : defaultUserPreferences.aiProviders,
+    theme: value?.theme === 'light' ? 'light' : 'dark',
+    sidebarWidth: Number.isFinite(value?.sidebarWidth) ? value.sidebarWidth : defaultUserPreferences.sidebarWidth,
+    secondarySidebarWidth: Number.isFinite(value?.secondarySidebarWidth)
+      ? value.secondarySidebarWidth
+      : defaultUserPreferences.secondarySidebarWidth,
+    showPrimarySidebar: value?.showPrimarySidebar !== false,
+    showSecondarySidebar: Boolean(value?.showSecondarySidebar),
+    workspaceViewMode: value?.workspaceViewMode === 'grid' ? 'grid' : defaultUserPreferences.workspaceViewMode,
+    selectedModel: typeof value?.selectedModel === 'string' ? value.selectedModel : '',
+    selectedEditor: typeof value?.selectedEditor === 'string' ? value.selectedEditor : defaultUserPreferences.selectedEditor,
+    selectedProvider: typeof value?.selectedProvider === 'string' ? value.selectedProvider : '',
+    selectedChatId: typeof value?.selectedChatId === 'string' ? value.selectedChatId : null,
+    selectedWorkspace:
+      value?.selectedWorkspace &&
+      typeof value.selectedWorkspace === 'object' &&
+      typeof value.selectedWorkspace.projectId === 'string' &&
+      value.selectedWorkspace.workspace &&
+      typeof value.selectedWorkspace.workspace === 'object'
+        ? value.selectedWorkspace
+        : null,
+  };
+}
+
+function loadUserPreferences() {
+  const preferencesPath = getUserPreferencesPath();
+  if (!fs.existsSync(preferencesPath)) {
+    return {
+      exists: false,
+      preferences: { ...defaultUserPreferences },
+    };
+  }
+
+  return {
+    exists: true,
+    preferences: normalizeUserPreferences(readJsonFile(preferencesPath)),
+  };
+}
+
+function saveUserPreferences(preferences) {
+  const preferencesPath = getUserPreferencesPath();
+  ensureDirectory(path.dirname(preferencesPath));
+  writeJsonFile(preferencesPath, normalizeUserPreferences(preferences));
 }
 
 function updateJsoncFile(filePath, buildUpdates) {
@@ -143,6 +214,18 @@ function destroyEmbeddedSession(session, options = {}) {
   }
 
   try {
+    if (process.platform === 'win32' && session.ptyProcess.pid) {
+      const killer = spawn('taskkill', ['/PID', String(session.ptyProcess.pid), '/T', '/F'], {
+        stdio: 'ignore',
+        windowsHide: true,
+      });
+
+      killer.on('error', (error) => {
+        console.log('Erro ao encerrar sessao de terminal:', error);
+      });
+      return;
+    }
+
     session.ptyProcess.kill();
   } catch (error) {
     console.log('Erro ao encerrar sessao de terminal:', error);
@@ -405,6 +488,29 @@ function createWindow() {
   });
 }
 
+function parseNumstat(rawDiff = '') {
+  const fileStats = new Map();
+  const lines = rawDiff.split('\n').filter((line) => line.trim());
+
+  lines.forEach((line) => {
+    const parts = line.split('\t');
+    if (parts.length < 3) {
+      return;
+    }
+
+    const [addedRaw, removedRaw, filePath] = parts;
+    const added = addedRaw === '-' ? 0 : Number.parseInt(addedRaw, 10) || 0;
+    const removed = removedRaw === '-' ? 0 : Number.parseInt(removedRaw, 10) || 0;
+    const current = fileStats.get(filePath) || { path: filePath, added: 0, removed: 0 };
+
+    current.added += added;
+    current.removed += removed;
+    fileStats.set(filePath, current);
+  });
+
+  return fileStats;
+}
+
 function setupIpcHandlers() {
   ipcMain.on('window:minimize', () => {
     if (mainWindow) {
@@ -442,6 +548,38 @@ function setupIpcHandlers() {
     return mainWindow ? mainWindow.isMaximized() : false;
   });
 
+  ipcMain.handle('preferences:load', async () => {
+    try {
+      const result = loadUserPreferences();
+      return {
+        success: true,
+        exists: result.exists,
+        preferences: result.preferences,
+      };
+    } catch (error) {
+      console.error('Erro ao carregar preferencias:', error);
+      return {
+        success: false,
+        exists: false,
+        preferences: { ...defaultUserPreferences },
+        error: error.message || 'Erro ao carregar preferencias',
+      };
+    }
+  });
+
+  ipcMain.handle('preferences:save', async (_event, preferences = {}) => {
+    try {
+      saveUserPreferences(preferences);
+      return { success: true };
+    } catch (error) {
+      console.error('Erro ao salvar preferencias:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro ao salvar preferencias',
+      };
+    }
+  });
+
   ipcMain.handle('dialog:openDirectory', async () => {
     if (!mainWindow) return null;
 
@@ -454,43 +592,6 @@ function setupIpcHandlers() {
     }
 
     return result.filePaths[0];
-  });
-
-  ipcMain.handle('git:clone', async (_event, { url, path: destinationPath }) => {
-    try {
-      if (!mainWindow) {
-        return { success: false, error: 'Janela nao disponivel' };
-      }
-
-      const repoName = url.replace(/\.git$/, '').split('/').pop();
-      const fullPath = path.join(destinationPath, repoName);
-
-      if (fs.existsSync(fullPath)) {
-        return {
-          success: false,
-          error: `Pasta ja existe: ${fullPath}`,
-        };
-      }
-
-      if (!fs.existsSync(destinationPath)) {
-        fs.mkdirSync(destinationPath, { recursive: true });
-      }
-
-      const git = simpleGit();
-      await git.clone(url, fullPath);
-
-      return {
-        success: true,
-        path: fullPath,
-        message: `Repositorio clonado: ${repoName}`,
-      };
-    } catch (error) {
-      console.error('Erro ao clonar:', error);
-      return {
-        success: false,
-        error: error.message || 'Erro ao clonar repositorio',
-      };
-    }
   });
 
   ipcMain.handle('git:createWorktree', async (_event, { projectPath, worktreeName }) => {
@@ -630,6 +731,264 @@ function setupIpcHandlers() {
       return {
         success: false,
         error: error.message || 'Erro ao remover worktree',
+      };
+    }
+  });
+
+  ipcMain.handle('git:renameWorktree', async (_event, { projectPath, worktreePath, newName }) => {
+    try {
+      if (!projectPath || !worktreePath || !newName) {
+        return { success: false, error: 'Parametros invalidos' };
+      }
+
+      const trimmedName = String(newName).trim();
+      if (!/^[a-zA-Z0-9_-]+$/.test(trimmedName)) {
+        return { success: false, error: 'Nome de workspace invalido' };
+      }
+
+      const oldWorkspaceName = path.basename(worktreePath);
+      if (oldWorkspaceName === trimmedName) {
+        return {
+          success: true,
+          workspace: {
+            name: oldWorkspaceName,
+            path: worktreePath,
+            branch: `refs/heads/${oldWorkspaceName}`,
+          },
+        };
+      }
+
+      const newWorktreePath = path.join(path.dirname(worktreePath), trimmedName);
+      if (fs.existsSync(newWorktreePath)) {
+        return { success: false, error: `Workspace ja existe: ${trimmedName}` };
+      }
+
+      const git = simpleGit(projectPath);
+      const worktreesRaw = await git.raw(['worktree', 'list', '--porcelain']);
+      const lines = worktreesRaw.split('\n').filter((line) => line.trim());
+
+      let currentPath = '';
+      let currentBranchRef = '';
+
+      for (const line of lines) {
+        if (line.startsWith('worktree ')) {
+          currentPath = line.replace('worktree ', '');
+          continue;
+        }
+
+        if (line.startsWith('branch ') && currentPath === worktreePath) {
+          currentBranchRef = line.replace('branch ', '');
+          break;
+        }
+      }
+
+      const sourceBranchName = currentBranchRef.replace(/^refs\/heads\//, '') || oldWorkspaceName;
+
+      await git.raw(['worktree', 'move', worktreePath, newWorktreePath]);
+      await git.branch(['-m', sourceBranchName, trimmedName]);
+
+      return {
+        success: true,
+        workspace: {
+          name: trimmedName,
+          path: newWorktreePath,
+          branch: `refs/heads/${trimmedName}`,
+        },
+      };
+    } catch (error) {
+      console.error('Erro ao renomear worktree:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro ao renomear workspace',
+      };
+    }
+  });
+
+  ipcMain.handle('git:getWorktreeChanges', async (_event, { worktreePath }) => {
+    try {
+      if (!worktreePath) {
+        return { success: false, error: 'Caminho do workspace nao fornecido', files: [] };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco', files: [] };
+      }
+
+      const git = simpleGit(worktreePath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) {
+        return { success: false, error: 'Workspace nao e um repositorio Git valido', files: [] };
+      }
+
+      const [unstagedRaw, stagedRaw, status] = await Promise.all([
+        git.raw(['diff', '--numstat', '--']),
+        git.raw(['diff', '--cached', '--numstat', '--']),
+        git.status(),
+      ]);
+
+      const filesMap = parseNumstat(unstagedRaw);
+      const stagedMap = parseNumstat(stagedRaw);
+
+      stagedMap.forEach((stats, filePath) => {
+        const current = filesMap.get(filePath) || { path: filePath, added: 0, removed: 0 };
+        current.added += stats.added;
+        current.removed += stats.removed;
+        filesMap.set(filePath, current);
+      });
+
+      const ensureFile = (filePath) => {
+        if (!filePath) {
+          return;
+        }
+
+        if (!filesMap.has(filePath)) {
+          filesMap.set(filePath, { path: filePath, added: 0, removed: 0 });
+        }
+      };
+
+      status.not_added.forEach(ensureFile);
+      status.created.forEach(ensureFile);
+      status.deleted.forEach(ensureFile);
+      status.modified.forEach(ensureFile);
+      status.staged.forEach(ensureFile);
+      status.conflicted.forEach(ensureFile);
+      status.renamed.forEach((entry) => ensureFile(entry.to || entry.from));
+
+      const files = Array.from(filesMap.values())
+        .sort((a, b) => {
+          const totalA = a.added + a.removed;
+          const totalB = b.added + b.removed;
+          if (totalA !== totalB) {
+            return totalB - totalA;
+          }
+
+          return a.path.localeCompare(b.path);
+        });
+
+      return {
+        success: true,
+        files,
+      };
+    } catch (error) {
+      console.error('Erro ao obter alteracoes do workspace:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro ao obter alteracoes do workspace',
+        files: [],
+      };
+    }
+  });
+
+  ipcMain.handle('git:commit', async (_event, { worktreePath, message }) => {
+    try {
+      if (!worktreePath) {
+        return { success: false, error: 'Caminho do workspace nao fornecido' };
+      }
+
+      const commitMessage = String(message || '').trim();
+      if (!commitMessage) {
+        return { success: false, error: 'Mensagem de commit nao fornecida' };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco' };
+      }
+
+      const git = simpleGit(worktreePath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) {
+        return { success: false, error: 'Workspace nao e um repositorio Git valido' };
+      }
+
+      await git.add(['-A']);
+      const status = await git.status();
+      if (status.isClean()) {
+        return { success: false, error: 'Nao ha alteracoes para commit' };
+      }
+
+      const result = await git.commit(commitMessage);
+      return {
+        success: true,
+        commit: {
+          hash: result.commit,
+          summary: result.summary,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao realizar commit',
+      };
+    }
+  });
+
+  ipcMain.handle('git:push', async (_event, { worktreePath }) => {
+    try {
+      if (!worktreePath) {
+        return { success: false, error: 'Caminho do workspace nao fornecido' };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco' };
+      }
+
+      const git = simpleGit(worktreePath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) {
+        return { success: false, error: 'Workspace nao e um repositorio Git valido' };
+      }
+
+      await git.push();
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao realizar push',
+      };
+    }
+  });
+
+  ipcMain.handle('git:commitAndPush', async (_event, { worktreePath, message }) => {
+    try {
+      if (!worktreePath) {
+        return { success: false, error: 'Caminho do workspace nao fornecido' };
+      }
+
+      const commitMessage = String(message || '').trim();
+      if (!commitMessage) {
+        return { success: false, error: 'Mensagem de commit nao fornecida' };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco' };
+      }
+
+      const git = simpleGit(worktreePath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) {
+        return { success: false, error: 'Workspace nao e um repositorio Git valido' };
+      }
+
+      await git.add(['-A']);
+      const status = await git.status();
+      if (status.isClean()) {
+        return { success: false, error: 'Nao ha alteracoes para commit' };
+      }
+
+      const result = await git.commit(commitMessage);
+      await git.push();
+
+      return {
+        success: true,
+        commit: {
+          hash: result.commit,
+          summary: result.summary,
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao realizar commit e push',
       };
     }
   });

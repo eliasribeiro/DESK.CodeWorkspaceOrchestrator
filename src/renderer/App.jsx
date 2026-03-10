@@ -5,7 +5,6 @@ import { HomeScreen } from '@components/HomeScreen';
 import { ChatArea } from '@components/ChatArea';
 import { WorkspaceChatArea } from '@components/WorkspaceChatArea';
 import { SettingsScreen } from '@components/SettingsScreen';
-import { CloneModal } from '@components/CloneModal';
 import { SecondarySidebar } from '@components/Layout/SecondarySidebar';
 import { WorkspaceProvider, useWorkspace } from '@context/WorkspaceContext';
 import '@styles/index.css';
@@ -16,7 +15,6 @@ import '@styles/index.css';
 function WorkspaceContent() {
   const {
     activeScreen,
-    setIsCloneModalOpen,
     showPrimarySidebar,
     setShowPrimarySidebar,
     showSecondarySidebar,
@@ -28,17 +26,7 @@ function WorkspaceContent() {
     selectedWorkspace,
     activeSessionsCount
   } = useWorkspace();
-  const [showCloneModal, setShowCloneModal] = useState(false);
   const [isResizingSecondary, setIsResizingSecondary] = useState(false);
-
-  useEffect(() => {
-    const handleOpenCloneModal = () => {
-      setShowCloneModal(true);
-    };
-
-    window.addEventListener('open-clone-modal', handleOpenCloneModal);
-    return () => window.removeEventListener('open-clone-modal', handleOpenCloneModal);
-  }, []);
 
   useEffect(() => {
     if (!isResizingSecondary) {
@@ -70,11 +58,6 @@ function WorkspaceContent() {
     setIsResizingSecondary(true);
     document.body.style.cursor = 'col-resize';
     document.body.style.userSelect = 'none';
-  };
-
-  const handleCloseCloneModal = () => {
-    setShowCloneModal(false);
-    setIsCloneModalOpen(false);
   };
 
   // Se configurações estiverem abertas, mostra a tela de configurações
@@ -146,12 +129,6 @@ function WorkspaceContent() {
           <span>v1.0.0</span>
         </span>
       </footer>
-
-      {/* Modais */}
-      <CloneModal
-        isOpen={showCloneModal}
-        onClose={handleCloseCloneModal}
-      />
     </div>
   );
 }

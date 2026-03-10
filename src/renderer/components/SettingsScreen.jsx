@@ -201,7 +201,7 @@ export function SettingsScreen() {
                     return (
                       <div
                         key={provider.id}
-                        className="p-5 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20 transition-all group shadow-sm"
+                        className="p-5 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20 transition-all shadow-sm"
                       >
                         <div className="flex items-start justify-between mb-4">
                           <div className="flex items-center gap-3">
@@ -239,7 +239,7 @@ export function SettingsScreen() {
                                 />
                               </button>
                             </label>
-                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="flex items-center gap-1 opacity-100">
                             <button
                               onClick={() => handleEditProvider(provider)}
                               className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-all"

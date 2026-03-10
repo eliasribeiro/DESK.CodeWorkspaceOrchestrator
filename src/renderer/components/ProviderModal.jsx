@@ -10,10 +10,12 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
     models: ''
   });
   const [isFetchingModels, setIsFetchingModels] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
 
   // Quando o modal abrir, carrega os dados do provedor sendo editado ou limpa o formulário
   useEffect(() => {
     if (isOpen) {
+      setShowApiKey(false);
       if (editingProvider) {
         setFormData({
           name: editingProvider.name || '',
@@ -140,13 +142,22 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
             <label className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase ml-1">
               API Token
             </label>
-            <input
-              type="password"
-              value={formData.apiKey}
-              onChange={(e) => handleChange('apiKey', e.target.value)}
-              placeholder="sk-..."
-              className="w-full px-3 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
-            />
+            <div className="flex items-center gap-2">
+              <input
+                type={showApiKey ? 'text' : 'password'}
+                value={formData.apiKey}
+                onChange={(e) => handleChange('apiKey', e.target.value)}
+                placeholder="sk-..."
+                className="w-full px-3 py-2.5 bg-background-light dark:bg-background-dark border border-border-light dark:border-white/10 rounded-lg focus:outline-none focus:border-primary-light transition-all text-sm shadow-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setShowApiKey(prev => !prev)}
+                className="px-3 py-2.5 text-xs font-semibold text-slate-700 dark:text-slate-200 bg-slate-100 dark:bg-slate-800/40 border border-border-light dark:border-white/10 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800/70 transition-colors whitespace-nowrap"
+              >
+                {showApiKey ? 'Ocultar' : 'Visualizar'}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1.5">

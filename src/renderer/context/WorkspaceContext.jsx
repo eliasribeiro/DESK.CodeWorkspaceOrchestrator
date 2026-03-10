@@ -1,90 +1,280 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 
-/**
- * Contexto para gerenciamento de projetos e chats
- */
 const WorkspaceContext = createContext(null);
 
-/**
- * Provider do contexto Workspace
- */
-export function WorkspaceProvider({ children }) {
-  const [projects, setProjects] = useState([]);
-  const [selectedChatId, setSelectedChatId] = useState(null);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(null);
-  const [sidebarWidth, setSidebarWidth] = useState(280);
-  const [secondarySidebarWidth, setSecondarySidebarWidth] = useState(450);
-  const [activeScreen, setActiveScreen] = useState('home');
-  const [isCloneModalOpen, setIsCloneModalOpen] = useState(false);
-  const [showPrimarySidebar, setShowPrimarySidebar] = useState(true);
-  const [showSecondarySidebar, setShowSecondarySidebar] = useState(false);
-  const [workspaceViewMode, setWorkspaceViewMode] = useState('chat');
-  const [selectedModel, setSelectedModel] = useState('');
-  const [selectedEditor, setSelectedEditor] = useState('claude-code');
-  const [selectedProvider, setSelectedProvider] = useState('');
-  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [aiProviders, setAiProviders] = useState([]);
-  const [theme, setTheme] = useState('dark');
-  const [activeSessionsCount, setActiveSessionsCount] = useState(0);
+const defaultPreferences = {
+  projects: [],
+  aiProviders: [],
+  theme: 'dark',
+  sidebarWidth: 280,
+  secondarySidebarWidth: 250,
+  showPrimarySidebar: true,
+  showSecondarySidebar: false,
+  workspaceViewMode: 'chat',
+  selectedModel: '',
+  selectedEditor: 'claude-code',
+  selectedProvider: '',
+  selectedChatId: null,
+  selectedWorkspace: null,
+};
 
-  const normalizeProvider = useCallback((provider = {}) => ({
+function normalizeProvider(provider = {}) {
+  return {
     ...provider,
     enabled: provider.enabled !== false,
-  }), []);
+  };
+}
 
-  /**
-   * Carrega dados do localStorage ao montar
-   */
-  useEffect(() => {
-    const savedProjects = localStorage.getItem('workspace-projects');
+function normalizePreferences(preferences = {}) {
+  return {
+    ...defaultPreferences,
+    ...(preferences && typeof preferences === 'object' ? preferences : {}),
+    projects: Array.isArray(preferences?.projects) ? preferences.projects : [],
+    aiProviders: Array.isArray(preferences?.aiProviders)
+      ? preferences.aiProviders.map(normalizeProvider)
+      : [],
+    theme: preferences?.theme === 'light' ? 'light' : 'dark',
+    sidebarWidth: Number.isFinite(preferences?.sidebarWidth) ? preferences.sidebarWidth : defaultPreferences.sidebarWidth,
+    secondarySidebarWidth: Number.isFinite(preferences?.secondarySidebarWidth)
+      ? preferences.secondarySidebarWidth
+      : defaultPreferences.secondarySidebarWidth,
+    showPrimarySidebar: preferences?.showPrimarySidebar !== false,
+    showSecondarySidebar: Boolean(preferences?.showSecondarySidebar),
+    workspaceViewMode: preferences?.workspaceViewMode === 'grid' ? 'grid' : 'chat',
+    selectedModel: typeof preferences?.selectedModel === 'string' ? preferences.selectedModel : '',
+    selectedEditor: typeof preferences?.selectedEditor === 'string'
+      ? preferences.selectedEditor
+      : defaultPreferences.selectedEditor,
+    selectedProvider: typeof preferences?.selectedProvider === 'string' ? preferences.selectedProvider : '',
+    selectedChatId: typeof preferences?.selectedChatId === 'string' ? preferences.selectedChatId : null,
+    selectedWorkspace:
+      preferences?.selectedWorkspace &&
+      typeof preferences.selectedWorkspace === 'object' &&
+      typeof preferences.selectedWorkspace.projectId === 'string' &&
+      preferences.selectedWorkspace.workspace &&
+      typeof preferences.selectedWorkspace.workspace === 'object'
+        ? preferences.selectedWorkspace
+        : null,
+  };
+}
+
+function readLegacyLocalPreferences() {
+  if (typeof window === 'undefined' || !window.localStorage) {
+    return { ...defaultPreferences };
+  }
+
+  const nextPreferences = { ...defaultPreferences };
+
+  try {
+    const savedProjects = window.localStorage.getItem('workspace-projects');
     if (savedProjects) {
-      try {
-        setProjects(JSON.parse(savedProjects));
-      } catch (e) {
-        console.error('Erro ao carregar projetos:', e);
-      }
+      nextPreferences.projects = JSON.parse(savedProjects);
     }
+  } catch (error) {
+    console.error('Erro ao migrar projetos do localStorage:', error);
+  }
 
-    const savedProviders = localStorage.getItem('workspace-ai-providers');
+  try {
+    const savedProviders = window.localStorage.getItem('workspace-ai-providers');
     if (savedProviders) {
-      try {
-        const parsedProviders = JSON.parse(savedProviders);
-        setAiProviders(Array.isArray(parsedProviders) ? parsedProviders.map(normalizeProvider) : []);
-      } catch (e) {
-        console.error('Erro ao carregar provedores:', e);
-      }
+      const parsedProviders = JSON.parse(savedProviders);
+      nextPreferences.aiProviders = Array.isArray(parsedProviders)
+        ? parsedProviders.map(normalizeProvider)
+        : [];
     }
+  } catch (error) {
+    console.error('Erro ao migrar provedores do localStorage:', error);
+  }
 
-    const savedTheme = localStorage.getItem('workspace-theme');
+  try {
+    const savedTheme = window.localStorage.getItem('workspace-theme');
     if (savedTheme) {
-      setTheme(savedTheme);
+      nextPreferences.theme = savedTheme === 'light' ? 'light' : 'dark';
     }
-  }, [normalizeProvider]);
+  } catch (error) {
+    console.error('Erro ao migrar tema do localStorage:', error);
+  }
 
-  /**
-   * Aplica o tema ao documento
-   */
+  return nextPreferences;
+}
+
+export function WorkspaceProvider({ children }) {
+  const [projects, setProjects] = useState(defaultPreferences.projects);
+  const [selectedChatId, setSelectedChatId] = useState(defaultPreferences.selectedChatId);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(defaultPreferences.selectedWorkspace);
+  const [sidebarWidth, setSidebarWidth] = useState(defaultPreferences.sidebarWidth);
+  const [secondarySidebarWidth, setSecondarySidebarWidth] = useState(defaultPreferences.secondarySidebarWidth);
+  const [activeScreen, setActiveScreen] = useState('home');
+  const [showPrimarySidebar, setShowPrimarySidebar] = useState(defaultPreferences.showPrimarySidebar);
+  const [showSecondarySidebar, setShowSecondarySidebar] = useState(defaultPreferences.showSecondarySidebar);
+  const [workspaceViewMode, setWorkspaceViewMode] = useState(defaultPreferences.workspaceViewMode);
+  const [selectedModel, setSelectedModel] = useState(defaultPreferences.selectedModel);
+  const [selectedEditor, setSelectedEditor] = useState(defaultPreferences.selectedEditor);
+  const [selectedProvider, setSelectedProvider] = useState(defaultPreferences.selectedProvider);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [aiProviders, setAiProviders] = useState(defaultPreferences.aiProviders);
+  const [theme, setTheme] = useState(defaultPreferences.theme);
+  const [activeSessionsCount, setActiveSessionsCount] = useState(0);
+  const hasHydratedRef = useRef(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadPreferences = async () => {
+      const electronPreferencesApi = window.electronAPI?.preferences;
+
+      if (!electronPreferencesApi?.load) {
+        const legacyPreferences = normalizePreferences(readLegacyLocalPreferences());
+        if (!isMounted) {
+          return;
+        }
+
+        applyLoadedPreferences(legacyPreferences);
+        hasHydratedRef.current = true;
+        return;
+      }
+
+      try {
+        const result = await electronPreferencesApi.load();
+        if (!isMounted) {
+          return;
+        }
+
+        const sourcePreferences = result?.success
+          ? (result.exists ? result.preferences : readLegacyLocalPreferences())
+          : readLegacyLocalPreferences();
+        const nextPreferences = normalizePreferences(sourcePreferences);
+
+        applyLoadedPreferences(nextPreferences);
+        hasHydratedRef.current = true;
+
+        if (result?.success && !result.exists) {
+          await electronPreferencesApi.save(nextPreferences);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar preferencias:', error);
+
+        if (!isMounted) {
+          return;
+        }
+
+        applyLoadedPreferences(normalizePreferences(readLegacyLocalPreferences()));
+        hasHydratedRef.current = true;
+      }
+    };
+
+    const applyLoadedPreferences = (preferences) => {
+      setProjects(preferences.projects);
+      setAiProviders(preferences.aiProviders);
+      setTheme(preferences.theme);
+      setSidebarWidth(preferences.sidebarWidth);
+      setSecondarySidebarWidth(preferences.secondarySidebarWidth);
+      setShowPrimarySidebar(preferences.showPrimarySidebar);
+      setShowSecondarySidebar(preferences.showSecondarySidebar);
+      setWorkspaceViewMode(preferences.workspaceViewMode);
+      setSelectedModel(preferences.selectedModel);
+      setSelectedEditor(preferences.selectedEditor);
+      setSelectedProvider(preferences.selectedProvider);
+      setSelectedChatId(preferences.selectedChatId);
+
+      const restoredWorkspace = preferences.selectedWorkspace;
+      const workspaceStillExists =
+        restoredWorkspace &&
+        preferences.projects.some((project) => (
+          project.id === restoredWorkspace.projectId &&
+          Array.isArray(project.workspaces) &&
+          project.workspaces.some((workspace) => workspace.path === restoredWorkspace.workspace?.path)
+        ));
+
+      if (workspaceStillExists) {
+        setSelectedWorkspace(restoredWorkspace);
+        setActiveScreen('workspace');
+        return;
+      }
+
+      const selectedChatStillExists = preferences.selectedChatId && preferences.projects.some((project) => (
+        Array.isArray(project.chats) && project.chats.some((chat) => chat.id === preferences.selectedChatId)
+      ));
+
+      if (selectedChatStillExists) {
+        setSelectedWorkspace(null);
+        setActiveScreen('chat');
+        return;
+      }
+
+      setSelectedWorkspace(null);
+      setActiveScreen('home');
+    };
+
+    loadPreferences();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (theme === 'dark') {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('workspace-theme', theme);
   }, [theme]);
 
-  /**
-   * Salva dados no localStorage
-   */
   useEffect(() => {
-    localStorage.setItem('workspace-projects', JSON.stringify(projects));
-  }, [projects]);
+    if (!hasHydratedRef.current) {
+      return;
+    }
 
-  useEffect(() => {
-    localStorage.setItem('workspace-ai-providers', JSON.stringify(aiProviders));
-  }, [aiProviders]);
+    const preferences = normalizePreferences({
+      projects,
+      aiProviders,
+      theme,
+      sidebarWidth,
+      secondarySidebarWidth,
+      showPrimarySidebar,
+      showSecondarySidebar,
+      workspaceViewMode,
+      selectedModel,
+      selectedEditor,
+      selectedProvider,
+      selectedChatId,
+      selectedWorkspace,
+    });
 
-  const generateId = () => `id-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const electronPreferencesApi = window.electronAPI?.preferences;
+
+    if (electronPreferencesApi?.save) {
+      electronPreferencesApi.save(preferences).catch((error) => {
+        console.error('Erro ao salvar preferencias:', error);
+      });
+      return;
+    }
+
+    try {
+      window.localStorage?.setItem('workspace-projects', JSON.stringify(projects));
+      window.localStorage?.setItem('workspace-ai-providers', JSON.stringify(aiProviders));
+      window.localStorage?.setItem('workspace-theme', theme);
+    } catch (error) {
+      console.error('Erro ao salvar preferencias locais:', error);
+    }
+  }, [
+    projects,
+    aiProviders,
+    theme,
+    sidebarWidth,
+    secondarySidebarWidth,
+    showPrimarySidebar,
+    showSecondarySidebar,
+    workspaceViewMode,
+    selectedModel,
+    selectedEditor,
+    selectedProvider,
+    selectedChatId,
+    selectedWorkspace,
+  ]);
+
+  const generateId = () => `id-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
   const extractFolderName = (fullPath) => {
     if (!fullPath) return '';
@@ -94,8 +284,9 @@ export function WorkspaceProvider({ children }) {
 
   const addProjectFromPath = useCallback((folderPath) => {
     if (!folderPath) return null;
+
     const folderName = extractFolderName(folderPath);
-    const existing = projects.find(p => p.path === folderPath);
+    const existing = projects.find((project) => project.path === folderPath);
     if (existing) return existing;
 
     const newProject = {
@@ -103,47 +294,86 @@ export function WorkspaceProvider({ children }) {
       name: folderName,
       path: folderPath,
       chats: [],
+      workspaces: [],
       isExpanded: true,
       createdAt: new Date().toISOString(),
     };
 
-    setProjects(prev => [...prev, newProject]);
+    setProjects((current) => [...current, newProject]);
     return newProject;
   }, [projects]);
 
   const removeProject = useCallback((projectId) => {
-    setProjects(prev => prev.filter(p => p.id !== projectId));
-  }, []);
+    setProjects((current) => current.filter((project) => project.id !== projectId));
+    setSelectedWorkspace((current) => (current?.projectId === projectId ? null : current));
+    setSelectedChatId((current) => {
+      const project = projects.find((item) => item.id === projectId);
+      const hasSelectedChat = project?.chats?.some((chat) => chat.id === current);
+      return hasSelectedChat ? null : current;
+    });
+  }, [projects]);
 
   const renameProject = useCallback((projectId, newName) => {
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, name: newName } : p));
+    setProjects((current) => current.map((project) => (
+      project.id === projectId ? { ...project, name: newName } : project
+    )));
   }, []);
 
   const toggleProjectExpanded = useCallback((projectId) => {
-    setProjects(prev => prev.map(p => p.id === projectId ? { ...p, isExpanded: !p.isExpanded } : p));
+    setProjects((current) => current.map((project) => (
+      project.id === projectId ? { ...project, isExpanded: !project.isExpanded } : project
+    )));
   }, []);
 
   const addChat = useCallback((projectId, name) => {
     const newChat = {
       id: generateId(),
-      name: name || `Novo Chat`,
+      name: name || 'Novo Chat',
       createdAt: new Date().toISOString(),
     };
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return { ...p, chats: [...p.chats, newChat], isExpanded: true };
+
+    setProjects((current) => current.map((project) => {
+      if (project.id !== projectId) {
+        return project;
       }
-      return p;
+
+      return {
+        ...project,
+        chats: [...(project.chats || []), newChat],
+        isExpanded: true,
+      };
     }));
+
     return newChat;
   }, []);
 
   const removeChat = useCallback((projectId, chatId) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return { ...p, chats: p.chats.filter(c => c.id !== chatId) };
+    setProjects((current) => current.map((project) => {
+      if (project.id !== projectId) {
+        return project;
       }
-      return p;
+
+      return {
+        ...project,
+        chats: (project.chats || []).filter((chat) => chat.id !== chatId),
+      };
+    }));
+
+    setSelectedChatId((current) => (current === chatId ? null : current));
+  }, []);
+
+  const renameChat = useCallback((projectId, chatId, newName) => {
+    setProjects((current) => current.map((project) => {
+      if (project.id !== projectId) {
+        return project;
+      }
+
+      return {
+        ...project,
+        chats: (project.chats || []).map((chat) => (
+          chat.id === chatId ? { ...chat, name: newName } : chat
+        )),
+      };
     }));
   }, []);
 
@@ -151,77 +381,138 @@ export function WorkspaceProvider({ children }) {
     if (!projectId || !workspace) {
       setSelectedWorkspace(null);
       setActiveScreen('home');
-    } else {
-      setSelectedWorkspace({ projectId, workspace });
-      setActiveScreen('workspace');
+      return;
     }
+
+    setSelectedWorkspace({ projectId, workspace });
+    setActiveScreen('workspace');
   }, []);
 
   const selectChat = useCallback((chatId) => {
     setSelectedChatId(chatId);
+    setSelectedWorkspace(null);
     setActiveScreen('chat');
   }, []);
 
   const getSelectedChat = useCallback(() => {
     for (const project of projects) {
-      const chat = project.chats.find(c => c.id === selectedChatId);
-      if (chat) return { chat, project };
+      const chat = (project.chats || []).find((item) => item.id === selectedChatId);
+      if (chat) {
+        return { chat, project };
+      }
     }
+
     return null;
   }, [projects, selectedChatId]);
 
   const addWorkspace = useCallback((projectId, workspace) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return { ...p, workspaces: [...(p.workspaces || []), workspace] };
+    setProjects((current) => current.map((project) => {
+      if (project.id !== projectId) {
+        return project;
       }
-      return p;
+
+      return {
+        ...project,
+        workspaces: [...(project.workspaces || []), workspace],
+      };
     }));
   }, []);
 
   const removeWorkspace = useCallback((projectId, workspaceName) => {
-    setProjects(prev => prev.map(p => {
-      if (p.id === projectId) {
-        return { ...p, workspaces: (p.workspaces || []).filter(w => w.name !== workspaceName) };
+    setProjects((current) => current.map((project) => {
+      if (project.id !== projectId) {
+        return project;
       }
-      return p;
+
+      return {
+        ...project,
+        workspaces: (project.workspaces || []).filter((workspace) => workspace.name !== workspaceName),
+      };
     }));
+
+    setSelectedWorkspace((current) => {
+      if (current?.projectId !== projectId || current?.workspace?.name !== workspaceName) {
+        return current;
+      }
+
+      return null;
+    });
+  }, []);
+
+  const renameWorkspace = useCallback((projectId, workspacePath, nextWorkspace) => {
+    if (!projectId || !workspacePath || !nextWorkspace?.name || !nextWorkspace?.path) {
+      return;
+    }
+
+    setProjects((current) => current.map((project) => {
+      if (project.id !== projectId) {
+        return project;
+      }
+
+      return {
+        ...project,
+        workspaces: (project.workspaces || []).map((workspace) => (
+          workspace.path === workspacePath
+            ? { ...workspace, ...nextWorkspace }
+            : workspace
+        )),
+      };
+    }));
+
+    setSelectedWorkspace((current) => {
+      if (current?.projectId !== projectId || current?.workspace?.path !== workspacePath) {
+        return current;
+      }
+
+      return {
+        ...current,
+        workspace: {
+          ...current.workspace,
+          ...nextWorkspace,
+        },
+      };
+    });
   }, []);
 
   const addProvider = useCallback((providerData = null) => {
     const newProvider = normalizeProvider({
-      id: `prov-${Date.now()}`,
+      id: providerData?.id || `prov-${Date.now()}`,
       name: providerData?.name || '',
       baseUrl: providerData?.baseUrl || '',
       apiKey: providerData?.apiKey || '',
       models: providerData?.models || '',
       enabled: providerData?.enabled,
     });
-    setAiProviders(prev => [...prev, newProvider]);
+
+    setAiProviders((current) => [...current, newProvider]);
     return newProvider;
-  }, [normalizeProvider]);
+  }, []);
 
   const updateProvider = useCallback((id, updates) => {
-    setAiProviders(prev => prev.map(p => (
-      p.id === id ? normalizeProvider({ ...p, ...updates }) : p
+    setAiProviders((current) => current.map((provider) => (
+      provider.id === id ? normalizeProvider({ ...provider, ...updates }) : provider
     )));
-  }, [normalizeProvider]);
+  }, []);
 
   const removeProvider = useCallback((id) => {
-    setAiProviders(prev => prev.filter(p => p.id !== id));
+    setAiProviders((current) => current.filter((provider) => provider.id !== id));
+    setSelectedProvider((current) => (current === id ? '' : current));
   }, []);
 
   const fetchProviderModels = useCallback(async (providerId) => {
-    const provider = aiProviders.find(p => p.id === providerId);
-    if (!provider || !provider.baseUrl || !provider.apiKey) return;
+    const provider = aiProviders.find((item) => item.id === providerId);
+    if (!provider || !provider.baseUrl || !provider.apiKey) {
+      return;
+    }
 
     try {
       const response = await fetch(`${provider.baseUrl}/models`, {
-        headers: { 'Authorization': `Bearer ${provider.apiKey}` }
+        headers: { Authorization: `Bearer ${provider.apiKey}` },
       });
       const data = await response.json();
-      if (data.data && Array.isArray(data.data)) {
-        const modelNames = data.data.map(m => m.id).join(',');
+
+      if (Array.isArray(data.data)) {
+        const modelNames = data.data.map((model) => model.id).join(',');
         updateProvider(providerId, { models: modelNames });
       }
     } catch (error) {
@@ -239,8 +530,6 @@ export function WorkspaceProvider({ children }) {
     setSecondarySidebarWidth,
     activeScreen,
     setActiveScreen,
-    isCloneModalOpen,
-    setIsCloneModalOpen,
     showPrimarySidebar,
     setShowPrimarySidebar,
     showSecondarySidebar,
@@ -268,10 +557,12 @@ export function WorkspaceProvider({ children }) {
     toggleProjectExpanded,
     addChat,
     removeChat,
+    renameChat,
     selectChat,
     getSelectedChat,
     addWorkspace,
     removeWorkspace,
+    renameWorkspace,
     selectWorkspace,
     setSelectedWorkspace,
     activeSessionsCount,

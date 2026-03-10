@@ -6,12 +6,7 @@ const subscribe = (channel, callback) => {
   return () => ipcRenderer.removeListener(channel, listener);
 };
 
-/**
- * Bridge segura para comunicação entre renderer e main process
- * Expõe apenas as APIs necessárias de forma controlada
- */
 contextBridge.exposeInMainWorld('electronAPI', {
-  // Controle da janela
   window: {
     minimize: () => ipcRenderer.send('window:minimize'),
     maximize: () => ipcRenderer.send('window:maximize'),
@@ -19,27 +14,32 @@ contextBridge.exposeInMainWorld('electronAPI', {
     isMaximized: () => ipcRenderer.invoke('window:isMaximized'),
   },
 
-  // Diálogos do sistema
   dialog: {
     openDirectory: () => ipcRenderer.invoke('dialog:openDirectory'),
   },
 
-  // Operações Git
+  preferences: {
+    load: () => ipcRenderer.invoke('preferences:load'),
+    save: (preferences) => ipcRenderer.invoke('preferences:save', preferences),
+  },
+
   git: {
-    clone: (options) => ipcRenderer.invoke('git:clone', options),
     createWorktree: (options) => ipcRenderer.invoke('git:createWorktree', options),
     listWorktrees: (options) => ipcRenderer.invoke('git:listWorktrees', options),
     removeWorktree: (options) => ipcRenderer.invoke('git:removeWorktree', options),
+    renameWorktree: (options) => ipcRenderer.invoke('git:renameWorktree', options),
+    getWorktreeChanges: (options) => ipcRenderer.invoke('git:getWorktreeChanges', options),
+    commit: (options) => ipcRenderer.invoke('git:commit', options),
+    push: (options) => ipcRenderer.invoke('git:push', options),
+    commitAndPush: (options) => ipcRenderer.invoke('git:commitAndPush', options),
   },
 
-  // Shell
   shell: {
     openPath: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
     openTerminal: (dirPath) => ipcRenderer.invoke('shell:openTerminal', dirPath),
     runCommandInTerminal: (dirPath, command) => ipcRenderer.invoke('shell:runCommandInTerminal', dirPath, command),
   },
 
-  // Terminal embutido
   terminal: {
     listSessions: (payload) => ipcRenderer.invoke('terminal:listSessions', payload),
     launchSession: (options) => ipcRenderer.invoke('terminal:launchSession', options),
@@ -51,15 +51,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onError: (callback) => subscribe('terminal:error', callback),
   },
 
-  // DevTools
   devTools: {
     toggle: () => ipcRenderer.send('devtools:toggle'),
   },
 
-  // Platform info
   platform: process.platform,
 
-  // Versão do Electron
   versions: {
     node: process.versions.node,
     chrome: process.versions.chrome,

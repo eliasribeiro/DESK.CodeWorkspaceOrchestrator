@@ -19,15 +19,6 @@ export function HomeScreen() {
     }
   };
 
-  /**
-   * Handler para clonar repositório
-   */
-  const handleClone = () => {
-    // Será tratado pelo componente pai via evento
-    const event = new CustomEvent('open-clone-modal');
-    window.dispatchEvent(event);
-  };
-
   return (
     <div className="flex-1 flex items-center justify-center bg-background-light dark:bg-background-dark p-8">
       <div className="w-full h-full max-w-none flex flex-col justify-center">
@@ -42,7 +33,7 @@ export function HomeScreen() {
         </div>
 
         {/* Cards de ação */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+        <div className="grid grid-cols-1 gap-6 w-full">
           {/* Card: Open Project */}
           <button
             onClick={handleOpenProject}
@@ -70,32 +61,6 @@ export function HomeScreen() {
             </p>
           </button>
 
-          {/* Card: Clone from URL */}
-          <button
-            onClick={handleClone}
-            className="group p-8 rounded-2xl bg-surface-light dark:bg-surface-dark 
-                       border border-border-light dark:border-white/5
-                       hover:border-primary-light dark:hover:border-white/20
-                       hover:shadow-lg hover:shadow-primary-light/5 dark:hover:shadow-white/5
-                       transition-all duration-200
-                       text-left"
-          >
-            <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-white/5 
-                            flex items-center justify-center mb-4
-                            group-hover:scale-110 transition-transform duration-200">
-              <svg className="w-7 h-7 text-primary-light dark:text-white" 
-                   fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" 
-                      d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H2a2 2 0 01-2-2V5a2 2 0 012-2h6" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-              Clone from URL
-            </h3>
-            <p className="text-sm text-slate-600 dark:text-slate-400">
-              Clone um repositório Git remoto
-            </p>
-          </button>
         </div>
 
         {/* Projetos recentes */}

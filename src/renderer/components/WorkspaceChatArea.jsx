@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceToolbar } from '@components/WorkspaceToolbar';
 import { Terminal } from '@components/Terminal';
+import { isValidWorkspaceName } from '@utils/nameGenerator';
 
 const MAX_TERMINAL_SESSIONS = 8;
 
@@ -37,6 +38,7 @@ function getGridColumnsClass(sessionCount) {
   if (sessionCount <= 1) return 'grid-cols-1';
   if (sessionCount === 2) return 'grid-cols-2';
   if (sessionCount === 4) return 'grid-cols-2';
+  if (sessionCount > 6) return 'grid-cols-4';
   return 'grid-cols-3';
 }
 
@@ -52,6 +54,7 @@ export function WorkspaceChatArea() {
     aiProviders,
     setSelectedModel,
     setActiveSessionsCount,
+    renameWorkspace,
   } = useWorkspace();
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [selectedEditor, setSelectedEditor] = useState('claude-code');
@@ -59,6 +62,9 @@ export function WorkspaceChatArea() {
   const [selectedModelLocal, setSelectedModelLocal] = useState('');
   const [yoloMode, setYoloMode] = useState(false);
   const [workspaceViews, setWorkspaceViews] = useState({});
+  const [isEditingWorkspaceName, setIsEditingWorkspaceName] = useState(false);
+  const [workspaceNameDraft, setWorkspaceNameDraft] = useState('');
+  const [isRenamingWorkspace, setIsRenamingWorkspace] = useState(false);
 
   const workspace = selectedWorkspace?.workspace;
   const projectId = selectedWorkspace?.projectId;
@@ -86,10 +92,24 @@ export function WorkspaceChatArea() {
   const showTerminal = sessions.length > 0;
   const terminalError = currentWorkspaceView.terminalError || '';
   const isGridMode = currentWorkspaceView.layoutMode === 'grid';
+  const projectLabel = project?.name || 'Projeto';
+  const workspacePathLabel = useMemo(() => {
+    if (!workspacePath) {
+      return '';
+    }
+    const normalizedPath = workspacePath.replace(/\\/g, '/');
+    const pathSegments = normalizedPath.split('/').filter(Boolean);
+    return pathSegments[pathSegments.length - 1] || workspacePath;
+  }, [workspacePath]);
 
   useEffect(() => {
     setActiveSessionsCount(sessions.length);
   }, [sessions.length, setActiveSessionsCount]);
+
+  useEffect(() => {
+    setWorkspaceNameDraft(workspace?.name || '');
+    setIsEditingWorkspaceName(false);
+  }, [workspace?.name, workspace?.path]);
 
   useEffect(() => {
     if (!selectedProviderId && aiProviders.length > 0) {
@@ -386,30 +406,113 @@ export function WorkspaceChatArea() {
     }));
   };
 
+  const handleRenameWorkspace = async () => {
+    const nextName = workspaceNameDraft.trim();
+
+    if (!workspacePath || !projectId || !workspace || !project?.path) {
+      return;
+    }
+
+    if (!nextName || nextName === workspace.name) {
+      setWorkspaceNameDraft(workspace.name);
+      setIsEditingWorkspaceName(false);
+      return;
+    }
+
+    if (!isValidWorkspaceName(nextName)) {
+      updateWorkspaceView((currentView) => ({
+        ...currentView,
+        terminalError: 'Nome invalido. Use apenas letras, numeros, hifen e underscore.',
+      }));
+      return;
+    }
+
+    setIsRenamingWorkspace(true);
+
+    try {
+      const result = await window.electronAPI.git.renameWorktree({
+        projectPath: project.path,
+        worktreePath: workspacePath,
+        newName: nextName,
+      });
+
+      if (!result.success || !result.workspace) {
+        throw new Error(result.error || 'Erro ao renomear workspace');
+      }
+
+      renameWorkspace(projectId, workspacePath, result.workspace);
+      setWorkspaceViews((current) => {
+        const currentView = current[workspacePath];
+        if (!currentView || result.workspace.path === workspacePath) {
+          return current;
+        }
+
+        const nextViews = { ...current, [result.workspace.path]: currentView };
+        delete nextViews[workspacePath];
+        return nextViews;
+      });
+      setWorkspaceNameDraft(result.workspace.name);
+      setIsEditingWorkspaceName(false);
+    } catch (error) {
+      updateWorkspaceView((currentView) => ({
+        ...currentView,
+        terminalError: error.message || 'Erro ao renomear workspace',
+      }));
+    } finally {
+      setIsRenamingWorkspace(false);
+    }
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark">
       <header className="h-12 px-6 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-surface-light dark:bg-surface-dark">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
+        <div className="flex items-center">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
-              {workspace.name}
-            </h2>
+            {isEditingWorkspaceName ? (
+              <input
+                type="text"
+                value={workspaceNameDraft}
+                onChange={(e) => setWorkspaceNameDraft(e.target.value)}
+                onBlur={handleRenameWorkspace}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleRenameWorkspace();
+                  } else if (e.key === 'Escape') {
+                    setWorkspaceNameDraft(workspace.name);
+                    setIsEditingWorkspaceName(false);
+                  }
+                }}
+                disabled={isRenamingWorkspace}
+                autoFocus
+                className="w-52 px-2 py-1 text-sm font-semibold rounded
+                           bg-white dark:bg-surface-dark
+                           border border-border-light dark:border-white/10
+                           focus:outline-none focus:ring-1 focus:ring-primary-light
+                           text-slate-900 dark:text-slate-100"
+              />
+            ) : (
+              <h2
+                className="text-sm font-semibold text-slate-900 dark:text-white cursor-text"
+                onDoubleClick={() => {
+                  setWorkspaceNameDraft(workspace.name);
+                  setIsEditingWorkspaceName(true);
+                }}
+              >
+                {workspace.name}
+              </h2>
+            )}
             <p className="text-xs text-slate-500 dark:text-slate-400">
-              {project?.name || 'Projeto'} | {workspace.branch || 'workspace'}
+              {projectLabel}
             </p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <div className="text-xs text-slate-500 dark:text-slate-400 text-right">
-            <p className="truncate max-w-xs" title={workspace.path}>
-              {workspace.path}
-            </p>
+        <div className="flex items-center gap-2">
+          <div
+            className="hidden md:flex max-w-[220px] items-center gap-1 rounded-lg border border-border-light bg-background-light px-2 py-1 text-xs text-slate-500 dark:border-white/10 dark:bg-background-dark dark:text-slate-400"
+            title={workspace.path}
+          >
+            <span className="truncate">{workspacePathLabel}</span>
           </div>
           <button
             onClick={() => window.electronAPI.shell.openPath(workspace.path)}
@@ -450,44 +553,9 @@ export function WorkspaceChatArea() {
       <div className="flex-1 min-h-0 bg-background-light dark:bg-background-dark">
         {showTerminal ? (
           <div className="h-full min-h-0 flex flex-col">
-            {!isGridMode && (
-              <div className="px-4 pt-4">
-                <div className="flex items-center gap-2 overflow-x-auto rounded-xl border border-border-light dark:border-white/5 bg-surface-light dark:bg-surface-dark p-2 shadow-sm">
-                  {sessions.map((session) => {
-                    const isActive = session.sessionId === activeSession?.sessionId;
-                    return (
-                      <button
-                        key={session.sessionId}
-                        onClick={() => handleFocusSession(session.sessionId)}
-                        className={`group min-w-0 flex items-center gap-3 rounded-lg border px-3 py-2 text-left transition-all ${
-                          isActive
-                            ? 'border-primary-light bg-primary-light/10 text-primary-light shadow-sm dark:border-white/20 dark:bg-white/10 dark:text-white'
-                            : 'border-transparent bg-transparent text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'
-                        }`}
-                      >
-                        <span className={`inline-flex h-2.5 w-2.5 rounded-full ${
-                          session.status === 'exited' ? 'bg-amber-400' : 'bg-emerald-400'
-                        }`} />
-                        <span className="min-w-0">
-                          <span className="block truncate text-sm font-semibold">
-                            {getSessionTitle(session)}
-                          </span>
-                          <span className={`block truncate text-[11px] ${
-                            isActive ? 'text-white/70 dark:text-slate-600' : 'text-slate-400'
-                          }`}>
-                            {getSessionStatusLabel(session)}
-                          </span>
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div className={`flex-1 min-h-0 p-4 ${isGridMode ? '' : 'pt-3'}`}>
+            <div className="flex-1 min-h-0">
               {isGridMode ? (
-                <div className={`grid h-full min-h-0 gap-4 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
+                <div className={`grid h-full min-h-0 gap-0 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
                   {sessions.map((session) => (
                     <Terminal
                       key={session.sessionId}
@@ -505,17 +573,72 @@ export function WorkspaceChatArea() {
                   ))}
                 </div>
               ) : activeSession ? (
-                <Terminal
-                  key={activeSession.sessionId}
-                  session={activeSession}
-                  workspaceName={workspace.name}
-                  workspacePath={workspacePath}
-                  title={getSessionTitle(activeSession)}
-                  statusLabel={getSessionStatusLabel(activeSession)}
-                  errorMessage=""
-                  onClose={() => handleCloseTerminal(activeSession.sessionId)}
-                  onSessionExit={() => {}}
-                />
+                <div className="h-full min-h-0 overflow-hidden border border-border-light bg-surface-light shadow-sm dark:border-white/5 dark:bg-surface-dark dark:shadow-md flex flex-col">
+                  <div className="shrink-0 border-b border-border-light bg-slate-50 px-2 pt-2 dark:border-white/5 dark:bg-black/20">
+                    <div className="flex items-end gap-1 overflow-x-auto">
+                      {sessions.map((session) => {
+                        const isActive = session.sessionId === activeSession.sessionId;
+                        return (
+                          <button
+                            key={session.sessionId}
+                            onClick={() => handleFocusSession(session.sessionId)}
+                            className={`group min-w-0 max-w-xs flex items-center gap-2 border border-b-0 px-3 py-2 text-left text-sm transition-colors ${
+                              isActive
+                                ? 'border-border-light bg-surface-light text-slate-900 dark:border-white/10 dark:bg-surface-dark dark:text-slate-100'
+                                : 'border-transparent bg-transparent text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-white/5'
+                            }`}
+                          >
+                            <span className={`inline-flex h-2 w-2 rounded-full ${
+                              session.status === 'exited' ? 'bg-amber-400' : 'bg-emerald-400'
+                            }`} />
+                            <span className="truncate font-medium">
+                              {getSessionTitle(session)}
+                            </span>
+                            <span
+                              role="button"
+                              tabIndex={0}
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                handleCloseTerminal(session.sessionId);
+                              }}
+                              onKeyDown={(event) => {
+                                if (event.key === 'Enter' || event.key === ' ') {
+                                  event.preventDefault();
+                                  event.stopPropagation();
+                                  handleCloseTerminal(session.sessionId);
+                                }
+                              }}
+                              className={`inline-flex h-5 w-5 items-center justify-center rounded transition-colors ${
+                                isActive
+                                  ? 'text-slate-500 hover:bg-slate-200 hover:text-slate-700 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white'
+                                  : 'text-slate-400 hover:bg-slate-200 hover:text-slate-700 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-slate-200'
+                              }`}
+                              aria-label={`Fechar ${getSessionTitle(session)}`}
+                            >
+                              ×
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="flex-1 min-h-0">
+                    <Terminal
+                      key={activeSession.sessionId}
+                      session={activeSession}
+                      workspaceName={workspace.name}
+                      workspacePath={workspacePath}
+                      title={getSessionTitle(activeSession)}
+                      statusLabel={getSessionStatusLabel(activeSession)}
+                      errorMessage=""
+                      embedded
+                      onClose={() => handleCloseTerminal(activeSession.sessionId)}
+                      onSessionExit={() => {}}
+                      onFocus={() => handleFocusSession(activeSession.sessionId)}
+                    />
+                  </div>
+                </div>
               ) : null}
             </div>
           </div>
