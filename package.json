@@ -25,7 +25,6 @@
   "dependencies": {
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
-    "electron": "^40.8.0",
     "jsonc-parser": "^3.3.1",
     "node-pty": "^1.1.0",
     "react": "^19.2.4",
@@ -38,6 +37,7 @@
     "autoprefixer": "^10.4.27",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "electron": "^40.8.0",
     "electron-builder": "^26.8.1",
     "postcss": "^8.5.8",
     "tailwindcss": "^4.2.1",
@@ -47,6 +47,7 @@
   "build": {
     "appId": "com.codeworkspace.orchestrator",
     "productName": "Code Workspace Orchestrator",
+    "npmRebuild": false,
     "directories": {
       "output": "release"
     },
