@@ -679,6 +679,162 @@ function parseNumstat(rawDiff = '') {
   return fileStats;
 }
 
+function normalizeTextContent(value) {
+  return String(value || '').replace(/\r\n/g, '\n');
+}
+
+function readTextFileIfExists(filePath) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return '';
+  }
+
+  const content = fs.readFileSync(filePath, 'utf8');
+  if (content.includes('\u0000')) {
+    throw new Error('Arquivo binario nao suportado na visualizacao');
+  }
+
+  return normalizeTextContent(content);
+}
+
+function buildFallbackLineDiff(previousLines, nextLines) {
+  const maxLength = Math.max(previousLines.length, nextLines.length);
+  const lines = [];
+  let oldLineNumber = 1;
+  let newLineNumber = 1;
+
+  for (let index = 0; index < maxLength; index += 1) {
+    const previousLine = previousLines[index];
+    const nextLine = nextLines[index];
+
+    if (previousLine === nextLine) {
+      lines.push({
+        type: 'context',
+        content: previousLine ?? '',
+        oldLineNumber: previousLine === undefined ? null : oldLineNumber,
+        newLineNumber: nextLine === undefined ? null : newLineNumber,
+      });
+      if (previousLine !== undefined) oldLineNumber += 1;
+      if (nextLine !== undefined) newLineNumber += 1;
+      continue;
+    }
+
+    if (previousLine !== undefined) {
+      lines.push({
+        type: 'removed',
+        content: previousLine,
+        oldLineNumber,
+        newLineNumber: null,
+      });
+      oldLineNumber += 1;
+    }
+
+    if (nextLine !== undefined) {
+      lines.push({
+        type: 'added',
+        content: nextLine,
+        oldLineNumber: null,
+        newLineNumber,
+      });
+      newLineNumber += 1;
+    }
+  }
+
+  return lines;
+}
+
+function buildLineDiff(previousContent = '', nextContent = '') {
+  const previousLines = normalizeTextContent(previousContent).split('\n');
+  const nextLines = normalizeTextContent(nextContent).split('\n');
+  const matrixCellCount = previousLines.length * nextLines.length;
+
+  if (matrixCellCount > 250000) {
+    return buildFallbackLineDiff(previousLines, nextLines);
+  }
+
+  const dp = Array.from({ length: previousLines.length + 1 }, () => (
+    new Array(nextLines.length + 1).fill(0)
+  ));
+
+  for (let previousIndex = previousLines.length - 1; previousIndex >= 0; previousIndex -= 1) {
+    for (let nextIndex = nextLines.length - 1; nextIndex >= 0; nextIndex -= 1) {
+      if (previousLines[previousIndex] === nextLines[nextIndex]) {
+        dp[previousIndex][nextIndex] = dp[previousIndex + 1][nextIndex + 1] + 1;
+      } else {
+        dp[previousIndex][nextIndex] = Math.max(
+          dp[previousIndex + 1][nextIndex],
+          dp[previousIndex][nextIndex + 1]
+        );
+      }
+    }
+  }
+
+  const lines = [];
+  let previousIndex = 0;
+  let nextIndex = 0;
+  let oldLineNumber = 1;
+  let newLineNumber = 1;
+
+  while (previousIndex < previousLines.length && nextIndex < nextLines.length) {
+    if (previousLines[previousIndex] === nextLines[nextIndex]) {
+      lines.push({
+        type: 'context',
+        content: previousLines[previousIndex],
+        oldLineNumber,
+        newLineNumber,
+      });
+      previousIndex += 1;
+      nextIndex += 1;
+      oldLineNumber += 1;
+      newLineNumber += 1;
+      continue;
+    }
+
+    if (dp[previousIndex + 1][nextIndex] >= dp[previousIndex][nextIndex + 1]) {
+      lines.push({
+        type: 'removed',
+        content: previousLines[previousIndex],
+        oldLineNumber,
+        newLineNumber: null,
+      });
+      previousIndex += 1;
+      oldLineNumber += 1;
+    } else {
+      lines.push({
+        type: 'added',
+        content: nextLines[nextIndex],
+        oldLineNumber: null,
+        newLineNumber,
+      });
+      nextIndex += 1;
+      newLineNumber += 1;
+    }
+  }
+
+  while (previousIndex < previousLines.length) {
+    lines.push({
+      type: 'removed',
+      content: previousLines[previousIndex],
+      oldLineNumber,
+      newLineNumber: null,
+    });
+    previousIndex += 1;
+    oldLineNumber += 1;
+  }
+
+  while (nextIndex < nextLines.length) {
+    lines.push({
+      type: 'added',
+      content: nextLines[nextIndex],
+      oldLineNumber: null,
+      newLineNumber,
+    });
+    nextIndex += 1;
+    newLineNumber += 1;
+  }
+
+  return lines;
+}
+
 function setupIpcHandlers() {
   ipcMain.on('window:minimize', () => {
     if (mainWindow) {
@@ -1099,6 +1255,68 @@ function setupIpcHandlers() {
         success: false,
         error: error.message || 'Erro ao obter alteracoes do workspace',
         files: [],
+      };
+    }
+  });
+
+  ipcMain.handle('git:getWorktreeFilePreview', async (_event, { worktreePath, filePath }) => {
+    try {
+      if (!worktreePath || !filePath) {
+        return { success: false, error: 'Workspace ou arquivo nao informado', file: null };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco', file: null };
+      }
+
+      const git = simpleGit(worktreePath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) {
+        return { success: false, error: 'Workspace nao e um repositorio Git valido', file: null };
+      }
+
+      const normalizedRelativePath = String(filePath).replace(/\\/g, '/');
+      const absoluteFilePath = path.join(worktreePath, normalizedRelativePath);
+      let previousContent = '';
+      let currentContent = '';
+
+      try {
+        previousContent = normalizeTextContent(
+          await git.raw(['show', `HEAD:${normalizedRelativePath}`])
+        );
+      } catch (_error) {
+        previousContent = '';
+      }
+
+      try {
+        currentContent = readTextFileIfExists(absoluteFilePath);
+      } catch (error) {
+        return { success: false, error: error.message || 'Nao foi possivel ler o arquivo atual', file: null };
+      }
+
+      const diffLines = buildLineDiff(previousContent, currentContent);
+      const addedCount = diffLines.filter((line) => line.type === 'added').length;
+      const removedCount = diffLines.filter((line) => line.type === 'removed').length;
+
+      return {
+        success: true,
+        file: {
+          path: normalizedRelativePath,
+          absolutePath: absoluteFilePath,
+          previousContent,
+          currentContent,
+          lines: diffLines,
+          summary: {
+            added: addedCount,
+            removed: removedCount,
+          },
+        },
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao carregar preview do arquivo',
+        file: null,
       };
     }
   });

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceToolbar } from '@components/WorkspaceToolbar';
 import { Terminal } from '@components/Terminal';
+import { WorkspaceFilePreviewModal } from '@components/WorkspaceFilePreviewModal';
 
 const MAX_TERMINAL_SESSIONS = 8;
 const TERMINAL_MIN_ZOOM_LEVEL = -4;
@@ -56,14 +57,16 @@ export function WorkspaceChatArea() {
     aiProviders,
     setSelectedModel,
     setActiveSessionsCount,
+    workspaceViews,
+    setWorkspaceViews,
+    filePreview,
+    closeFilePreview,
   } = useWorkspace();
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [selectedEditor, setSelectedEditor] = useState('claude-code');
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [selectedModelLocal, setSelectedModelLocal] = useState('');
   const [yoloMode, setYoloMode] = useState(false);
-  const [workspaceViews, setWorkspaceViews] = useState({});
-
   const workspace = selectedWorkspace?.workspace;
   const projectId = selectedWorkspace?.projectId;
   const project = projects.find((item) => item.id === projectId);
@@ -99,6 +102,10 @@ export function WorkspaceChatArea() {
     const pathSegments = normalizedPath.split('/').filter(Boolean);
     return pathSegments[pathSegments.length - 1] || workspacePath;
   }, [workspacePath]);
+
+  useEffect(() => {
+    closeFilePreview();
+  }, [workspacePath, closeFilePreview]);
 
   useEffect(() => {
     setActiveSessionsCount(sessions.length);
@@ -638,6 +645,13 @@ export function WorkspaceChatArea() {
               )}
             </div>
           </div>
+        )}
+
+        {filePreview?.isOpen && filePreview?.file && (
+          <WorkspaceFilePreviewModal
+            file={filePreview.file}
+            onClose={closeFilePreview}
+          />
         )}
       </div>
     </div>

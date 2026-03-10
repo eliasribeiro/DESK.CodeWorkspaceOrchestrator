@@ -131,6 +131,11 @@ export function WorkspaceProvider({ children }) {
   const [theme, setTheme] = useState(defaultPreferences.theme);
   const [language, setLanguage] = useState(defaultPreferences.language);
   const [activeSessionsCount, setActiveSessionsCount] = useState(0);
+  const [workspaceViews, setWorkspaceViews] = useState({});
+  const [filePreview, setFilePreview] = useState({
+    isOpen: false,
+    file: null,
+  });
   const [dialogState, setDialogState] = useState({
     isOpen: false,
     type: 'alert',
@@ -615,6 +620,20 @@ export function WorkspaceProvider({ children }) {
 
   const t = useCallback((key, vars = {}) => translate(language, key, vars), [language]);
 
+  const openFilePreview = useCallback((file) => {
+    setFilePreview({
+      isOpen: true,
+      file: file || null,
+    });
+  }, []);
+
+  const closeFilePreview = useCallback(() => {
+    setFilePreview({
+      isOpen: false,
+      file: null,
+    });
+  }, []);
+
   const value = {
     projects,
     selectedChatId,
@@ -669,6 +688,11 @@ export function WorkspaceProvider({ children }) {
     setSelectedWorkspace,
     activeSessionsCount,
     setActiveSessionsCount,
+    workspaceViews,
+    setWorkspaceViews,
+    filePreview,
+    openFilePreview,
+    closeFilePreview,
   };
 
   return (

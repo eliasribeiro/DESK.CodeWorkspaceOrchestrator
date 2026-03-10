@@ -6,7 +6,7 @@ import { useWorkspace } from '@context/WorkspaceContext';
  * Área limpa conforme solicitado.
  */
 export function SecondarySidebar() {
-  const { selectedWorkspace, projects } = useWorkspace();
+  const { selectedWorkspace, projects, openFilePreview } = useWorkspace();
   const [changedFiles, setChangedFiles] = useState([]);
   const [isLoadingChanges, setIsLoadingChanges] = useState(false);
   const [changesError, setChangesError] = useState('');
@@ -16,6 +16,7 @@ export function SecondarySidebar() {
   const [gitFeedback, setGitFeedback] = useState({ type: '', text: '' });
   const [pullRequestUrl, setPullRequestUrl] = useState('');
   const [isOpeningPullRequest, setIsOpeningPullRequest] = useState(false);
+  const [previewLoadingPath, setPreviewLoadingPath] = useState('');
   const actionsMenuRef = useRef(null);
   const projectPath = projects.find((project) => project.id === selectedWorkspace?.projectId)?.path || '';
 
@@ -53,6 +54,7 @@ export function SecondarySidebar() {
     setCommitMessage('');
     setGitFeedback({ type: '', text: '' });
     setPullRequestUrl('');
+    setPreviewLoadingPath('');
   }, [selectedWorkspace?.workspace?.path, loadWorktreeChanges]);
 
   useEffect(() => {
@@ -246,6 +248,32 @@ export function SecondarySidebar() {
     }
   };
 
+  const handleOpenFilePreview = async (filePath) => {
+    const workspacePath = selectedWorkspace?.workspace?.path;
+    if (!workspacePath || !filePath) {
+      return;
+    }
+
+    setPreviewLoadingPath(filePath);
+    try {
+      const result = await window.electronAPI.git.getWorktreeFilePreview({
+        worktreePath: workspacePath,
+        filePath,
+      });
+
+      if (!result?.success || !result?.file) {
+        setGitFeedback({ type: 'error', text: result?.error || 'Nao foi possivel abrir a visualizacao do arquivo' });
+        return;
+      }
+
+      openFilePreview(result.file);
+    } catch (error) {
+      setGitFeedback({ type: 'error', text: error.message || 'Erro ao abrir a visualizacao do arquivo' });
+    } finally {
+      setPreviewLoadingPath('');
+    }
+  };
+
   return (
     <aside className="h-full flex flex-col bg-background-light dark:bg-background-dark border-l border-border-light dark:border-white/5 overflow-hidden">
       <div className="h-full p-2">
@@ -296,14 +324,21 @@ export function SecondarySidebar() {
                     {changedFiles.map((file) => (
                       <li
                         key={file.path}
-                        className="w-full min-h-8 flex items-center justify-between gap-2 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-white/5"
                         title={file.path}
                       >
-                        <span className="text-xs text-slate-700 dark:text-slate-300 truncate">{file.path}</span>
-                        <span className="flex items-center gap-2 shrink-0 text-[11px] font-semibold">
-                          <span className="text-red-500">-{file.removed || 0}</span>
-                          <span className="text-emerald-500">+{file.added || 0}</span>
-                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleOpenFilePreview(file.path)}
+                          className="w-full min-h-8 flex items-center justify-between gap-2 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-white/5"
+                        >
+                          <span className="text-left text-xs text-slate-700 dark:text-slate-300 truncate">
+                            {previewLoadingPath === file.path ? 'Abrindo...' : file.path}
+                          </span>
+                          <span className="flex items-center gap-2 shrink-0 text-[11px] font-semibold">
+                            <span className="text-red-500">-{file.removed || 0}</span>
+                            <span className="text-emerald-500">+{file.added || 0}</span>
+                          </span>
+                        </button>
                       </li>
                     ))}
                   </ul>
