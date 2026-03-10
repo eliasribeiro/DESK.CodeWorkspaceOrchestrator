@@ -9,12 +9,12 @@ export default {
     extend: {
       colors: {
         background: {
-          light: '#f8fafc', // slate-50
-          dark: '#0f172a',  // slate-950
+          light: '#f8fafc',
+          dark: '#161111',
         },
         surface: {
           light: '#ffffff',
-          dark: '#1e293b',  // slate-800
+          dark: '#302e2d',
         }
       }
     },

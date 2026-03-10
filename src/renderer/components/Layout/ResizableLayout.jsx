@@ -75,7 +75,7 @@ export function ResizableLayout({
           <div
             onMouseDown={startResizingPrimary}
             className="absolute top-0 right-0 w-1 h-full cursor-col-resize z-10
-                       hover:bg-blue-500/50 transition-colors"
+                       hover:bg-slate-700/50 transition-colors"
           />
         )}
       </div>
@@ -95,7 +95,7 @@ export function ResizableLayout({
           <div
             onMouseDown={startResizingSecondary}
             className="absolute top-0 left-0 w-1 h-full cursor-col-resize z-10
-                       hover:bg-blue-500/50 transition-colors"
+                       hover:bg-slate-700/50 transition-colors"
           />
         )}
         <SecondarySidebar />

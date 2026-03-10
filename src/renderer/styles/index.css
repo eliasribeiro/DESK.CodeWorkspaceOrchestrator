@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@config "../../../tailwind.config.js";
+
+/* Configuração de Dark Mode para Tailwind v4 usando classe .dark */
+@variant dark (&:where(.dark, .dark *));
 
 /* Estilos globais personalizados */
 @layer base {
@@ -7,7 +11,7 @@
   }
 
   body {
-    @apply bg-white dark:bg-slate-900;
+    @apply bg-white dark:bg-[#161111];
     @apply text-slate-900 dark:text-slate-100;
     @apply transition-colors duration-200;
     overflow: hidden; /* Previne scroll na janela do Electron */

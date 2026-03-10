@@ -15,6 +15,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src/renderer'),
       '@components': path.resolve(__dirname, './src/renderer/components'),
       '@styles': path.resolve(__dirname, './src/renderer/styles'),
+      '@context': path.resolve(__dirname, './src/renderer/context'),
+      '@utils': path.resolve(__dirname, './src/renderer/utils'),
     },
   },
   server: {

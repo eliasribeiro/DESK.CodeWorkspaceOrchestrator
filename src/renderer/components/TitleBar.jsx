@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
-import { ThemeToggle } from './ThemeToggle';
 
 /**
  * Componente TitleBar
  * Barra de título customizada para janela frameless do Electron
  */
 export function TitleBar({ 
-  showPrimary, 
-  onTogglePrimary, 
-  showSecondary, 
-  onToggleSecondary 
+  showPrimary = false, 
+  onTogglePrimary = () => {}, 
+  showSecondary = false, 
+  onToggleSecondary = () => {} 
 }) {
   const [isMaximized, setIsMaximized] = useState(false);
 
   useEffect(() => {
-    // Check if electronAPI is available before calling
     if (window.electronAPI && window.electronAPI.window && window.electronAPI.window.isMaximized) {
       window.electronAPI.window.isMaximized()
         .then(setIsMaximized)
@@ -41,35 +39,29 @@ export function TitleBar({
     }
   };
 
+  // Ícones estilo VSCode
+  const PrimarySidebarIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M1 3.5V13L2 14H14L15 13V3.5L14 2.5H2L1 3.5ZM2 3.5H5V13H2V3.5ZM14 13H6V3.5H14V13Z" />
+    </svg>
+  );
+
+  const SecondarySidebarIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+      <path d="M1 3.5V13L2 14H14L15 13V3.5L14 2.5H2L1 3.5ZM10 3.5H14V13H10V3.5ZM2 13V3.5H9V13H2Z" />
+    </svg>
+  );
+
   return (
     <header 
       className="drag-region flex items-center justify-between h-10 px-3 
-                 bg-surface-light dark:bg-surface-dark
+                 bg-background-light dark:bg-background-dark
                  border-b border-slate-200 dark:border-slate-800
                  select-none z-50"
     >
-      {/* Lado esquerdo: Toggles de Sidebar e Logo */}
+      {/* Lado esquerdo: Espaço vazio ou botões extras */}
       <div className="flex items-center gap-2 flex-1 no-drag">
-        <button
-          onClick={onTogglePrimary}
-          className={`p-1.5 rounded-md transition-colors duration-150 ${
-            showPrimary 
-              ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
-              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
-          }`}
-          title="Toggle Primary Sidebar"
-        >
-          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-          </svg>
-        </button>
-
-        <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-purple-600 
-                        flex items-center justify-center shadow-sm">
-          <span className="text-white text-[10px] font-bold">CW</span>
-        </div>
       </div>
-
       {/* Centro: Título do projeto */}
       <div className="flex-1 flex justify-center items-center pointer-events-none">
         <h1 className="text-xs font-semibold text-slate-700 dark:text-slate-200 uppercase tracking-widest">
@@ -77,23 +69,36 @@ export function TitleBar({
         </h1>
       </div>
 
-      {/* Lado direito: ThemeToggle + Sidebar Toggle + Controles da Janela */}
+      {/* Lado direito: Controles */}
       <div className="flex items-center justify-end gap-1 flex-1 no-drag">
-        <ThemeToggle />
         
+        {/* Toggle Sidebar Primária - MOVIDO PARA CÁ */}
+        <button
+          onClick={onTogglePrimary}
+          className={`p-1.5 rounded-md transition-colors duration-150 mx-0.5 ${
+            showPrimary 
+              ? 'text-slate-900 bg-slate-100 dark:bg-slate-800/20 dark:text-white' 
+              : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+          }`}
+          title="Toggle Primary Sidebar (Ctrl+B)"
+        >
+          <PrimarySidebarIcon />
+        </button>
+
+        {/* Toggle Sidebar Secundária */}
         <button
           onClick={onToggleSecondary}
-          className={`p-1.5 rounded-md transition-colors duration-150 mx-1 ${
+          className={`p-1.5 rounded-md transition-colors duration-150 mx-0.5 ${
             showSecondary 
-              ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20' 
+              ? 'text-slate-900 bg-slate-100 dark:bg-slate-800/20 dark:text-white' 
               : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
           }`}
           title="Toggle Secondary Sidebar"
         >
-          <svg className="w-4 h-4 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-          </svg>
+          <SecondarySidebarIcon />
         </button>
+
+        <div className="w-[1px] h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
 
         {/* Botão Minimizar */}
         <button

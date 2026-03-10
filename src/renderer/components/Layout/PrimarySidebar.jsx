@@ -17,7 +17,7 @@ export function PrimarySidebar({ projectPath, onSelectProject }) {
           <button
             onClick={onSelectProject}
             className="w-full py-2 px-3 flex items-center justify-center gap-2 
-                       bg-blue-600 hover:bg-blue-700 active:bg-blue-800 
+                       bg-slate-900 hover:bg-black active:bg-black 
                        text-white text-sm font-medium rounded-md transition-colors shadow-sm"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

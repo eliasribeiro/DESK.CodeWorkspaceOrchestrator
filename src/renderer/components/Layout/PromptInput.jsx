@@ -21,8 +21,8 @@ export function PromptInput() {
           className="w-full min-h-[120px] max-h-[300px] p-4 pr-12
                      bg-white dark:bg-slate-900 
                      border border-slate-200 dark:border-slate-800 
-                     rounded-xl shadow-sm focus:ring-2 focus:ring-blue-500/20 
-                     focus:border-blue-500 outline-none transition-all
+                     rounded-xl shadow-sm focus:ring-2 focus:ring-slate-700/20 
+                     focus:border-slate-700 outline-none transition-all
                      text-slate-800 dark:text-slate-100 placeholder:text-slate-400
                      resize-y scrollbar-thin"
         />
@@ -30,7 +30,7 @@ export function PromptInput() {
         <button 
           disabled={!prompt.trim()}
           className="absolute right-3 bottom-3 p-2 rounded-lg
-                     bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 
+                     bg-slate-900 hover:bg-black disabled:bg-slate-300 
                      dark:disabled:bg-slate-800 text-white transition-colors
                      shadow-sm flex items-center justify-center"
           title="Enviar Prompt"
