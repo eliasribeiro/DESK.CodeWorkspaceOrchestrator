@@ -448,7 +448,7 @@ export function WorkspaceProvider({ children }) {
     }));
   }, []);
 
-  const removeWorkspace = useCallback((projectId, workspaceName) => {
+  const removeWorkspace = useCallback((projectId, workspaceName, workspacePath = '') => {
     setProjects((current) => current.map((project) => {
       if (project.id !== projectId) {
         return project;
@@ -460,13 +460,23 @@ export function WorkspaceProvider({ children }) {
       };
     }));
 
+    let clearedSelection = false;
     setSelectedWorkspace((current) => {
-      if (current?.projectId !== projectId || current?.workspace?.name !== workspaceName) {
+      const sameProject = current?.projectId === projectId;
+      const samePath = workspacePath && current?.workspace?.path === workspacePath;
+      const sameName = current?.workspace?.name === workspaceName;
+
+      if (!sameProject || (!samePath && !sameName)) {
         return current;
       }
 
+      clearedSelection = true;
       return null;
     });
+
+    if (clearedSelection) {
+      setActiveScreen('home');
+    }
   }, []);
 
   const renameWorkspace = useCallback((projectId, workspacePath, nextWorkspace) => {

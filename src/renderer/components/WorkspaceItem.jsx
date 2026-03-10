@@ -13,7 +13,7 @@ import { isValidWorkspaceName } from '@utils/nameGenerator';
  * @returns {JSX.Element} Item de workspace
  */
 export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, onRenamed }) {
-  const { removeWorkspace, renameWorkspace, selectWorkspace, showConfirm, showAlert } = useWorkspace();
+  const { removeWorkspace, renameWorkspace, selectWorkspace, selectedWorkspace, showConfirm, showAlert } = useWorkspace();
   const [showActions, setShowActions] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -73,6 +73,24 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
     setIsRemoving(true);
     
     try {
+      const isWorkspaceSelected = selectedWorkspace?.projectId === projectId
+        && selectedWorkspace?.workspace?.path === workspace.path;
+
+      if (isWorkspaceSelected) {
+        selectWorkspace(null, null);
+        await new Promise((resolve) => setTimeout(resolve, 250));
+      }
+
+      const closeSessionsResult = await window.electronAPI.terminal.closeWorkspaceSessions({
+        workspacePath: workspace.path,
+      });
+
+      if (!closeSessionsResult?.success) {
+        throw new Error(closeSessionsResult?.error || 'Nao foi possivel encerrar os terminais do workspace');
+      }
+
+      await new Promise((resolve) => setTimeout(resolve, 700));
+
       const result = await window.electronAPI.git.removeWorktree({
         projectPath,
         worktreePath: workspace.path
@@ -84,7 +102,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
           selectWorkspace(null, null);
         }
         
-        removeWorkspace(projectId, workspace.name);
+        removeWorkspace(projectId, workspace.name, workspace.path);
         if (onDeleted) onDeleted();
       } else {
         throw new Error(result.error || 'Erro desconhecido');

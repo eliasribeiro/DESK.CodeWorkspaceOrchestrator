@@ -20,7 +20,7 @@ function SearchableSelect({
   disabled = false,
   placeholder = 'Selecionar',
   searchPlaceholder = 'Digite para filtrar',
-  emptyLabel = 'Nenhuma opcao',
+  emptyLabel = 'Nenhuma opção',
   className = '',
 }) {
   const [isOpen, setIsOpen] = useState(false);

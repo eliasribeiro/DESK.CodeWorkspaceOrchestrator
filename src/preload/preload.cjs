@@ -44,6 +44,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   terminal: {
     listSessions: (payload) => ipcRenderer.invoke('terminal:listSessions', payload),
+    closeWorkspaceSessions: (payload) => ipcRenderer.invoke('terminal:closeWorkspaceSessions', payload),
     launchSession: (options) => ipcRenderer.invoke('terminal:launchSession', options),
     write: (payload) => ipcRenderer.invoke('terminal:write', payload),
     resize: (payload) => ipcRenderer.invoke('terminal:resize', payload),

@@ -253,7 +253,7 @@ export function ProjectItem({ project }) {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
               </svg>
             )}
-            <span className="font-medium">New workspace</span>
+            <span className="font-medium">Novo workspace</span>
           </button>
 
           {/* Lista de workspaces */}

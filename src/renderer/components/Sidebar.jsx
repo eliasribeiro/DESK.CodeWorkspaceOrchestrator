@@ -142,7 +142,7 @@ export function Sidebar() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
           )}
-          Add repository
+          Adicionar repositório
         </button>
 
         <div className="flex items-center">

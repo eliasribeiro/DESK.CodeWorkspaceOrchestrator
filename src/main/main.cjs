@@ -76,6 +76,12 @@ function generateSessionId() {
   return `term-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 function hashValue(value = '') {
   return createHash('sha256').update(value).digest('hex');
 }
@@ -447,6 +453,17 @@ function listSerializedSessions(workspacePath) {
   return Array.from(workspaceSessions.values())
     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
     .map((session) => serializeEmbeddedSession(session));
+}
+
+async function isRegisteredWorktree(git, worktreePath) {
+  try {
+    const worktreesRaw = await git.raw(['worktree', 'list', '--porcelain']);
+    return worktreesRaw
+      .split('\n')
+      .some((line) => line.trim() === `worktree ${worktreePath}`);
+  } catch (_error) {
+    return false;
+  }
 }
 
 function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yoloMode }) {
@@ -847,8 +864,47 @@ function setupIpcHandlers() {
 
       const git = simpleGit(projectPath);
       const worktreeName = path.basename(worktreePath);
+      const workspaceSessions = embeddedTerminalSessions.get(worktreePath);
 
-      await git.raw(['worktree', 'remove', '--force', worktreePath]);
+      if (workspaceSessions?.size) {
+        Array.from(workspaceSessions.values()).forEach((session) => {
+          destroyEmbeddedSession(session);
+        });
+      }
+
+      await delay(700);
+
+      let removeError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          await git.raw(['worktree', 'remove', '--force', worktreePath]);
+          removeError = null;
+          break;
+        } catch (error) {
+          removeError = error;
+          const message = String(error?.message || '');
+          const isPermissionDenied = message.toLowerCase().includes('permission denied');
+          const isNotWorkingTree = message.toLowerCase().includes('is not a working tree');
+
+          if (isNotWorkingTree) {
+            const stillRegistered = await isRegisteredWorktree(git, worktreePath);
+            if (!stillRegistered) {
+              removeError = null;
+              break;
+            }
+          }
+
+          if (!isPermissionDenied || attempt === 2) {
+            break;
+          }
+
+          await delay(700);
+        }
+      }
+
+      if (removeError) {
+        throw removeError;
+      }
 
       try {
         await git.branch(['-D', worktreeName]);
@@ -1212,6 +1268,38 @@ function setupIpcHandlers() {
       success: true,
       sessions: listSerializedSessions(workspacePath),
     };
+  });
+
+  ipcMain.handle('terminal:closeWorkspaceSessions', async (_event, payload = {}) => {
+    const workspacePath = typeof payload === 'string' ? payload : payload?.workspacePath;
+
+    if (!workspacePath) {
+      return { success: false, error: 'Workspace nao informado', closedSessionIds: [] };
+    }
+
+    try {
+      const workspaceSessions = embeddedTerminalSessions.get(workspacePath);
+      if (!workspaceSessions || workspaceSessions.size === 0) {
+        return { success: true, closedSessionIds: [] };
+      }
+
+      const closedSessionIds = Array.from(workspaceSessions.keys());
+      Array.from(workspaceSessions.values()).forEach((session) => {
+        destroyEmbeddedSession(session);
+      });
+
+      return {
+        success: true,
+        closedSessionIds,
+      };
+    } catch (error) {
+      console.error('Erro ao encerrar sessoes do workspace:', error);
+      return {
+        success: false,
+        error: error.message || 'Erro ao encerrar sessoes do workspace',
+        closedSessionIds: [],
+      };
+    }
   });
 
   ipcMain.handle('terminal:launchSession', async (_event, options = {}) => {
