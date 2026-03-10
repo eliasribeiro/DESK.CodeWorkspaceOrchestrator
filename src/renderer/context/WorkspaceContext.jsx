@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { SUPPORTED_LANGUAGES, translate } from '@utils/i18n';
 
 const WorkspaceContext = createContext(null);
 
@@ -6,6 +7,7 @@ const defaultPreferences = {
   projects: [],
   aiProviders: [],
   theme: 'dark',
+  language: 'pt',
   sidebarWidth: 280,
   secondarySidebarWidth: 250,
   showPrimarySidebar: true,
@@ -34,6 +36,7 @@ function normalizePreferences(preferences = {}) {
       ? preferences.aiProviders.map(normalizeProvider)
       : [],
     theme: preferences?.theme === 'light' ? 'light' : 'dark',
+    language: SUPPORTED_LANGUAGES.includes(preferences?.language) ? preferences.language : defaultPreferences.language,
     sidebarWidth: Number.isFinite(preferences?.sidebarWidth) ? preferences.sidebarWidth : defaultPreferences.sidebarWidth,
     secondarySidebarWidth: Number.isFinite(preferences?.secondarySidebarWidth)
       ? preferences.secondarySidebarWidth
@@ -63,7 +66,10 @@ function readLegacyLocalPreferences() {
     return { ...defaultPreferences };
   }
 
-  const nextPreferences = { ...defaultPreferences };
+  const browserLanguage = SUPPORTED_LANGUAGES.includes(String(window.navigator?.language || '').slice(0, 2))
+    ? String(window.navigator?.language || '').slice(0, 2)
+    : 'en';
+  const nextPreferences = { ...defaultPreferences, language: browserLanguage };
 
   try {
     const savedProjects = window.localStorage.getItem('workspace-projects');
@@ -95,6 +101,15 @@ function readLegacyLocalPreferences() {
     console.error('Erro ao migrar tema do localStorage:', error);
   }
 
+  try {
+    const savedLanguage = window.localStorage.getItem('workspace-language');
+    if (SUPPORTED_LANGUAGES.includes(savedLanguage)) {
+      nextPreferences.language = savedLanguage;
+    }
+  } catch (error) {
+    console.error('Erro ao migrar idioma do localStorage:', error);
+  }
+
   return nextPreferences;
 }
 
@@ -114,8 +129,19 @@ export function WorkspaceProvider({ children }) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [aiProviders, setAiProviders] = useState(defaultPreferences.aiProviders);
   const [theme, setTheme] = useState(defaultPreferences.theme);
+  const [language, setLanguage] = useState(defaultPreferences.language);
   const [activeSessionsCount, setActiveSessionsCount] = useState(0);
+  const [dialogState, setDialogState] = useState({
+    isOpen: false,
+    type: 'alert',
+    variant: 'info',
+    title: '',
+    message: '',
+    confirmText: 'OK',
+    cancelText: 'Cancelar',
+  });
   const hasHydratedRef = useRef(false);
+  const dialogResolverRef = useRef(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -167,6 +193,7 @@ export function WorkspaceProvider({ children }) {
       setProjects(preferences.projects);
       setAiProviders(preferences.aiProviders);
       setTheme(preferences.theme);
+      setLanguage(preferences.language);
       setSidebarWidth(preferences.sidebarWidth);
       setSecondarySidebarWidth(preferences.secondarySidebarWidth);
       setShowPrimarySidebar(preferences.showPrimarySidebar);
@@ -230,6 +257,7 @@ export function WorkspaceProvider({ children }) {
       projects,
       aiProviders,
       theme,
+      language,
       sidebarWidth,
       secondarySidebarWidth,
       showPrimarySidebar,
@@ -255,6 +283,7 @@ export function WorkspaceProvider({ children }) {
       window.localStorage?.setItem('workspace-projects', JSON.stringify(projects));
       window.localStorage?.setItem('workspace-ai-providers', JSON.stringify(aiProviders));
       window.localStorage?.setItem('workspace-theme', theme);
+      window.localStorage?.setItem('workspace-language', language);
     } catch (error) {
       console.error('Erro ao salvar preferencias locais:', error);
     }
@@ -262,6 +291,7 @@ export function WorkspaceProvider({ children }) {
     projects,
     aiProviders,
     theme,
+    language,
     sidebarWidth,
     secondarySidebarWidth,
     showPrimarySidebar,
@@ -520,6 +550,61 @@ export function WorkspaceProvider({ children }) {
     }
   }, [aiProviders, updateProvider]);
 
+  const resolveDialog = useCallback((value) => {
+    if (typeof dialogResolverRef.current === 'function') {
+      dialogResolverRef.current(value);
+      dialogResolverRef.current = null;
+    }
+  }, []);
+
+  const closeDialog = useCallback((value = false) => {
+    resolveDialog(value);
+    setDialogState((current) => ({
+      ...current,
+      isOpen: false,
+    }));
+  }, [resolveDialog]);
+
+  const showConfirm = useCallback((options = {}) => {
+    resolveDialog(false);
+
+    const nextState = {
+      isOpen: true,
+      type: 'confirm',
+      variant: options.variant === 'danger' ? 'danger' : 'info',
+      title: options.title || 'Confirmar ação',
+      message: options.message || 'Deseja continuar?',
+      confirmText: options.confirmText || 'Confirmar',
+      cancelText: options.cancelText || 'Cancelar',
+    };
+
+    return new Promise((resolve) => {
+      dialogResolverRef.current = resolve;
+      setDialogState(nextState);
+    });
+  }, [resolveDialog]);
+
+  const showAlert = useCallback((options = {}) => {
+    resolveDialog(false);
+
+    const nextState = {
+      isOpen: true,
+      type: 'alert',
+      variant: options.variant === 'danger' ? 'danger' : 'info',
+      title: options.title || 'Aviso',
+      message: options.message || '',
+      confirmText: options.confirmText || 'Entendi',
+      cancelText: 'Cancelar',
+    };
+
+    return new Promise((resolve) => {
+      dialogResolverRef.current = () => resolve(true);
+      setDialogState(nextState);
+    });
+  }, [resolveDialog]);
+
+  const t = useCallback((key, vars = {}) => translate(language, key, vars), [language]);
+
   const value = {
     projects,
     selectedChatId,
@@ -547,6 +632,13 @@ export function WorkspaceProvider({ children }) {
     aiProviders,
     theme,
     setTheme,
+    language,
+    setLanguage,
+    dialogState,
+    closeDialog,
+    showConfirm,
+    showAlert,
+    t,
     addProvider,
     updateProvider,
     removeProvider,

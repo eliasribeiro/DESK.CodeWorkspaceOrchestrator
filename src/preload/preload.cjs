@@ -29,6 +29,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     removeWorktree: (options) => ipcRenderer.invoke('git:removeWorktree', options),
     renameWorktree: (options) => ipcRenderer.invoke('git:renameWorktree', options),
     getWorktreeChanges: (options) => ipcRenderer.invoke('git:getWorktreeChanges', options),
+    getWorktreeSyncStatus: (options) => ipcRenderer.invoke('git:getWorktreeSyncStatus', options),
     commit: (options) => ipcRenderer.invoke('git:commit', options),
     push: (options) => ipcRenderer.invoke('git:push', options),
     commitAndPush: (options) => ipcRenderer.invoke('git:commitAndPush', options),
@@ -36,6 +37,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   shell: {
     openPath: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
+    openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
     openTerminal: (dirPath) => ipcRenderer.invoke('shell:openTerminal', dirPath),
     runCommandInTerminal: (dirPath, command) => ipcRenderer.invoke('shell:runCommandInTerminal', dirPath, command),
   },

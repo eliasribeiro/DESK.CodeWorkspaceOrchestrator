@@ -17,11 +17,13 @@ const terminalProcesses = [];
 const embeddedTerminalSessions = new Map();
 const embeddedTerminalSessionsById = new Map();
 const USER_PREFERENCES_FILENAME = 'preferences.json';
+const SUPPORTED_LANGUAGES = ['en', 'pt', 'es'];
 
 const defaultUserPreferences = {
   projects: [],
   aiProviders: [],
   theme: 'dark',
+  language: 'en',
   sidebarWidth: 280,
   secondarySidebarWidth: 450,
   showPrimarySidebar: true,
@@ -33,6 +35,42 @@ const defaultUserPreferences = {
   selectedChatId: null,
   selectedWorkspace: null,
 };
+
+function resolveSupportedLanguage(locale) {
+  const normalized = String(locale || '').toLowerCase();
+
+  if (normalized.startsWith('pt')) {
+    return 'pt';
+  }
+
+  if (normalized.startsWith('es')) {
+    return 'es';
+  }
+
+  if (normalized.startsWith('en')) {
+    return 'en';
+  }
+
+  return 'en';
+}
+
+function getDefaultLanguage() {
+  const preferredLanguages = typeof app.getPreferredSystemLanguages === 'function'
+    ? app.getPreferredSystemLanguages()
+    : [];
+  const locales = Array.isArray(preferredLanguages) && preferredLanguages.length > 0
+    ? preferredLanguages
+    : [typeof app.getLocale === 'function' ? app.getLocale() : 'en'];
+
+  for (const locale of locales) {
+    const candidate = resolveSupportedLanguage(locale);
+    if (SUPPORTED_LANGUAGES.includes(candidate)) {
+      return candidate;
+    }
+  }
+
+  return 'en';
+}
 
 function generateSessionId() {
   return `term-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -69,6 +107,30 @@ function ensureDirectory(directoryPath) {
   }
 }
 
+function ensureGitignoreEntry(projectPath, entry) {
+  const gitignorePath = path.join(projectPath, '.gitignore');
+  const normalizedEntry = String(entry || '').trim();
+
+  if (!normalizedEntry) {
+    return;
+  }
+
+  const currentContent = fs.existsSync(gitignorePath)
+    ? fs.readFileSync(gitignorePath, 'utf8')
+    : '';
+  const lines = currentContent.split(/\r?\n/).map((line) => line.trim());
+
+  if (lines.includes(normalizedEntry)) {
+    return;
+  }
+
+  const nextContent = currentContent.trim().length > 0
+    ? `${currentContent.replace(/\s*$/, '')}\n${normalizedEntry}\n`
+    : `${normalizedEntry}\n`;
+
+  fs.writeFileSync(gitignorePath, nextContent, 'utf8');
+}
+
 function readJsonFile(filePath) {
   if (!fs.existsSync(filePath)) {
     return {};
@@ -86,6 +148,57 @@ function writeJsonFile(filePath, value) {
   fs.writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
 }
 
+function normalizeRemoteRepositoryUrl(remoteUrl) {
+  const value = String(remoteUrl || '').trim();
+  if (!value) {
+    return '';
+  }
+
+  if (value.startsWith('http://') || value.startsWith('https://')) {
+    return value.replace(/\.git$/i, '');
+  }
+
+  const sshMatch = value.match(/^git@([^:]+):(.+)$/i);
+  if (sshMatch) {
+    const host = sshMatch[1];
+    const repositoryPath = sshMatch[2].replace(/\.git$/i, '');
+    return `https://${host}/${repositoryPath}`;
+  }
+
+  return value.replace(/\.git$/i, '');
+}
+
+function buildPullRequestUrl(repositoryUrl, branchName) {
+  const normalizedRepositoryUrl = normalizeRemoteRepositoryUrl(repositoryUrl);
+  const normalizedBranchName = String(branchName || '').trim();
+
+  if (!normalizedRepositoryUrl || !normalizedBranchName) {
+    return '';
+  }
+
+  try {
+    const url = new URL(normalizedRepositoryUrl);
+    const host = url.hostname.toLowerCase();
+    const encodedBranch = encodeURIComponent(normalizedBranchName);
+
+    if (host.includes('github.com')) {
+      return `${normalizedRepositoryUrl}/compare/${encodedBranch}?expand=1`;
+    }
+
+    if (host.includes('gitlab')) {
+      return `${normalizedRepositoryUrl}/-/merge_requests/new?merge_request[source_branch]=${encodedBranch}`;
+    }
+
+    if (host.includes('bitbucket')) {
+      return `${normalizedRepositoryUrl}/pull-requests/new?source=${encodedBranch}`;
+    }
+
+    return normalizedRepositoryUrl;
+  } catch (_error) {
+    return '';
+  }
+}
+
 function getUserPreferencesPath() {
   return path.join(app.getPath('userData'), USER_PREFERENCES_FILENAME);
 }
@@ -97,6 +210,7 @@ function normalizeUserPreferences(value = {}) {
     projects: Array.isArray(value?.projects) ? value.projects : defaultUserPreferences.projects,
     aiProviders: Array.isArray(value?.aiProviders) ? value.aiProviders : defaultUserPreferences.aiProviders,
     theme: value?.theme === 'light' ? 'light' : 'dark',
+    language: SUPPORTED_LANGUAGES.includes(value?.language) ? value.language : getDefaultLanguage(),
     sidebarWidth: Number.isFinite(value?.sidebarWidth) ? value.sidebarWidth : defaultUserPreferences.sidebarWidth,
     secondarySidebarWidth: Number.isFinite(value?.secondarySidebarWidth)
       ? value.secondarySidebarWidth
@@ -122,9 +236,14 @@ function normalizeUserPreferences(value = {}) {
 function loadUserPreferences() {
   const preferencesPath = getUserPreferencesPath();
   if (!fs.existsSync(preferencesPath)) {
+    const initialPreferences = normalizeUserPreferences({
+      ...defaultUserPreferences,
+      language: getDefaultLanguage(),
+    });
+
     return {
       exists: false,
-      preferences: { ...defaultUserPreferences },
+      preferences: initialPreferences,
     };
   }
 
@@ -611,6 +730,8 @@ function setupIpcHandlers() {
       const cwoPath = path.join(projectPath, '.cwo');
       const worktreePath = path.join(cwoPath, worktreeName);
 
+      ensureGitignoreEntry(projectPath, '.cwo/');
+
       if (!fs.existsSync(cwoPath)) {
         fs.mkdirSync(cwoPath, { recursive: true });
       }
@@ -665,7 +786,20 @@ function setupIpcHandlers() {
         return { success: false, error: 'Caminho do projeto nao fornecido' };
       }
 
+      if (!fs.existsSync(projectPath)) {
+        return { success: false, error: 'Caminho do projeto nao encontrado', worktrees: [] };
+      }
+
       const git = simpleGit(projectPath);
+      const isRepo = await git.checkIsRepo();
+
+      if (!isRepo) {
+        return {
+          success: true,
+          worktrees: [],
+        };
+      }
+
       const worktrees = await git.raw(['worktree', 'list', '--porcelain']);
       const worktreeList = [];
       const lines = worktrees.split('\n').filter((line) => line.trim());
@@ -764,28 +898,30 @@ function setupIpcHandlers() {
       }
 
       const git = simpleGit(projectPath);
-      const worktreesRaw = await git.raw(['worktree', 'list', '--porcelain']);
-      const lines = worktreesRaw.split('\n').filter((line) => line.trim());
+      const worktreeGit = simpleGit(worktreePath);
+      const currentBranchName = (await worktreeGit.raw(['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
 
-      let currentPath = '';
-      let currentBranchRef = '';
-
-      for (const line of lines) {
-        if (line.startsWith('worktree ')) {
-          currentPath = line.replace('worktree ', '');
-          continue;
-        }
-
-        if (line.startsWith('branch ') && currentPath === worktreePath) {
-          currentBranchRef = line.replace('branch ', '');
-          break;
-        }
+      if (!currentBranchName || currentBranchName === 'HEAD') {
+        return { success: false, error: 'Workspace nao esta em uma branch valida para renomeacao' };
       }
 
-      const sourceBranchName = currentBranchRef.replace(/^refs\/heads\//, '') || oldWorkspaceName;
+      const localBranches = await git.branchLocal();
+      const targetBranchExists =
+        currentBranchName !== trimmedName &&
+        localBranches.all.includes(trimmedName);
+
+      if (targetBranchExists) {
+        return { success: false, error: `Ja existe uma branch local com o nome: ${trimmedName}` };
+      }
 
       await git.raw(['worktree', 'move', worktreePath, newWorktreePath]);
-      await git.branch(['-m', sourceBranchName, trimmedName]);
+
+      const movedWorktreeGit = simpleGit(newWorktreePath);
+      await movedWorktreeGit.raw(['rev-parse', '--show-toplevel']);
+
+      if (currentBranchName !== trimmedName) {
+        await movedWorktreeGit.raw(['branch', '-m', currentBranchName, trimmedName]);
+      }
 
       return {
         success: true,
@@ -879,6 +1015,45 @@ function setupIpcHandlers() {
     }
   });
 
+  ipcMain.handle('git:getWorktreeSyncStatus', async (_event, { worktreePath }) => {
+    try {
+      if (!worktreePath) {
+        return { success: false, error: 'Caminho do workspace nao fornecido', hasPendingWork: true };
+      }
+
+      if (!fs.existsSync(worktreePath)) {
+        return { success: false, error: 'Workspace nao encontrado no disco', hasPendingWork: true };
+      }
+
+      const git = simpleGit(worktreePath);
+      const isRepo = await git.checkIsRepo();
+      if (!isRepo) {
+        return { success: false, error: 'Workspace nao e um repositorio Git valido', hasPendingWork: true };
+      }
+
+      const status = await git.status();
+      const hasUncommittedChanges = !status.isClean();
+      const trackingBranch = String(status.tracking || '').trim();
+      const aheadCount = Number.isFinite(status.ahead) ? status.ahead : 0;
+      const needsPush = !trackingBranch || aheadCount > 0;
+
+      return {
+        success: true,
+        hasUncommittedChanges,
+        aheadCount,
+        hasTrackingBranch: Boolean(trackingBranch),
+        needsPush,
+        hasPendingWork: hasUncommittedChanges || needsPush,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao obter status de sincronizacao do workspace',
+        hasPendingWork: true,
+      };
+    }
+  });
+
   ipcMain.handle('git:commit', async (_event, { worktreePath, message }) => {
     try {
       if (!worktreePath) {
@@ -939,7 +1114,13 @@ function setupIpcHandlers() {
       }
 
       await git.push();
-      return { success: true };
+      const status = await git.status();
+      const remotes = await git.getRemotes(true);
+      const preferredRemote = remotes.find((entry) => entry.name === 'origin') || remotes[0];
+      const repositoryUrl = preferredRemote?.refs?.push || preferredRemote?.refs?.fetch || '';
+      const pullRequestUrl = buildPullRequestUrl(repositoryUrl, status.current);
+
+      return { success: true, pullRequestUrl };
     } catch (error) {
       return {
         success: false,
@@ -977,6 +1158,11 @@ function setupIpcHandlers() {
 
       const result = await git.commit(commitMessage);
       await git.push();
+      const statusAfterPush = await git.status();
+      const remotes = await git.getRemotes(true);
+      const preferredRemote = remotes.find((entry) => entry.name === 'origin') || remotes[0];
+      const repositoryUrl = preferredRemote?.refs?.push || preferredRemote?.refs?.fetch || '';
+      const pullRequestUrl = buildPullRequestUrl(repositoryUrl, statusAfterPush.current);
 
       return {
         success: true,
@@ -984,6 +1170,7 @@ function setupIpcHandlers() {
           hash: result.commit,
           summary: result.summary,
         },
+        pullRequestUrl,
       };
     } catch (error) {
       return {
@@ -995,6 +1182,23 @@ function setupIpcHandlers() {
 
   ipcMain.handle('shell:openPath', async (_event, filePath) => {
     return shell.openPath(filePath);
+  });
+
+  ipcMain.handle('shell:openExternal', async (_event, value) => {
+    const url = String(value || '').trim();
+    if (!url) {
+      return { success: false, error: 'URL nao informada' };
+    }
+
+    try {
+      await shell.openExternal(url);
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Nao foi possivel abrir URL externa',
+      };
+    }
   });
 
   ipcMain.handle('terminal:listSessions', async (_event, payload) => {
@@ -1336,9 +1540,9 @@ function setupGlobalShortcuts() {
 }
 
 app.whenReady().then(() => {
+  setupGlobalShortcuts();
   createWindow();
   setupIpcHandlers();
-  setupGlobalShortcuts();
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

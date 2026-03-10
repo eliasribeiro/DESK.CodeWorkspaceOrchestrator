@@ -18,7 +18,9 @@ export function ProjectItem({ project }) {
     removeProject,
     addWorkspace,
     selectedChatId,
-    selectedWorkspace
+    selectedWorkspace,
+    showConfirm,
+    showAlert
   } = useWorkspace();
   
   const [showActions, setShowActions] = useState(false);
@@ -81,9 +83,16 @@ export function ProjectItem({ project }) {
   /**
    * Handler para remover projeto
    */
-  const handleRemove = (e) => {
+  const handleRemove = async (e) => {
     e.stopPropagation();
-    if (confirm(`Tem certeza que deseja remover "${project.name}" e todos os seus chats?`)) {
+    const shouldRemove = await showConfirm({
+      title: 'Remover projeto?',
+      message: `Tem certeza que deseja remover "${project.name}" e todos os seus chats?`,
+      confirmText: 'Remover projeto',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    });
+    if (shouldRemove) {
       removeProject(project.id);
     }
   };
@@ -122,11 +131,21 @@ export function ProjectItem({ project }) {
         // Recarrega lista de workspaces
         await loadWorkspaces();
       } else {
-        alert(`Erro ao criar workspace: ${result.error}`);
+        await showAlert({
+          title: 'Erro ao criar workspace',
+          message: result.error || 'Erro desconhecido',
+          confirmText: 'Fechar',
+          variant: 'danger',
+        });
       }
     } catch (error) {
       console.error('Erro ao criar workspace:', error);
-      alert(`Erro ao criar workspace: ${error.message}`);
+      await showAlert({
+        title: 'Erro ao criar workspace',
+        message: error.message || 'Erro desconhecido',
+        confirmText: 'Fechar',
+        variant: 'danger',
+      });
     } finally {
       setIsCreatingWorkspace(false);
     }

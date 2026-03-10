@@ -13,7 +13,7 @@ import { isValidWorkspaceName } from '@utils/nameGenerator';
  * @returns {JSX.Element} Item de workspace
  */
 export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, onRenamed }) {
-  const { removeWorkspace, renameWorkspace, selectWorkspace } = useWorkspace();
+  const { removeWorkspace, renameWorkspace, selectWorkspace, showConfirm, showAlert } = useWorkspace();
   const [showActions, setShowActions] = useState(false);
   const [isRemoving, setIsRemoving] = useState(false);
   const [isRenaming, setIsRenaming] = useState(false);
@@ -27,8 +27,46 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
     e.stopPropagation();
     
     if (isRemoving) return;
-    
-    if (!confirm(`Tem certeza que deseja remover o workspace "${workspace.name}"?`)) {
+
+    let shouldRemove = false;
+
+    try {
+      const syncResult = await window.electronAPI.git.getWorktreeSyncStatus({
+        worktreePath: workspace.path
+      });
+
+      const hasPendingWork = syncResult.success
+        ? Boolean(syncResult.hasPendingWork)
+        : true;
+
+      if (hasPendingWork) {
+        shouldRemove = await showConfirm({
+          title: 'Descartar trabalho não enviado?',
+          message: `O workspace "${workspace.name}" possui alterações sem commit ou commits ainda não enviados. Deseja descartar todo o trabalho realizado?`,
+          confirmText: 'Descartar workspace',
+          cancelText: 'Cancelar',
+          variant: 'danger',
+        });
+      } else {
+        shouldRemove = await showConfirm({
+          title: 'Remover workspace?',
+          message: `Tem certeza que deseja remover o workspace "${workspace.name}"?`,
+          confirmText: 'Remover workspace',
+          cancelText: 'Cancelar',
+          variant: 'danger',
+        });
+      }
+    } catch (_error) {
+      shouldRemove = await showConfirm({
+        title: 'Confirmar remoção',
+        message: `Não foi possível validar o estado de commit/push do workspace "${workspace.name}". Deseja prosseguir com a remoção?`,
+        confirmText: 'Remover workspace',
+        cancelText: 'Cancelar',
+        variant: 'danger',
+      });
+    }
+
+    if (!shouldRemove) {
       return;
     }
 
@@ -53,7 +91,12 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       }
     } catch (error) {
       console.error('Erro ao remover workspace:', error);
-      alert(`Erro ao remover workspace: ${error.message}`);
+      await showAlert({
+        title: 'Erro ao remover workspace',
+        message: error.message || 'Erro desconhecido',
+        confirmText: 'Fechar',
+        variant: 'danger',
+      });
     } finally {
       setIsRemoving(false);
     }
@@ -82,7 +125,12 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
     }
 
     if (!isValidWorkspaceName(nextName)) {
-      alert('Nome invalido. Use apenas letras, numeros, hifen e underscore.');
+      await showAlert({
+        title: 'Nome de workspace inválido',
+        message: 'Use apenas letras, números, hífen e underscore.',
+        confirmText: 'Entendi',
+        variant: 'danger',
+      });
       return;
     }
 
@@ -103,7 +151,12 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       setIsEditing(false);
     } catch (error) {
       console.error('Erro ao renomear workspace:', error);
-      alert(`Erro ao renomear workspace: ${error.message}`);
+      await showAlert({
+        title: 'Erro ao renomear workspace',
+        message: error.message || 'Erro desconhecido',
+        confirmText: 'Fechar',
+        variant: 'danger',
+      });
     } finally {
       setIsRenaming(false);
     }

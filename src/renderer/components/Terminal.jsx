@@ -11,57 +11,41 @@ export function Terminal({
   errorMessage = '',
   compact = false,
   embedded = false,
+  showClear = true,
+  zoomLevel = 0,
+  onZoomIn,
+  onZoomOut,
   onClose,
   onFocus,
   onSessionExit,
 }) {
   const containerRef = useRef(null);
   const terminalRef = useRef(null);
+  const fitAddonRef = useRef(null);
   const [localError, setLocalError] = useState('');
+  const baseFontSize = compact ? 11.5 : 13;
 
   useEffect(() => {
     if (!containerRef.current || !session?.sessionId) {
       return undefined;
     }
 
-    const terminal = new XTerm({
-      allowTransparency: true,
-      convertEol: false,
-      cursorBlink: true,
-      cursorStyle: 'block',
-      fontFamily: 'Cascadia Code, Consolas, Monaco, monospace',
-      fontSize: compact ? 11.5 : 13,
-      lineHeight: 1.35,
-      scrollback: 4000,
-      theme: {
-        background: '#050505',
-        foreground: '#d7dde7',
-        black: '#111111',
-        red: '#f87171',
-        green: '#34d399',
-        yellow: '#fbbf24',
-        blue: '#60a5fa',
-        magenta: '#f472b6',
-        cyan: '#22d3ee',
-        white: '#e5e7eb',
-        brightBlack: '#6b7280',
-        brightRed: '#fca5a5',
-        brightGreen: '#6ee7b7',
-        brightYellow: '#fcd34d',
-        brightBlue: '#93c5fd',
-        brightMagenta: '#f9a8d4',
-        brightCyan: '#67e8f9',
-        brightWhite: '#ffffff',
-        cursor: '#ffffff',
-        cursorAccent: '#050505',
-        selectionBackground: 'rgba(148, 163, 184, 0.28)',
-      },
-    });
-    const fitAddon = new FitAddon();
-    const resizeObserver = new ResizeObserver(async () => {
+    let terminal = null;
+    let fitAddon = null;
+    let resizeObserver = null;
+    let inputDisposable = null;
+    let unsubscribeData = () => {};
+    let unsubscribeExit = () => {};
+    let unsubscribeError = () => {};
+
+    const handleResize = async () => {
+      if (!fitAddon || !terminal) {
+        return;
+      }
+
       try {
         fitAddon.fit();
-        await window.electronAPI.terminal.resize({
+        await window.electronAPI?.terminal?.resize?.({
           sessionId: session.sessionId,
           cols: terminal.cols,
           rows: terminal.rows,
@@ -69,69 +53,139 @@ export function Terminal({
       } catch (error) {
         setLocalError(error.message || 'Erro ao redimensionar terminal');
       }
-    });
+    };
 
-    terminal.loadAddon(fitAddon);
-    terminal.open(containerRef.current);
-    terminal.write(session.buffer || '');
-    fitAddon.fit();
-    terminal.focus();
-    terminalRef.current = terminal;
-
-    window.electronAPI.terminal.resize({
-      sessionId: session.sessionId,
-      cols: terminal.cols,
-      rows: terminal.rows,
-    });
-
-    const inputDisposable = terminal.onData((data) => {
-      window.electronAPI.terminal.write({
-        sessionId: session.sessionId,
-        data,
+    try {
+      terminal = new XTerm({
+        allowTransparency: true,
+        convertEol: false,
+        cursorBlink: true,
+        cursorStyle: 'block',
+        fontFamily: 'Cascadia Code, Consolas, Monaco, monospace',
+        fontSize: baseFontSize + zoomLevel,
+        lineHeight: 1.35,
+        scrollback: 4000,
+        theme: {
+          background: '#050505',
+          foreground: '#d7dde7',
+          black: '#111111',
+          red: '#f87171',
+          green: '#34d399',
+          yellow: '#fbbf24',
+          blue: '#60a5fa',
+          magenta: '#f472b6',
+          cyan: '#22d3ee',
+          white: '#e5e7eb',
+          brightBlack: '#6b7280',
+          brightRed: '#fca5a5',
+          brightGreen: '#6ee7b7',
+          brightYellow: '#fcd34d',
+          brightBlue: '#93c5fd',
+          brightMagenta: '#f9a8d4',
+          brightCyan: '#67e8f9',
+          brightWhite: '#ffffff',
+          cursor: '#ffffff',
+          cursorAccent: '#050505',
+          selectionBackground: 'rgba(148, 163, 184, 0.28)',
+        },
       });
-    });
+      fitAddon = new FitAddon();
 
-    const unsubscribeData = window.electronAPI.terminal.onData((payload) => {
-      if (payload.sessionId !== session.sessionId) {
-        return;
+      terminal.loadAddon(fitAddon);
+      fitAddonRef.current = fitAddon;
+      terminal.open(containerRef.current);
+      terminal.write(session.buffer || '');
+      fitAddon.fit();
+      terminal.focus();
+      terminalRef.current = terminal;
+
+      void window.electronAPI?.terminal?.resize?.({
+        sessionId: session.sessionId,
+        cols: terminal.cols,
+        rows: terminal.rows,
+      });
+
+      inputDisposable = terminal.onData((data) => {
+        void window.electronAPI?.terminal?.write?.({
+          sessionId: session.sessionId,
+          data,
+        });
+      });
+
+      unsubscribeData = window.electronAPI?.terminal?.onData?.((payload) => {
+        if (payload.sessionId !== session.sessionId) {
+          return;
+        }
+
+        terminal.write(payload.data);
+      }) || (() => {});
+
+      unsubscribeExit = window.electronAPI?.terminal?.onExit?.((payload) => {
+        if (payload.sessionId !== session.sessionId) {
+          return;
+        }
+
+        terminal.writeln('');
+        terminal.writeln(`\x1b[90mSessao encerrada (code ${payload.exitCode ?? 'n/a'})\x1b[0m`);
+        onSessionExit?.(payload);
+      }) || (() => {});
+
+      unsubscribeError = window.electronAPI?.terminal?.onError?.((payload) => {
+        if (payload.sessionId && payload.sessionId !== session.sessionId) {
+          return;
+        }
+
+        const message = payload.message || 'Erro no terminal';
+        setLocalError(message);
+        terminal.writeln('');
+        terminal.writeln(`\x1b[31m${message}\x1b[0m`);
+      }) || (() => {});
+
+      if (typeof ResizeObserver === 'function') {
+        resizeObserver = new ResizeObserver(() => {
+          void handleResize();
+        });
+        resizeObserver.observe(containerRef.current);
+      } else {
+        void handleResize();
       }
-
-      terminal.write(payload.data);
-    });
-
-    const unsubscribeExit = window.electronAPI.terminal.onExit((payload) => {
-      if (payload.sessionId !== session.sessionId) {
-        return;
-      }
-
-      terminal.writeln('');
-      terminal.writeln(`\x1b[90mSessao encerrada (code ${payload.exitCode ?? 'n/a'})\x1b[0m`);
-      onSessionExit?.(payload);
-    });
-
-    const unsubscribeError = window.electronAPI.terminal.onError((payload) => {
-      if (payload.sessionId && payload.sessionId !== session.sessionId) {
-        return;
-      }
-
-      const message = payload.message || 'Erro no terminal';
-      setLocalError(message);
-      terminal.writeln('');
-      terminal.writeln(`\x1b[31m${message}\x1b[0m`);
-    });
-
-    resizeObserver.observe(containerRef.current);
+    } catch (error) {
+      console.error('Erro ao inicializar terminal embutido:', error);
+      setLocalError(error.message || 'Nao foi possivel inicializar o terminal');
+    }
 
     return () => {
-      resizeObserver.disconnect();
+      resizeObserver?.disconnect();
       unsubscribeData();
       unsubscribeExit();
       unsubscribeError();
-      inputDisposable.dispose();
-      terminal.dispose();
+      inputDisposable?.dispose();
+      terminal?.dispose();
       terminalRef.current = null;
+      fitAddonRef.current = null;
     };
-  }, [compact, onSessionExit, session?.sessionId]);
+  }, [baseFontSize, onSessionExit, session?.sessionId]);
+
+  useEffect(() => {
+    const terminal = terminalRef.current;
+    const fitAddon = fitAddonRef.current;
+    if (!terminal || !fitAddon || !session?.sessionId) {
+      return;
+    }
+
+    try {
+      terminal.options.fontSize = baseFontSize + zoomLevel;
+      fitAddon.fit();
+      void window.electronAPI?.terminal?.resize?.({
+        sessionId: session.sessionId,
+        cols: terminal.cols,
+        rows: terminal.rows,
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar zoom do terminal:', error);
+      setLocalError(error.message || 'Erro ao atualizar zoom do terminal');
+    }
+  }, [baseFontSize, session?.sessionId, zoomLevel]);
 
   useEffect(() => {
     setLocalError(errorMessage || '');
@@ -144,7 +198,7 @@ export function Terminal({
 
   return (
     <div
-      className={`h-full min-h-0 overflow-hidden text-slate-700 dark:text-slate-300 flex flex-col ${
+      className={`relative h-full min-h-0 overflow-hidden text-slate-700 dark:text-slate-300 flex flex-col ${
         embedded
           ? 'bg-surface-light dark:bg-surface-dark'
           : 'border border-border-light bg-surface-light shadow-sm dark:border-white/5 dark:bg-surface-dark dark:shadow-md'
@@ -166,16 +220,18 @@ export function Terminal({
             </div>
 
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => {
-                  terminalRef.current?.clear();
-                  terminalRef.current?.focus();
-                  onFocus?.();
-                }}
-                className={`rounded-md border border-border-light text-slate-600 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
-              >
-                Limpar
-              </button>
+              {showClear && (
+                <button
+                  onClick={() => {
+                    terminalRef.current?.clear();
+                    terminalRef.current?.focus();
+                    onFocus?.();
+                  }}
+                  className={`rounded-md border border-border-light text-slate-600 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+                >
+                  Limpar
+                </button>
+              )}
               <button
                 onClick={onClose}
                 className={`rounded-md border border-rose-500/20 bg-rose-50 text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
@@ -198,6 +254,33 @@ export function Terminal({
           ref={containerRef}
           className="h-full w-full overflow-hidden bg-background-light dark:bg-background-dark"
         />
+      </div>
+
+      <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1">
+        <button
+          onClick={() => {
+            onZoomOut?.();
+            terminalRef.current?.focus();
+            onFocus?.();
+          }}
+          className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-border-light bg-slate-100 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800"
+          aria-label="Diminuir zoom do terminal"
+          title="Diminuir zoom"
+        >
+          −
+        </button>
+        <button
+          onClick={() => {
+            onZoomIn?.();
+            terminalRef.current?.focus();
+            onFocus?.();
+          }}
+          className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-border-light bg-slate-100 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800"
+          aria-label="Aumentar zoom do terminal"
+          title="Aumentar zoom"
+        >
+          +
+        </button>
       </div>
     </div>
   );

@@ -12,7 +12,7 @@ import { useWorkspace } from '@context/WorkspaceContext';
  * @returns {JSX.Element} Item de chat
  */
 export function ChatItem({ chat, projectId, isSelected }) {
-  const { selectChat, removeChat, renameChat } = useWorkspace();
+  const { selectChat, removeChat, renameChat, showConfirm } = useWorkspace();
   
   const [showActions, setShowActions] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -68,9 +68,16 @@ export function ChatItem({ chat, projectId, isSelected }) {
   /**
    * Handler para remover chat
    */
-  const handleRemove = (e) => {
+  const handleRemove = async (e) => {
     e.stopPropagation();
-    if (confirm(`Tem certeza que deseja remover "${chat.name}"?`)) {
+    const shouldRemove = await showConfirm({
+      title: 'Remover chat?',
+      message: `Tem certeza que deseja remover "${chat.name}"?`,
+      confirmText: 'Remover chat',
+      cancelText: 'Cancelar',
+      variant: 'danger',
+    });
+    if (shouldRemove) {
       removeChat(projectId, chat.id);
     }
   };

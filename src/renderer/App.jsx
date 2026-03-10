@@ -6,6 +6,7 @@ import { ChatArea } from '@components/ChatArea';
 import { WorkspaceChatArea } from '@components/WorkspaceChatArea';
 import { SettingsScreen } from '@components/SettingsScreen';
 import { SecondarySidebar } from '@components/Layout/SecondarySidebar';
+import { AppDialog } from '@components/AppDialog';
 import { WorkspaceProvider, useWorkspace } from '@context/WorkspaceContext';
 import '@styles/index.css';
 
@@ -24,7 +25,9 @@ function WorkspaceContent() {
     isSettingsOpen,
     setIsSettingsOpen,
     selectedWorkspace,
-    activeSessionsCount
+    activeSessionsCount,
+    dialogState,
+    closeDialog
   } = useWorkspace();
   const [isResizingSecondary, setIsResizingSecondary] = useState(false);
 
@@ -71,6 +74,17 @@ function WorkspaceContent() {
           onToggleSecondary={() => setShowSecondarySidebar(!showSecondarySidebar)}
         />
         <SettingsScreen />
+        <AppDialog
+          isOpen={dialogState.isOpen}
+          type={dialogState.type}
+          variant={dialogState.variant}
+          title={dialogState.title}
+          message={dialogState.message}
+          confirmText={dialogState.confirmText}
+          cancelText={dialogState.cancelText}
+          onConfirm={() => closeDialog(true)}
+          onCancel={() => closeDialog(false)}
+        />
       </div>
     );
   }
@@ -129,6 +143,17 @@ function WorkspaceContent() {
           <span>v1.0.0</span>
         </span>
       </footer>
+      <AppDialog
+        isOpen={dialogState.isOpen}
+        type={dialogState.type}
+        variant={dialogState.variant}
+        title={dialogState.title}
+        message={dialogState.message}
+        confirmText={dialogState.confirmText}
+        cancelText={dialogState.cancelText}
+        onConfirm={() => closeDialog(true)}
+        onCancel={() => closeDialog(false)}
+      />
     </div>
   );
 }

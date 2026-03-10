@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceToolbar } from '@components/WorkspaceToolbar';
 import { Terminal } from '@components/Terminal';
-import { isValidWorkspaceName } from '@utils/nameGenerator';
 
 const MAX_TERMINAL_SESSIONS = 8;
+const TERMINAL_MIN_ZOOM_LEVEL = -4;
+const TERMINAL_MAX_ZOOM_LEVEL = 8;
 
 function getDefaultWorkspaceView() {
   return {
@@ -12,6 +13,7 @@ function getDefaultWorkspaceView() {
     sessions: [],
     activeSessionId: '',
     terminalError: '',
+    terminalZoomBySession: {},
   };
 }
 
@@ -54,7 +56,6 @@ export function WorkspaceChatArea() {
     aiProviders,
     setSelectedModel,
     setActiveSessionsCount,
-    renameWorkspace,
   } = useWorkspace();
   const [isStartingSession, setIsStartingSession] = useState(false);
   const [selectedEditor, setSelectedEditor] = useState('claude-code');
@@ -62,9 +63,6 @@ export function WorkspaceChatArea() {
   const [selectedModelLocal, setSelectedModelLocal] = useState('');
   const [yoloMode, setYoloMode] = useState(false);
   const [workspaceViews, setWorkspaceViews] = useState({});
-  const [isEditingWorkspaceName, setIsEditingWorkspaceName] = useState(false);
-  const [workspaceNameDraft, setWorkspaceNameDraft] = useState('');
-  const [isRenamingWorkspace, setIsRenamingWorkspace] = useState(false);
 
   const workspace = selectedWorkspace?.workspace;
   const projectId = selectedWorkspace?.projectId;
@@ -105,11 +103,6 @@ export function WorkspaceChatArea() {
   useEffect(() => {
     setActiveSessionsCount(sessions.length);
   }, [sessions.length, setActiveSessionsCount]);
-
-  useEffect(() => {
-    setWorkspaceNameDraft(workspace?.name || '');
-    setIsEditingWorkspaceName(false);
-  }, [workspace?.name, workspace?.path]);
 
   useEffect(() => {
     if (!selectedProviderId && aiProviders.length > 0) {
@@ -189,6 +182,11 @@ export function WorkspaceChatArea() {
 
         setWorkspaceViews((current) => {
           const existingView = current[workspacePath] || getDefaultWorkspaceView();
+          const zoomBySession = existingView.terminalZoomBySession || {};
+          const nextZoomBySession = result.sessions.reduce((accumulator, session) => {
+            accumulator[session.sessionId] = zoomBySession[session.sessionId] ?? 0;
+            return accumulator;
+          }, {});
           const nextActiveSessionId = result.sessions.some((session) => session.sessionId === existingView.activeSessionId)
             ? existingView.activeSessionId
             : result.sessions[0]?.sessionId || '';
@@ -200,6 +198,7 @@ export function WorkspaceChatArea() {
               sessions: result.sessions,
               activeSessionId: nextActiveSessionId,
               terminalError: '',
+              terminalZoomBySession: nextZoomBySession,
             },
           };
         });
@@ -291,17 +290,53 @@ export function WorkspaceChatArea() {
     });
   };
 
+  const getSessionZoomLevel = (sessionId) => {
+    if (!sessionId) {
+      return 0;
+    }
+    return currentWorkspaceView.terminalZoomBySession?.[sessionId] ?? 0;
+  };
+
+  const handleAdjustTerminalZoom = (sessionId, delta) => {
+    if (!sessionId || !delta) {
+      return;
+    }
+
+    updateWorkspaceView((currentView) => {
+      const currentZoom = currentView.terminalZoomBySession?.[sessionId] ?? 0;
+      const nextZoom = Math.max(
+        TERMINAL_MIN_ZOOM_LEVEL,
+        Math.min(TERMINAL_MAX_ZOOM_LEVEL, currentZoom + delta),
+      );
+
+      if (nextZoom === currentZoom) {
+        return currentView;
+      }
+
+      return {
+        ...currentView,
+        terminalZoomBySession: {
+          ...(currentView.terminalZoomBySession || {}),
+          [sessionId]: nextZoom,
+        },
+      };
+    });
+  };
+
   const removeSession = (sessionId) => {
     updateWorkspaceView((currentView) => {
       const nextSessions = currentView.sessions.filter((item) => item.sessionId !== sessionId);
       const nextActiveSessionId = currentView.activeSessionId === sessionId
         ? nextSessions[nextSessions.length - 1]?.sessionId || ''
         : currentView.activeSessionId;
+      const nextZoomBySession = { ...(currentView.terminalZoomBySession || {}) };
+      delete nextZoomBySession[sessionId];
 
       return {
         ...currentView,
         sessions: nextSessions,
         activeSessionId: nextActiveSessionId,
+        terminalZoomBySession: nextZoomBySession,
       };
     });
   };
@@ -406,102 +441,12 @@ export function WorkspaceChatArea() {
     }));
   };
 
-  const handleRenameWorkspace = async () => {
-    const nextName = workspaceNameDraft.trim();
-
-    if (!workspacePath || !projectId || !workspace || !project?.path) {
-      return;
-    }
-
-    if (!nextName || nextName === workspace.name) {
-      setWorkspaceNameDraft(workspace.name);
-      setIsEditingWorkspaceName(false);
-      return;
-    }
-
-    if (!isValidWorkspaceName(nextName)) {
-      updateWorkspaceView((currentView) => ({
-        ...currentView,
-        terminalError: 'Nome invalido. Use apenas letras, numeros, hifen e underscore.',
-      }));
-      return;
-    }
-
-    setIsRenamingWorkspace(true);
-
-    try {
-      const result = await window.electronAPI.git.renameWorktree({
-        projectPath: project.path,
-        worktreePath: workspacePath,
-        newName: nextName,
-      });
-
-      if (!result.success || !result.workspace) {
-        throw new Error(result.error || 'Erro ao renomear workspace');
-      }
-
-      renameWorkspace(projectId, workspacePath, result.workspace);
-      setWorkspaceViews((current) => {
-        const currentView = current[workspacePath];
-        if (!currentView || result.workspace.path === workspacePath) {
-          return current;
-        }
-
-        const nextViews = { ...current, [result.workspace.path]: currentView };
-        delete nextViews[workspacePath];
-        return nextViews;
-      });
-      setWorkspaceNameDraft(result.workspace.name);
-      setIsEditingWorkspaceName(false);
-    } catch (error) {
-      updateWorkspaceView((currentView) => ({
-        ...currentView,
-        terminalError: error.message || 'Erro ao renomear workspace',
-      }));
-    } finally {
-      setIsRenamingWorkspace(false);
-    }
-  };
-
   return (
     <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark">
       <header className="h-12 px-6 flex items-center justify-between border-b border-slate-200 dark:border-white/5 bg-surface-light dark:bg-surface-dark">
         <div className="flex items-center">
           <div>
-            {isEditingWorkspaceName ? (
-              <input
-                type="text"
-                value={workspaceNameDraft}
-                onChange={(e) => setWorkspaceNameDraft(e.target.value)}
-                onBlur={handleRenameWorkspace}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    handleRenameWorkspace();
-                  } else if (e.key === 'Escape') {
-                    setWorkspaceNameDraft(workspace.name);
-                    setIsEditingWorkspaceName(false);
-                  }
-                }}
-                disabled={isRenamingWorkspace}
-                autoFocus
-                className="w-52 px-2 py-1 text-sm font-semibold rounded
-                           bg-white dark:bg-surface-dark
-                           border border-border-light dark:border-white/10
-                           focus:outline-none focus:ring-1 focus:ring-primary-light
-                           text-slate-900 dark:text-slate-100"
-              />
-            ) : (
-              <h2
-                className="text-sm font-semibold text-slate-900 dark:text-white cursor-text"
-                onDoubleClick={() => {
-                  setWorkspaceNameDraft(workspace.name);
-                  setIsEditingWorkspaceName(true);
-                }}
-              >
-                {workspace.name}
-              </h2>
-            )}
-            <p className="text-xs text-slate-500 dark:text-slate-400">
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">
               {projectLabel}
             </p>
           </div>
@@ -566,6 +511,10 @@ export function WorkspaceChatArea() {
                       statusLabel={getSessionStatusLabel(session)}
                       errorMessage=""
                       compact
+                      showClear={false}
+                      zoomLevel={getSessionZoomLevel(session.sessionId)}
+                      onZoomIn={() => handleAdjustTerminalZoom(session.sessionId, 1)}
+                      onZoomOut={() => handleAdjustTerminalZoom(session.sessionId, -1)}
                       onClose={() => handleCloseTerminal(session.sessionId)}
                       onSessionExit={() => {}}
                       onFocus={() => handleFocusSession(session.sessionId)}
@@ -633,6 +582,9 @@ export function WorkspaceChatArea() {
                       statusLabel={getSessionStatusLabel(activeSession)}
                       errorMessage=""
                       embedded
+                      zoomLevel={getSessionZoomLevel(activeSession.sessionId)}
+                      onZoomIn={() => handleAdjustTerminalZoom(activeSession.sessionId, 1)}
+                      onZoomOut={() => handleAdjustTerminalZoom(activeSession.sessionId, -1)}
                       onClose={() => handleCloseTerminal(activeSession.sessionId)}
                       onSessionExit={() => {}}
                       onFocus={() => handleFocusSession(activeSession.sessionId)}
