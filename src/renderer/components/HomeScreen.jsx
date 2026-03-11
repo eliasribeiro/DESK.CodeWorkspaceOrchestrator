@@ -93,9 +93,9 @@ export function HomeScreen() {
   };
 
   return (
-    <div className="panel-grid relative flex-1 overflow-hidden px-6 pb-6 pt-6">
+    <div className="panel-grid relative flex-1 overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(245,159,57,0.15),transparent_20%),radial-gradient(circle_at_80%_0%,rgba(56,189,248,0.12),transparent_24%)]" />
-      <div className="relative flex h-full flex-col gap-4 overflow-auto scrollbar-thin">
+      <div className="relative flex h-full flex-col gap-4 overflow-auto px-6 pb-6 pt-6 scrollbar-thin">
         <motion.div
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -156,7 +156,7 @@ export function HomeScreen() {
                 </div>
               )}
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-3 grid-cols-1">
                 {projects.slice(0, 6).map((project, index) => (
                   <motion.div
                     key={project.id}

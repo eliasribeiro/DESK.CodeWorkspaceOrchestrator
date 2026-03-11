@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Globe2, Palette, PlugZap, RefreshCcw, Pencil, Trash2, Plus } from 'lucide-react';
-import { useWorkspace } from '@context/WorkspaceContext';
-import { languageOptions } from '@utils/i18n';
+import { SUPPORTED_THEMES, useWorkspace } from '@context/WorkspaceContext';
+import { getThemeOptions, languageOptions } from '@utils/i18n';
 import { ProviderModal } from './ProviderModal';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
@@ -28,6 +28,7 @@ export function SettingsScreen() {
   const [editingProvider, setEditingProvider] = useState(null);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [expandedModels, setExpandedModels] = useState({});
+  const themeOptions = getThemeOptions(t).filter((option) => SUPPORTED_THEMES.includes(option.value));
 
   const handleFetchModels = async (provider) => {
     if (!provider.baseUrl || !provider.apiKey) return;
@@ -144,8 +145,11 @@ export function SettingsScreen() {
                         <SelectValue placeholder="Selecione um tema" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="dark">{t('settings.themeDark')}</SelectItem>
-                        <SelectItem value="light">{t('settings.themeLight')}</SelectItem>
+                        {themeOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>

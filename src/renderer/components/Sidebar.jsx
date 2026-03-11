@@ -72,7 +72,7 @@ export function Sidebar() {
               <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <h2 className="font-bold text-lg text-white">Code Workspace Orchestrator</h2>
+            <h2 className="font-bold text-sm leading-tight text-white">Code Workspace Orchestrator</h2>
           </div>
         </div>
 

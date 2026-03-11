@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { SUPPORTED_LANGUAGES, translate } from '@utils/i18n';
 
 const WorkspaceContext = createContext(null);
+export const SUPPORTED_THEMES = ['dark', 'light'];
 
 const defaultPreferences = {
   projects: [],
@@ -28,6 +29,10 @@ function normalizeProvider(provider = {}) {
 }
 
 function normalizePreferences(preferences = {}) {
+  const normalizedTheme = SUPPORTED_THEMES.includes(preferences?.theme)
+    ? preferences.theme
+    : defaultPreferences.theme;
+
   return {
     ...defaultPreferences,
     ...(preferences && typeof preferences === 'object' ? preferences : {}),
@@ -35,7 +40,7 @@ function normalizePreferences(preferences = {}) {
     aiProviders: Array.isArray(preferences?.aiProviders)
       ? preferences.aiProviders.map(normalizeProvider)
       : [],
-    theme: preferences?.theme === 'light' ? 'light' : 'dark',
+    theme: normalizedTheme,
     language: SUPPORTED_LANGUAGES.includes(preferences?.language) ? preferences.language : defaultPreferences.language,
     sidebarWidth: Number.isFinite(preferences?.sidebarWidth) ? preferences.sidebarWidth : defaultPreferences.sidebarWidth,
     secondarySidebarWidth: Number.isFinite(preferences?.secondarySidebarWidth)
@@ -95,7 +100,7 @@ function readLegacyLocalPreferences() {
   try {
     const savedTheme = window.localStorage.getItem('workspace-theme');
     if (savedTheme) {
-      nextPreferences.theme = savedTheme === 'light' ? 'light' : 'dark';
+      nextPreferences.theme = SUPPORTED_THEMES.includes(savedTheme) ? savedTheme : defaultPreferences.theme;
     }
   } catch (error) {
     console.error('Erro ao migrar tema do localStorage:', error);

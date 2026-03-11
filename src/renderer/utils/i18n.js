@@ -6,6 +6,13 @@ export const languageOptions = [
   { value: 'es', label: 'Español' },
 ];
 
+export function getThemeOptions(t) {
+  return [
+    { value: 'dark', label: t('settings.themeDark') },
+    { value: 'light', label: t('settings.themeLight') },
+  ];
+}
+
 const translations = {
   en: {
     'app.title': 'Code Workspace Orchestrator',
@@ -13,6 +20,7 @@ const translations = {
     'app.sessions': 'Sessions: {count}/8',
     'titlebar.togglePrimary': 'Toggle Primary Sidebar (Ctrl+B)',
     'titlebar.toggleSecondary': 'Toggle Secondary Sidebar',
+    'titlebar.themeSelector': 'Theme selector',
     'home.subtitle': 'Manage your projects and chats in one place',
     'home.openProject': 'Open Project',
     'home.openProjectDescription': 'Open an existing folder as a project',
