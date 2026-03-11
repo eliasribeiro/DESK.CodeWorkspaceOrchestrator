@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conductor White - System Design Guide</title>
+    <style>
+        :root {
+            --bg-base: #f6f2ea;
+            --bg-base-accent: #efe6d8;
+            --bg-surface: #fffdf8;
+            --bg-surface-elevated: #ffffff;
+            --bg-surface-hover: #f3ecdf;
+            --bg-input: #fffaf1;
+            --text-primary: #221f1a;
+            --text-secondary: #60584f;
+            --text-muted: #8b8276;
+            --accent-green: #2f8f5b;
+            --accent-green-bg: rgba(47, 143, 91, 0.12);
+            --accent-red: #c95b4e;
+            --accent-red-bg: rgba(201, 91, 78, 0.12);
+            --accent-yellow: #c58a1f;
+            --accent-yellow-bg: rgba(197, 138, 31, 0.12);
+            --accent-blue: #4b72d6;
+            --brand-primary: #3157c8;
+            --border-subtle: rgba(34, 31, 26, 0.12);
+            --border-focus: rgba(49, 87, 200, 0.28);
+            --shadow-sm: 0 1px 2px rgba(34, 31, 26, 0.06);
+            --shadow-md: 0 12px 24px rgba(93, 72, 46, 0.08);
+            --shadow-lg: 0 28px 60px rgba(72, 53, 26, 0.12);
+            --radius-sm: 6px;
+            --radius-md: 12px;
+            --radius-lg: 18px;
+            --radius-full: 9999px;
+            --font-sans: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(75, 114, 214, 0.14), transparent 28%),
+                radial-gradient(circle at bottom right, rgba(197, 138, 31, 0.11), transparent 24%),
+                linear-gradient(180deg, var(--bg-base), var(--bg-base-accent));
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            line-height: 1.5;
+            padding: 40px;
+        }
+
+        body::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(34, 31, 26, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 31, 26, 0.03) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), transparent 92%);
+        }
+
+        h1, h2, h3, h4 {
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 8px;
+            letter-spacing: -0.03em;
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            margin-top: 48px;
+            border-bottom: 1px solid var(--border-subtle);
+            padding-bottom: 10px;
+        }
+
+        p {
+            color: var(--text-secondary);
+            margin-bottom: 24px;
+        }
+
+        .theme-banner {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 253, 248, 0.85);
+            border: 1px solid rgba(34, 31, 26, 0.08);
+            border-radius: var(--radius-full);
+            padding: 8px 14px;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .theme-banner-label {
+            color: var(--text-muted);
+            font-size: 0.72rem;
+            font-family: var(--font-mono);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .theme-banner-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--brand-primary);
+            color: #fff;
+            border-radius: var(--radius-full);
+            padding: 6px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        .theme-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dfe7ff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .intro-card {
+            position: relative;
+            overflow: hidden;
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 250, 241, 0.95));
+            border: 1px solid rgba(34, 31, 26, 0.08);
+            border-radius: 28px;
+            padding: 30px 32px;
+            box-shadow: var(--shadow-lg);
+            margin-bottom: 24px;
+        }
+
+        .intro-card::after {
+            content: "";
+            position: absolute;
+            top: -32px;
+            right: -16px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(49, 87, 200, 0.18), transparent 72%);
+        }
+
+        .eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 14px;
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            font-family: var(--font-mono);
+        }
+
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .color-card {
+            border-radius: var(--radius-md);
+            overflow: hidden;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-surface-elevated);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .color-swatch {
+            height: 80px;
+            width: 100%;
+        }
+
+        .color-info {
+            padding: 12px;
+            background: var(--bg-surface);
+        }
+
+        .color-name {
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+
+        .color-hex {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        .component-row {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 24px;
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+            font-family: var(--font-sans);
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--accent-green);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(47, 143, 91, 0.16);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            filter: brightness(0.98);
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-surface-elevated);
+            border-color: var(--border-subtle);
+            color: var(--text-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--bg-surface-hover);
+        }
+
+        .btn-ghost {
+            background-color: transparent;
+            color: var(--text-secondary);
+        }
+
+        .btn-ghost:hover {
+            background-color: rgba(34, 31, 26, 0.06);
+            color: var(--text-primary);
+        }
+
+        .input-group {
+            margin-bottom: 16px;
+            max-width: 500px;
+        }
+
+        .input-label {
+            display: block;
+            font-size: 0.875rem;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .input-text {
+            width: 100%;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-primary);
+            padding: 10px 12px;
+            border-radius: var(--radius-md);
+            font-size: 0.875rem;
+            font-family: var(--font-sans);
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .input-text:focus {
+            outline: none;
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 4px rgba(49, 87, 200, 0.08);
+        }
+
+        .chat-input {
+            position: relative;
+            background-color: rgba(255, 255, 255, 0.82);
+            border: 1px solid rgba(34, 31, 26, 0.08);
+            border-radius: 24px;
+            padding: 16px;
+            max-width: 800px;
+            box-shadow: var(--shadow-md);
+            backdrop-filter: blur(10px);
+        }
+
+        .chat-input textarea {
+            width: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            font-size: 0.875rem;
+            resize: none;
+            outline: none;
+            min-height: 80px;
+        }
+
+        .chat-input textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .chat-input-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 12px;
+        }
+
+        .chat-tools {
+            display: flex;
+            gap: 8px;
+        }
+
+        .tool-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(49, 87, 200, 0.06);
+            padding: 4px 8px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border: 1px solid rgba(49, 87, 200, 0.08);
+            cursor: pointer;
+            gap: 4px;
+        }
+
+        .tool-badge:hover {
+            background: rgba(49, 87, 200, 0.1);
+            color: var(--text-primary);
+        }
+
+        .send-btn {
+            background-color: var(--brand-primary);
+            border: 1px solid transparent;
+            color: #fff;
+            border-radius: var(--radius-sm);
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(49, 87, 200, 0.18);
+        }
+
+        .send-btn:hover {
+            filter: brightness(1.02);
+        }
+
+        .list-group {
+            max-width: 400px;
+            background-color: rgba(255, 255, 255, 0.86);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            width: 100%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 16px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-size: 0.875rem;
+            cursor: pointer;
+        }
+
+        .list-item:last-child {
+            border-bottom: none;
+        }
+
+        .list-item:hover {
+            background-color: var(--bg-surface-hover);
+        }
+
+        .item-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .diff-stats {
+            display: flex;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+        }
+
+        .diff-add {
+            color: var(--accent-green);
+            background: var(--accent-green-bg);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(47, 143, 91, 0.2);
+        }
+
+        .diff-sub {
+            color: var(--accent-red);
+            background: var(--accent-red-bg);
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            border: 1px solid rgba(201, 91, 78, 0.2);
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-red { background-color: var(--accent-red); }
+        .status-green { background-color: var(--accent-green); }
+        .status-yellow {
+            background-color: var(--accent-yellow);
+            box-shadow: 0 0 0 3px var(--accent-yellow-bg);
+        }
+
+        .pill-new {
+            background: rgba(49, 87, 200, 0.08);
+            color: var(--accent-blue);
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: var(--radius-sm);
+            letter-spacing: 0.5px;
+            font-family: var(--font-mono);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 36px;
+            height: 20px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background-color: var(--bg-surface-hover);
+            transition: .3s;
+            border-radius: 20px;
+            border: 1px solid var(--border-subtle);
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: var(--text-secondary);
+            transition: .3s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--brand-primary);
+            border-color: transparent;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(16px);
+            background-color: #fff;
+        }
+
+        .modal {
+            background: rgba(255, 255, 255, 0.88);
+            border: 1px solid rgba(34, 31, 26, 0.08);
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 500px;
+            padding: 24px;
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .modal-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .dropdown {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 8px 0;
+            width: 250px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .dropdown-item {
+            padding: 8px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.875rem;
+            cursor: pointer;
+            color: var(--text-secondary);
+        }
+
+        .dropdown-item:hover,
+        .dropdown-item.active {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 24px;
+            }
+
+            .theme-banner {
+                position: static;
+                margin-bottom: 20px;
+            }
+
+            .intro-card {
+                padding: 24px;
+            }
+
+            .chat-input-actions {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="theme-banner">
+    <span class="theme-banner-label">Theme</span>
+    <span class="theme-banner-chip">
+        <span class="theme-dot"></span>
+        Conductor White
+    </span>
+</div>
+
+<div class="container">
+    <div class="intro-card">
+        <div class="eyebrow">Light system / same layout grammar</div>
+        <h1>Guia de System Design</h1>
+        <p>O Design System do Conductor White mantem a mesma estrutura do system guide original, mas traduz a linguagem para um tema claro: superficies quentes, sombras suaves, bordas discretas e acentos mais precisos para manter contraste sem perder leveza.</p>
+    </div>
+
+    <h2>Paleta de Cores</h2>
+    <div class="color-grid">
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--bg-base);"></div>
+            <div class="color-info">
+                <div class="color-name">Background Base</div>
+                <div class="color-hex">#F6F2EA</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--bg-surface);"></div>
+            <div class="color-info">
+                <div class="color-name">Surface</div>
+                <div class="color-hex">#FFFDF8</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--bg-surface-elevated);"></div>
+            <div class="color-info">
+                <div class="color-name">Surface Elevated</div>
+                <div class="color-hex">#FFFFFF</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--text-primary);"></div>
+            <div class="color-info">
+                <div class="color-name">Text Primary</div>
+                <div class="color-hex">#221F1A</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--text-secondary);"></div>
+            <div class="color-info">
+                <div class="color-name">Text Secondary</div>
+                <div class="color-hex">#60584F</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--accent-green);"></div>
+            <div class="color-info">
+                <div class="color-name">Success / Diff Add</div>
+                <div class="color-hex">#2F8F5B</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--accent-red);"></div>
+            <div class="color-info">
+                <div class="color-name">Error / Diff Sub</div>
+                <div class="color-hex">#C95B4E</div>
+            </div>
+        </div>
+        <div class="color-card">
+            <div class="color-swatch" style="background-color: var(--accent-yellow);"></div>
+            <div class="color-info">
+                <div class="color-name">Warning / Progress</div>
+                <div class="color-hex">#C58A1F</div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Tipografia</h2>
+    <div style="margin-bottom: 32px;">
+        <h1 style="font-size: 2rem;">Cabecalho (H1) - System UI</h1>
+        <p style="color: var(--text-primary); font-size: 1rem; margin-bottom: 8px;">Texto primario para descricoes principais e conteudo do chat.</p>
+        <p style="font-size: 0.875rem;">Texto secundario para detalhes granulares, notas e labels.</p>
+        <span class="pill-new">MONOSPACE PARA ATALHOS & TOKENS</span>
+    </div>
+
+    <h2>Botoes</h2>
+    <div class="component-row">
+        <button class="btn btn-primary">
+            Ready to merge
+        </button>
+        <button class="btn btn-secondary">
+            Settings
+        </button>
+        <button class="btn btn-secondary">
+            Edit before sending
+        </button>
+        <button class="btn btn-ghost">Cancel</button>
+    </div>
+
+    <h2>Inputs & AI Composer</h2>
+
+    <div class="input-group">
+        <label class="input-label">Your name</label>
+        <input type="text" class="input-text" placeholder="Jane Doe">
+    </div>
+
+    <div class="chat-input" style="margin-bottom: 24px;">
+        <textarea placeholder="Describe what you'd like to see built..."></textarea>
+        <div class="chat-input-actions">
+            <div class="chat-tools">
+                <div class="tool-badge">
+                    Sonnet 4.5
+                </div>
+                <div class="tool-badge">
+                    <span style="font-family: var(--font-mono); margin-right: 4px;">CMD+I</span> Link issue
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <span class="pill-new" style="background: transparent;">CMD+L to focus</span>
+                <button class="send-btn">
+                    ↑
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <h2>Listas, Historico & Diff Status</h2>
+    <div class="component-row" style="align-items: flex-start;">
+        <div class="list-group">
+            <div class="list-item" style="background: var(--bg-surface-hover);">
+                <div class="item-left">
+                    <span class="status-dot status-green"></span>
+                    <span style="font-weight: 600;">Done</span>
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">1</span>
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="item-left">
+                    <span>Add 'hi' to README.md</span>
+                </div>
+                <div class="diff-stats">
+                    <span class="diff-add">+1</span>
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="item-left">
+                    <span>Remove CodeMirror, migrate...</span>
+                </div>
+                <div class="diff-stats">
+                    <span class="diff-add">+4199</span>
+                    <span class="diff-sub">-10475</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="list-group">
+            <div class="list-item" style="background: var(--bg-surface-hover);">
+                <div class="item-left">
+                    <span class="status-dot status-yellow"></span>
+                    <span style="font-weight: 600;">In progress</span>
+                </div>
+            </div>
+            <div class="list-item">
+                <div class="item-left">
+                    <div>
+                        <div>cbh123/dubai-v6</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">conductor-v1 • dubai-v6</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Modais, Dropdowns & Switches</h2>
+    <div class="component-row" style="align-items: flex-start;">
+        <div class="modal">
+            <div class="modal-title">Submit a prompt</div>
+            <div class="modal-desc">Prompt a coding agent to build what you want to see in Conductor. If we like your prompt, we will run it and merge the result.</div>
+
+            <div class="input-group" style="max-width: 100%;">
+                <label class="input-label">Prompt</label>
+                <textarea class="input-text" style="min-height: 80px; resize: none;" placeholder="Describe what you'd like to see built..."></textarea>
+            </div>
+
+            <div class="input-group" style="max-width: 100%;">
+                <label class="input-label">Your name</label>
+                <input type="text" class="input-text" placeholder="Jane Doe">
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button class="btn btn-secondary">Submit prompt <span style="font-family: var(--font-mono); margin-left: 4px;">CMD+ENTER</span></button>
+            </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div class="dropdown">
+                <div style="padding: 4px 16px 8px; font-size: 0.75rem; color: var(--text-muted); border-bottom: 1px solid var(--border-subtle); margin-bottom: 8px;">Claude Code</div>
+                <div class="dropdown-item">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        Opus 4.6
+                    </div>
+                </div>
+                <div class="dropdown-item active">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        Sonnet 4.6 <span class="pill-new">NEW</span>
+                    </div>
+                    ✓
+                </div>
+                <div class="dropdown-item">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        Haiku 4.5
+                    </div>
+                </div>
+            </div>
+
+            <div class="list-group" style="max-width: 300px; padding: 16px;">
+                <div style="font-size: 0.875rem; margin-bottom: 16px;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">Models</div>
+                    <div style="color: var(--text-muted); font-size: 0.75rem;">Choose which Claude models are available</div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; font-size: 0.875rem;">
+                    <span>Opus 4.6</span>
+                    <span style="color: var(--text-muted); font-size: 0.75rem;">Always on</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.875rem;">
+                    <span>Opus 4.6 (1M)</span>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
