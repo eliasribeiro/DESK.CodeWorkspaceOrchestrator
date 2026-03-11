@@ -48,12 +48,12 @@ export function TitleBar({
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1">
         <div className="no-drag flex min-w-0 flex-1 justify-end">
-          <div className="mr-2 flex w-[132px] shrink-0 items-center gap-2 rounded-[10px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)]/80 px-2 py-1 backdrop-blur-sm sm:mr-3 sm:w-[156px]">
-            <Palette className="h-4 w-4 shrink-0 text-[color:var(--text-tertiary)]" />
+          <div className="mr-2 flex h-7 w-[132px] shrink-0 items-center gap-2 rounded-[10px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)]/80 px-2 backdrop-blur-sm sm:mr-3 sm:w-[156px]">
+            <Palette className="h-3.5 w-3.5 shrink-0 text-[color:var(--text-tertiary)]" />
             <Select value={theme} onValueChange={setTheme}>
               <SelectTrigger
                 aria-label={t('titlebar.themeSelector')}
-                className="h-7 min-w-0 border-0 bg-transparent px-1 text-[0.75rem] shadow-none focus:ring-0 sm:text-[0.8rem]"
+                className="h-6 min-w-0 border-0 bg-transparent px-1 text-[0.75rem] shadow-none focus:ring-0 sm:text-[0.8rem]"
               >
                 <SelectValue />
               </SelectTrigger>
@@ -91,9 +91,9 @@ export function TitleBar({
           </button>
         </div>
         
-        <div className="ml-2 w-px h-4 bg-[color:var(--border-color)] no-drag hidden md:block"></div>
+        <div className="ml-2 h-4 w-px bg-[color:var(--border-color)] no-drag"></div>
 
-        <div className="no-drag hidden items-center gap-1 md:flex ml-2">
+        <div className="no-drag ml-2 flex items-center gap-1">
           <button className="inline-flex h-7 w-7 items-center justify-center rounded-[6px] text-[color:var(--text-secondary)] hover:bg-[color:var(--bg-body)] hover:text-[color:var(--primary-color)]" onClick={() => window.electronAPI?.window?.minimize?.()}>
             <Minus className="h-4 w-4" />
           </button>
