@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VergaraPlayer Design System</title>
+    <style>
+        :root {
+            /* Cores Principais */
+            --primary-color: #0b5cff;
+            --primary-hover: #004ad4;
+            --secondary-color: #0e1041;
+            --secondary-hover: #1e205a;
+            
+            /* Cores de Status */
+            --success-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --info-color: #3b82f6;
+
+            /* Cores de Fundo e Texto */
+            --bg-body: #f3f4f6;
+            --bg-surface: #ffffff;
+            --bg-sidebar: #0e1041;
+            --text-primary: #111827;
+            --text-secondary: #6b7280;
+            --text-tertiary: #9ca3af;
+            --text-on-dark: #ffffff;
+            --border-color: #e5e7eb;
+
+            /* Espaçamento e Layout */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+
+            /* Bordas */
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --radius-xl: 16px;
+            --radius-full: 9999px;
+
+            /* Tipografia */
+            --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-body);
+            color: var(--text-primary);
+            line-height: 1.5;
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Layout do Design System */
+        .ds-sidebar {
+            width: 260px;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            padding: var(--spacing-lg);
+        }
+
+        .ds-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: var(--spacing-xl);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+
+        .ds-nav a {
+            display: block;
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--text-secondary);
+            text-decoration: none;
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-xs);
+            transition: all 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .ds-nav a:hover, .ds-nav a.active {
+            background-color: #eff6ff;
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .ds-content {
+            margin-left: 260px;
+            padding: var(--spacing-xl) 40px;
+            width: 100%;
+            max-width: 1200px;
+        }
+
+        /* Seções */
+        .ds-section {
+            margin-bottom: 60px;
+            scroll-margin-top: 40px;
+        }
+
+        .ds-section-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: var(--spacing-sm);
+        }
+
+        .ds-subsection-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin: var(--spacing-xl) 0 var(--spacing-md);
+            color: var(--text-primary);
+        }
+
+        .ds-description {
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-lg);
+            max-width: 800px;
+        }
+
+        /* Componente de Demonstração */
+        .ds-preview {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-lg);
+            background-color: var(--bg-surface);
+            overflow: hidden;
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .ds-preview-canvas {
+            padding: var(--spacing-xl);
+            background-color: white;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: var(--spacing-lg);
+            align-items: center;
+        }
+
+        .ds-preview-canvas.dark {
+            background-color: var(--secondary-color);
+            background-image: none;
+        }
+
+        .ds-code {
+            background-color: #1f2937;
+            color: #f3f4f6;
+            padding: var(--spacing-md);
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            border-top: 1px solid var(--border-color);
+        }
+
+        /* --- COMPONENTES DO SISTEMA --- */
+
+        /* Cores */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .color-card {
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            overflow: hidden;
+        }
+
+        .color-swatch {
+            height: 100px;
+            width: 100%;
+        }
+
+        .color-info {
+            padding: var(--spacing-sm);
+        }
+
+        .color-name {
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .color-hex {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            font-family: monospace;
+        }
+
+        /* Tipografia */
+        .type-scale {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        .type-row {
+            display: flex;
+            align-items: baseline;
+            gap: var(--spacing-xl);
+            padding-bottom: var(--spacing-sm);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .type-label {
+            width: 100px;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            flex-shrink: 0;
+        }
+
+        /* Botões */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            border-radius: var(--radius-full); /* Arredondado como no Zoom */
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            border-color: var(--primary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background-color: white;
+            color: var(--text-primary);
+            border-color: var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background-color: #f9fafb;
+            border-color: #d1d5db;
+        }
+
+        .btn-danger {
+            background-color: #fee2e2;
+            color: var(--danger-color);
+            border-color: transparent;
+        }
+        
+        .btn-danger:hover {
+            background-color: #fecaca;
+        }
+
+        .btn-icon {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 50%;
+        }
+
+        .btn-sm {
+            padding: 4px 12px;
+            font-size: 0.85rem;
+        }
+
+        /* Inputs e Formulários */
+        .form-group {
+            margin-bottom: var(--spacing-md);
+            min-width: 300px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: var(--spacing-xs);
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
+            font-size: 0.95rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(11, 92, 255, 0.1);
+        }
+
+        .form-input-search {
+            padding-left: 36px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%239ca3af'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 10px center;
+            background-size: 18px;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--bg-surface);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-color);
+            padding: var(--spacing-lg);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--spacing-md);
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* Avatares */
+        .avatar-group {
+            display: flex;
+            align-items: center;
+        }
+
+        .avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e5e7eb;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--text-secondary);
+            border: 2px solid white;
+            position: relative;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .avatar-status {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            border: 2px solid white;
+        }
+
+        .status-online { background-color: var(--success-color); }
+        .status-busy { background-color: var(--danger-color); }
+        .status-offline { background-color: var(--text-tertiary); }
+
+        /* Navigation Components */
+        .nav-tabs {
+            display: flex;
+            gap: var(--spacing-md);
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .nav-tab {
+            padding: var(--spacing-sm) 0;
+            color: var(--text-secondary);
+            font-weight: 500;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-tab.active {
+            color: var(--text-primary);
+            border-bottom-color: var(--text-primary); /* Estilo Zoom: underline preto ou azul dependendo do contexto, aqui usando preto como na imagem */
+        }
+        
+        .nav-tab:hover:not(.active) {
+            color: var(--text-primary);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success { background-color: #d1fae5; color: #065f46; }
+        .badge-warning { background-color: #fef3c7; color: #92400e; }
+        .badge-danger { background-color: #fee2e2; color: #991b1b; }
+        .badge-neutral { background-color: #f3f4f6; color: #374151; }
+
+    </style>
+</head>
+<body>
+
+    <aside class="ds-sidebar">
+        <div class="ds-logo">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="#0b5cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 17L12 22L22 17" stroke="#0b5cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M2 12L12 17L22 12" stroke="#0b5cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            Design System
+        </div>
+        <nav class="ds-nav">
+            <a href="#cores">Cores</a>
+            <a href="#tipografia">Tipografia</a>
+            <a href="#botoes">Botões</a>
+            <a href="#formularios">Formulários</a>
+            <a href="#navegacao">Navegação</a>
+            <a href="#cards">Cards & Layout</a>
+            <a href="#feedback">Feedback & Status</a>
+        </nav>
+    </aside>
+
+    <main class="ds-content">
+        
+        <header style="margin-bottom: 60px;">
+            <h1 style="font-size: 2.5rem; margin-bottom: 16px;">VergaraPlayer Design System</h1>
+            <p class="ds-description">
+                Um guia de estilo unificado baseado na interface visual moderna, focada em clareza, 
+                acessibilidade e produtividade. Extraído das interfaces de comunicação e colaboração analisadas.
+            </p>
+        </header>
+
+        <!-- CORES -->
+        <section id="cores" class="ds-section">
+            <h2 class="ds-section-title">Cores</h2>
+            <p class="ds-description">A paleta de cores primária utiliza um azul vibrante para ações principais e um azul profundo para navegação estrutural (sidebar).</p>
+            
+            <h3 class="ds-subsection-title">Cores da Marca</h3>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div class="color-grid" style="width: 100%;">
+                        <div class="color-card">
+                            <div class="color-swatch" style="background-color: var(--primary-color);"></div>
+                            <div class="color-info">
+                                <div class="color-name">Primary Blue</div>
+                                <div class="color-hex">#0b5cff</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-swatch" style="background-color: var(--secondary-color);"></div>
+                            <div class="color-info">
+                                <div class="color-name">Navy Sidebar</div>
+                                <div class="color-hex">#0e1041</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-swatch" style="background-color: var(--bg-body);"></div>
+                            <div class="color-info">
+                                <div class="color-name">Background Light</div>
+                                <div class="color-hex">#f3f4f6</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="ds-code">
+                    --primary-color: #0b5cff;<br>
+                    --secondary-color: #0e1041;<br>
+                    --bg-body: #f3f4f6;
+                </div>
+            </div>
+
+            <h3 class="ds-subsection-title">Cores de Estado</h3>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div class="color-grid" style="width: 100%;">
+                        <div class="color-card">
+                            <div class="color-swatch" style="background-color: var(--success-color);"></div>
+                            <div class="color-info">
+                                <div class="color-name">Success / Online</div>
+                                <div class="color-hex">#10b981</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-swatch" style="background-color: var(--danger-color);"></div>
+                            <div class="color-info">
+                                <div class="color-name">Danger / Busy</div>
+                                <div class="color-hex">#ef4444</div>
+                            </div>
+                        </div>
+                        <div class="color-card">
+                            <div class="color-swatch" style="background-color: var(--warning-color);"></div>
+                            <div class="color-info">
+                                <div class="color-name">Warning</div>
+                                <div class="color-hex">#f59e0b</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TIPOGRAFIA -->
+        <section id="tipografia" class="ds-section">
+            <h2 class="ds-section-title">Tipografia</h2>
+            <p class="ds-description">Utilizamos uma fonte sans-serif moderna (família Inter/System) para máxima legibilidade em interfaces densas.</p>
+
+            <div class="ds-preview">
+                <div class="ds-preview-canvas" style="display: block;">
+                    <div class="type-scale">
+                        <div class="type-row">
+                            <div class="type-label">H1 Header</div>
+                            <h1 style="font-size: 2.5rem; font-weight: 700;">Brainstorming Workshop</h1>
+                        </div>
+                        <div class="type-row">
+                            <div class="type-label">H2 Title</div>
+                            <h2 style="font-size: 1.5rem; font-weight: 600;">Team Chat & Collaboration</h2>
+                        </div>
+                        <div class="type-row">
+                            <div class="type-label">H3 Subtitle</div>
+                            <h3 style="font-size: 1.1rem; font-weight: 600;">Próximos eventos</h3>
+                        </div>
+                        <div class="type-row">
+                            <div class="type-label">Body Regular</div>
+                            <p style="font-size: 1rem; color: var(--text-secondary);">
+                                I just wanted to take a moment to express how much I have enjoyed working with your team. 
+                                Our collaboration has been an absolute pleasure.
+                            </p>
+                        </div>
+                        <div class="type-row">
+                            <div class="type-label">Small / Caption</div>
+                            <p style="font-size: 0.85rem; color: var(--text-tertiary);">
+                                Edited yesterday at 9:20 AM
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="ds-code">
+                    font-family: 'Inter', -apple-system, sans-serif;
+                </div>
+            </div>
+        </section>
+
+        <!-- BOTÕES -->
+        <section id="botoes" class="ds-section">
+            <h2 class="ds-section-title">Botões</h2>
+            <p class="ds-description">Botões com bordas totalmente arredondadas (Pill shape) são o padrão para ações principais.</p>
+
+            <h3 class="ds-subsection-title">Variantes</h3>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <button class="btn btn-primary">Primary Action</button>
+                    <button class="btn btn-secondary">Secondary Action</button>
+                    <button class="btn btn-secondary">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+                        Add Item
+                    </button>
+                    <button class="btn btn-danger">Delete</button>
+                    <button class="btn btn-primary btn-icon">
+                        <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                </div>
+                <div class="ds-code">
+&lt;button class="btn btn-primary"&gt;Primary Action&lt;/button&gt;
+&lt;button class="btn btn-secondary"&gt;Secondary Action&lt;/button&gt;
+                </div>
+            </div>
+        </section>
+
+        <!-- FORMULÁRIOS -->
+        <section id="formularios" class="ds-section">
+            <h2 class="ds-section-title">Formulários</h2>
+            <p class="ds-description">Inputs limpos com bordas suaves e foco claro na cor primária.</p>
+
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div class="form-group">
+                        <label class="form-label">Email Address</label>
+                        <input type="email" class="form-input" placeholder="name@company.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Search</label>
+                        <input type="text" class="form-input form-input-search" placeholder="Search people...">
+                    </div>
+                </div>
+                <div class="ds-code">
+&lt;input type="text" class="form-input" placeholder="..."&gt;
+                </div>
+            </div>
+        </section>
+
+        <!-- NAVEGAÇÃO -->
+        <section id="navegacao" class="ds-section">
+            <h2 class="ds-section-title">Navegação</h2>
+            
+            <h3 class="ds-subsection-title">Sidebar Principal</h3>
+            <p class="ds-description">A barra lateral escura é a característica marcante da navegação global.</p>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas dark" style="padding: 0; height: 300px; align-items: stretch;">
+                    <div style="width: 240px; background-color: var(--bg-sidebar); padding: 16px; display: flex; flex-direction: column; gap: 8px;">
+                        <!-- Item Ativo -->
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; background-color: var(--primary-color); color: white; border-radius: 8px; cursor: pointer;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+                            <span style="font-weight: 500;">Team Chat</span>
+                            <span style="margin-left: auto; background-color: #ef4444; color: white; font-size: 10px; padding: 2px 6px; border-radius: 10px;">1</span>
+                        </div>
+                        <!-- Item Inativo -->
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: #9ca3af; cursor: pointer;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span style="font-weight: 500;">Meetings</span>
+                        </div>
+                        <!-- Item Inativo -->
+                        <div style="display: flex; align-items: center; gap: 12px; padding: 10px 12px; color: #9ca3af; cursor: pointer;">
+                            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            <span style="font-weight: 500;">Phone</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="ds-subsection-title">Abas (Tabs)</h3>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div style="width: 100%;">
+                        <div class="nav-tabs">
+                            <div class="nav-tab active">All History</div>
+                            <div class="nav-tab">Voicemail</div>
+                            <div class="nav-tab">Lines</div>
+                            <div class="nav-tab">SMS</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CARDS & LAYOUT -->
+        <section id="cards" class="ds-section">
+            <h2 class="ds-section-title">Cards & Componentes</h2>
+            
+            <h3 class="ds-subsection-title">Meeting Card</h3>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div class="card" style="width: 350px;">
+                        <div class="card-header">
+                            <span class="badge badge-success">Going? Yes</span>
+                            <button class="btn btn-secondary btn-sm" style="border: none; padding: 4px;">•••</button>
+                        </div>
+                        <div style="margin-bottom: 16px;">
+                            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px;">Yesterday, 1:00 - 2:00 PM</div>
+                            <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 8px;">Brainstorming Workshop</h3>
+                            <div style="display: flex; gap: 4px; font-size: 0.85rem; color: var(--text-secondary); align-items: center;">
+                                <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                Occurs every first of the month
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 8px; margin-bottom: 24px;">
+                            <button class="btn btn-secondary btn-sm">Join</button>
+                            <button class="btn btn-secondary btn-sm">Copy Link</button>
+                        </div>
+                        <div style="border-top: 1px solid var(--border-color); padding-top: 16px;">
+                            <div style="font-weight: 600; font-size: 0.9rem; margin-bottom: 8px;">Host</div>
+                            <div style="display: flex; align-items: center; gap: 12px;">
+                                <div class="avatar">
+                                    <img src="https://ui-avatars.com/api/?name=Katie+Carter&background=random" alt="KC">
+                                    <div class="avatar-status status-online"></div>
+                                </div>
+                                <span style="font-size: 0.95rem;">Katie Carter</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="ds-subsection-title">Lista de Participantes</h3>
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div style="width: 300px; background: white; padding: 16px; border-radius: 8px; border: 1px solid var(--border-color);">
+                        <h4 style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Starred</h4>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 4px 0;">
+                                <div class="avatar" style="width: 32px; height: 32px;">
+                                    <img src="https://ui-avatars.com/api/?name=Maurice+Lawson&background=0b5cff&color=fff" alt="ML">
+                                    <div class="avatar-status status-online"></div>
+                                </div>
+                                <span style="font-size: 0.9rem;">Maurice Lawson (You)</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px; padding: 4px 0;">
+                                <div class="avatar" style="width: 32px; height: 32px;">
+                                    <img src="https://ui-avatars.com/api/?name=Nabil+Rashad&background=random" alt="NR">
+                                    <div class="avatar-status status-offline"></div>
+                                </div>
+                                <span style="font-size: 0.9rem;">Nabil Rashad</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEEDBACK -->
+        <section id="feedback" class="ds-section">
+            <h2 class="ds-section-title">Feedback & Status</h2>
+            <p class="ds-description">Indicadores visuais para informar o usuário sobre o estado do sistema ou de outros usuários.</p>
+
+            <div class="ds-preview">
+                <div class="ds-preview-canvas">
+                    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                        <span class="badge badge-success">Available</span>
+                        <span class="badge badge-danger">Busy</span>
+                        <span class="badge badge-warning">Away</span>
+                        <span class="badge badge-neutral">Offline</span>
+                    </div>
+                    <div style="width: 100%; margin-top: 16px;">
+                        <div class="card" style="display: inline-flex; align-items: center; gap: 12px; padding: 12px;">
+                            <div style="background-color: #fee2e2; padding: 8px; border-radius: 8px; color: #991b1b;">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem;">Apennines</div>
+                                <div style="font-size: 0.8rem; color: var(--danger-color); font-weight: 500;">Busy</div>
+                            </div>
+                        </div>
+                        <div class="card" style="display: inline-flex; align-items: center; gap: 12px; padding: 12px; margin-left: 16px;">
+                            <div style="background-color: #d1fae5; padding: 8px; border-radius: 8px; color: #065f46;">
+                                <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                            <div>
+                                <div style="font-weight: 600; font-size: 0.9rem;">Bear River</div>
+                                <div style="font-size: 0.8rem; color: var(--success-color); font-weight: 500;">Available</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Smooth scroll simples para navegação interna
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+                
+                // Atualiza classe active
+                document.querySelectorAll('.ds-nav a').forEach(a => a.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

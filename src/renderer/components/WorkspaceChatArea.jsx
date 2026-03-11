@@ -350,17 +350,17 @@ export function WorkspaceChatArea() {
 
   if (!selectedWorkspace || !workspace) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-background-light dark:bg-background-dark">
+      <div className="flex-1 flex items-center justify-center bg-[color:var(--bg-body)]">
         <div className="text-center px-4">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-            <svg className="w-8 h-8 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[color:var(--bg-surface)] flex items-center justify-center border border-[color:var(--border-color)]">
+            <svg className="w-8 h-8 text-[color:var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
             </svg>
           </div>
-          <h3 className="text-lg font-semibold text-slate-700 dark:text-slate-200 mb-1">
+          <h3 className="text-lg font-bold text-[color:var(--text-primary)] mb-1">
             Nenhum workspace selecionado
           </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
+          <p className="text-[0.95rem] text-[color:var(--text-secondary)]">
             Selecione um workspace na barra lateral
           </p>
         </div>
@@ -449,14 +449,14 @@ export function WorkspaceChatArea() {
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-slate-50/50 dark:bg-[#0a0f18]">
-      <header className="h-16 px-6 flex items-center justify-between border-b border-slate-200/60 bg-white/70 dark:bg-[#111827]/80 backdrop-blur-xl z-40 shadow-sm transition-all">
+    <div className="flex-1 flex flex-col bg-[color:var(--bg-body)]">
+      <header className="h-[60px] px-6 flex items-center justify-between border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] backdrop-blur-xl z-40 transition-all">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md shadow-indigo-500/20">
-            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+          <div className="h-9 w-9 rounded-[8px] flex items-center justify-center border border-[color:var(--primary-color)] bg-[#eff6ff] dark:bg-[color:var(--primary-color)]">
+            <svg className="w-5 h-5 text-[color:var(--primary-color)] dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+            <p className="font-semibold text-[1.1rem] text-[color:var(--text-primary)] tracking-tight">
               {projectLabel}
             </p>
           </div>
@@ -464,20 +464,20 @@ export function WorkspaceChatArea() {
 
         <div className="flex items-center gap-3">
           <div
-            className="hidden md:flex max-w-[280px] items-center gap-2 rounded-full border border-slate-200/80 bg-slate-100/50 px-3.5 py-1.5 text-xs font-medium text-slate-600 shadow-inner group transition-all hover:bg-slate-200/50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10"
+            className="hidden md:flex max-w-[280px] items-center gap-2 rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-1.5 text-[0.85rem] font-medium text-[color:var(--text-secondary)] transition-all"
             title={workspace.path}
           >
-            <svg className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors dark:group-hover:text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg className="w-4 h-4 text-[color:var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
             <span className="truncate">{workspacePathLabel}</span>
           </div>
           <button
             onClick={() => window.electronAPI.shell.openPath(workspace.path)}
-            className="p-2.5 rounded-full hover:bg-white dark:hover:bg-white/10 transition-all hover:shadow-sm text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white transform hover:scale-105 active:scale-95"
+            className="p-2 rounded-[8px] hover:bg-[#eff6ff] hover:text-[color:var(--primary-color)] dark:hover:bg-white/5 text-[color:var(--text-secondary)] transition-colors"
             title="Abrir pasta no explorador"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
               <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-1.405-1.405A2 2 0 0010 6z" />
             </svg>
           </button>
@@ -509,16 +509,13 @@ export function WorkspaceChatArea() {
       />
 
       <div className="flex-1 min-h-0 relative">
-        {/* Subtle background gradient pattern for the workspace area */}
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxjaXJjbGUgY3g9IjMiIGN5PSIzIiByPSIzIiBmaWxsPSIjOWNhM2FmIiBmaWxsLW9wYWNpdHk9IjAuMDUiLz48L2c+PC9zdmc+')] pointer-events-none" />
-
         {showTerminal ? (
           <div className="h-full min-h-0 flex flex-col relative z-10">
-            <div className="flex-1 min-h-0 p-3">
+            <div className="flex-1 min-h-0">
               {isGridMode ? (
-                <div className={`grid h-full min-h-0 gap-3 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
+                <div className={`grid h-full min-h-0 gap-0 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
                   {sessions.map((session) => (
-                    <div key={session.sessionId} className="rounded-xl overflow-hidden shadow-sm border border-slate-200/80 bg-white/60 dark:border-white/10 dark:bg-[#111827]/80 backdrop-blur-md transition-all duration-300 hover:shadow-md hover:border-indigo-400/30 dark:hover:border-indigo-500/30 flex flex-col">
+                    <div key={session.sessionId} className="overflow-hidden border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] transition-all duration-300 flex flex-col">
                       <Terminal
                         session={session}
                         workspaceName={workspace.name}
@@ -539,8 +536,8 @@ export function WorkspaceChatArea() {
                   ))}
                 </div>
               ) : activeSession ? (
-                <div className="h-full min-h-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white/60 shadow-sm backdrop-blur-md dark:border-white/10 dark:bg-[#111827]/80 flex flex-col transition-all duration-300 hover:shadow-md">
-                  <div className="shrink-0 border-b border-slate-200/80 bg-slate-50/50 pt-2 px-2 dark:border-white/10 dark:bg-white/5 backdrop-blur-xl">
+                <div className="h-full min-h-0 overflow-hidden border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex flex-col transition-all duration-300">
+                  <div className="shrink-0 border-b border-[color:var(--border-color)] bg-[color:var(--bg-body)] pt-2 px-2">
                     <div className="flex items-end gap-1.5 overflow-x-auto pb-0 hide-scrollbar">
                       {sessions.map((session) => {
                         const isActive = session.sessionId === activeSession.sessionId;
@@ -548,14 +545,14 @@ export function WorkspaceChatArea() {
                           <button
                             key={session.sessionId}
                             onClick={() => handleFocusSession(session.sessionId)}
-                            className={`group relative min-w-0 max-w-xs flex items-center gap-2.5 rounded-t-lg border-t border-x px-4 py-2.5 text-left text-sm font-medium transition-all duration-200 ${
+                            className={`group relative min-w-0 max-w-xs flex items-center gap-2.5 rounded-t-[8px] border-t border-x px-4 py-2 text-left text-[0.95rem] font-medium transition-all duration-200 ${
                               isActive
-                                ? 'border-slate-200/80 bg-white text-indigo-600 dark:border-white/10 dark:bg-[#111827] dark:text-indigo-400 shadow-[0_-2px_10px_rgba(0,0,0,0.02)] z-10'
-                                : 'border-transparent bg-transparent text-slate-500 hover:bg-black/5 dark:text-slate-400 dark:hover:bg-white/5 hover:text-slate-700 dark:hover:text-slate-200'
+                                ? 'border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--primary-color)] z-10'
+                                : 'border-transparent bg-transparent text-[color:var(--text-secondary)] hover:bg-[#eff6ff] dark:hover:bg-white/5 hover:text-[color:var(--text-primary)]'
                             }`}
                           >
-                            <span className={`inline-flex h-2 w-2 rounded-full ring-2 ring-white/50 dark:ring-black/50 align-middle transition-colors shadow-sm ${
-                              session.status === 'exited' ? 'bg-amber-400' : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]'
+                            <span className={`inline-flex h-2 w-2 rounded-full align-middle transition-colors shadow-sm ${
+                              session.status === 'exited' ? 'bg-[color:var(--warning-color)]' : 'bg-[color:var(--success-color)] shadow-[0_0_6px_rgba(16,185,129,0.3)]'
                             }`} />
                             <span className="truncate">
                               {getSessionTitle(session)}
@@ -567,27 +564,20 @@ export function WorkspaceChatArea() {
                                 event.stopPropagation();
                                 handleCloseTerminal(session.sessionId);
                               }}
-                              onKeyDown={(event) => {
-                                if (event.key === 'Enter' || event.key === ' ') {
-                                  event.preventDefault();
-                                  event.stopPropagation();
-                                  handleCloseTerminal(session.sessionId);
-                                }
-                              }}
-                              className={`ml-1 inline-flex h-5 w-5 items-center justify-center rounded-md transition-all ${
+                              className={`ml-1 inline-flex h-[18px] w-[18px] items-center justify-center rounded-[4px] transition-all ${
                                 isActive
-                                  ? 'text-slate-400 hover:bg-slate-100 hover:text-red-500 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-red-400'
-                                  : 'text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-200 hover:text-red-500 dark:text-slate-500 dark:hover:bg-white/10 dark:hover:text-red-400'
+                                  ? 'text-[color:var(--text-tertiary)] hover:bg-[color:var(--danger-color)]/10 hover:text-[color:var(--danger-color)]'
+                                  : 'text-[color:var(--text-tertiary)] opacity-0 group-hover:opacity-100 hover:bg-[color:var(--danger-color)]/10 hover:text-[color:var(--danger-color)]'
                               }`}
                               aria-label={`Fechar ${getSessionTitle(session)}`}
                             >
                               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                             </span>
                             {isActive && (
-                              <div className="absolute -bottom-[1px] left-0 right-0 h-[3px] bg-white dark:bg-[#111827]" />
+                              <div className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-[color:var(--bg-surface)]" />
                             )}
                             {isActive && (
-                              <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-indigo-500 to-purple-500 rounded-t-lg opacity-80" />
+                              <div className="absolute top-0 left-0 right-0 h-[2px] bg-[color:var(--primary-color)] rounded-t-[8px]" />
                             )}
                           </button>
                         );
@@ -595,7 +585,7 @@ export function WorkspaceChatArea() {
                     </div>
                   </div>
 
-                  <div className="flex-1 min-h-0 relative bg-white/70 dark:bg-transparent">
+                  <div className="flex-1 min-h-0 relative">
                     <Terminal
                       key={activeSession.sessionId}
                       session={activeSession}
@@ -617,29 +607,23 @@ export function WorkspaceChatArea() {
               ) : null}
             </div>
           </div>
-        ) : (
+) : (
           <div className="h-full flex items-center justify-center px-6 relative overflow-hidden">
-            {/* Background elements for empty state */}
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center opacity-40 dark:opacity-20">
-              <div className="w-[500px] h-[500px] bg-indigo-400/20 rounded-full blur-[100px] absolute -top-20 -left-20 mix-blend-multiply dark:mix-blend-screen" />
-              <div className="w-[400px] h-[400px] bg-purple-400/20 rounded-full blur-[80px] absolute bottom-10 right-10 mix-blend-multiply dark:mix-blend-screen" />
-            </div>
-            
-            <div className="max-w-md text-center rounded-3xl border border-white/60 bg-white/60 px-10 py-12 shadow-2xl backdrop-blur-xl dark:border-white/10 dark:bg-[#111827]/60 relative z-10 duration-500 hover:shadow-indigo-500/10 hover:border-white/80 transition-all dark:hover:border-white/20">
-              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30">
-                <svg className="w-10 h-10 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+            <div className="max-w-md text-center rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-10 py-12 shadow-sm relative z-10 transition-all">
+              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-[12px] bg-[#eff6ff] text-[color:var(--primary-color)] dark:border dark:border-[color:var(--primary-color)] dark:bg-[color:var(--bg-sidebar)]">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 tracking-tight">
+              <h3 className="text-xl font-bold text-[color:var(--text-primary)] tracking-tight">
                 Sessões inline do workspace
               </h3>
-              <p className="mt-4 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                Escolha o editor, defina o layout em abas ou grade e clique em <span className="font-semibold text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-500/10">Executar</span>. 
-                Cada novo launch abre um terminal embutido nesta área, sem criar janelas externas.
+              <p className="mt-4 text-[0.95rem] leading-relaxed text-[color:var(--text-secondary)]">
+                Escolha o editor, defina o layout em abas ou grade e clique em <span className="font-semibold text-[color:var(--primary-color)] px-1.5 py-0.5 rounded-[4px] bg-[#eff6ff] dark:bg-white/10 dark:text-[color:var(--primary-color)]">Executar</span>. 
+                Cada novo launch abre um terminal embutido nesta área.
               </p>
               {terminalError && (
-                <div className="mt-6 p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-sm text-red-600 dark:text-red-400 animate-pulse">
+                <div className="mt-6 p-4 rounded-[8px] bg-red-50 text-[0.9rem] text-red-600 dark:bg-red-900/10 dark:text-red-400">
                   {terminalError}
                 </div>
               )}

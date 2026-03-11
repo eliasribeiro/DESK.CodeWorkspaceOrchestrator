@@ -182,11 +182,11 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
 
   return (
     <li
-      className={`group w-full min-h-9 flex items-center gap-2 px-3 text-sm rounded-md
+      className={`group w-full min-h-9 flex items-center gap-2 px-3 text-[0.85rem] rounded-[8px]
                   cursor-pointer transition-colors duration-150
-                  hover:bg-slate-100 dark:hover:bg-white/5
+                  hover:bg-[#eff6ff] dark:hover:bg-white/5
                   ${workspace.isSelected
-                    ? 'bg-slate-100 dark:bg-white/10' 
+                    ? 'bg-[#eff6ff] dark:bg-white/10' 
                     : ''}`}
       onClick={handleSelect}
       onMouseEnter={() => setShowActions(true)}
@@ -195,7 +195,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
     >
       {/* Ícone do Workspace (Branch) */}
       <svg 
-        className={`w-4 h-4 flex-shrink-0 ${workspace.isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-400 dark:text-slate-500'}`}
+        className={`w-4 h-4 flex-shrink-0 ${workspace.isSelected ? 'text-[color:var(--primary-color)]' : 'text-[color:var(--text-tertiary)]'}`}
         viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
       >
         <line x1="6" y1="3" x2="6" y2="15"></line>
@@ -220,21 +220,21 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
             }
           }}
           autoFocus
-          className="flex-1 px-1 py-0.5 text-sm rounded
-                     bg-white dark:bg-surface-dark
-                     border border-border-light dark:border-white/10
-                     focus:outline-none focus:ring-1 focus:ring-primary-light
-                     text-slate-900 dark:text-slate-100"
+          className="flex-1 px-1 py-0.5 text-[0.85rem] rounded-[4px]
+                     bg-[color:var(--bg-body)]
+                     border border-[color:var(--border-color)]
+                     focus:outline-none focus:ring-1 focus:ring-[color:var(--primary-color)]
+                     text-[color:var(--text-primary)]"
         />
       ) : (
-        <span className={`flex-1 text-sm truncate ${workspace.isSelected ? 'font-medium text-black dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>
+        <span className={`flex-1 text-[0.85rem] truncate ${workspace.isSelected ? 'font-bold text-[color:var(--primary-color)]' : 'text-[color:var(--text-primary)]'}`}>
           {workspace.name}
         </span>
       )}
 
       {/* Indicador de workspace atual */}
       {workspace.isCurrent && (
-        <span className="text-sm text-slate-700 dark:text-slate-400 font-medium mr-1">
+        <span className="text-[0.75rem] text-[color:var(--text-secondary)] font-semibold mr-1 bg-[color:var(--bg-surface)] px-1.5 py-0.5 rounded-[4px]">
           Git
         </span>
       )}
@@ -244,12 +244,12 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
         <button
           onClick={handleStartRename}
           disabled={isRenaming || isRemoving}
-          className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1 rounded-[6px] hover:bg-[#eff6ff] hover:text-[color:var(--primary-color)] dark:hover:bg-white/10 text-[color:var(--text-tertiary)]
+                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title="Renomear"
           aria-label="Renomear workspace"
         >
-          <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400"
+          <svg className="w-3.5 h-3.5"
                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
             <path strokeLinecap="round" strokeLinejoin="round"
                   d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -259,8 +259,8 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
         <button
           onClick={handleRemove}
           disabled={isRemoving || isRenaming}
-          className="p-1 rounded-md hover:bg-red-500 hover:text-white
-                     disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-1 rounded-[6px] hover:bg-[color:var(--danger-color)] hover:text-[color:var(--bg-body)] text-[color:var(--text-tertiary)]
+                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           title="Remover"
           aria-label="Remover workspace"
         >

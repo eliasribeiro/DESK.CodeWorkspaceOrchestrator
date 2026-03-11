@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'motion/react';
 import { TitleBar } from '@components/TitleBar';
 import { Sidebar } from '@components/Sidebar';
 import { HomeScreen } from '@components/HomeScreen';
@@ -10,9 +11,6 @@ import { AppDialog } from '@components/AppDialog';
 import { WorkspaceProvider, useWorkspace } from '@context/WorkspaceContext';
 import '@styles/index.css';
 
-/**
- * Conteúdo principal da aplicação
- */
 function WorkspaceContent() {
   const {
     activeScreen,
@@ -23,11 +21,10 @@ function WorkspaceContent() {
     secondarySidebarWidth,
     setSecondarySidebarWidth,
     isSettingsOpen,
-    setIsSettingsOpen,
     selectedWorkspace,
     activeSessionsCount,
     dialogState,
-    closeDialog
+    closeDialog,
   } = useWorkspace();
   const [isResizingSecondary, setIsResizingSecondary] = useState(false);
 
@@ -37,7 +34,7 @@ function WorkspaceContent() {
     }
 
     const handleMouseMove = (event) => {
-      const nextWidth = Math.max(240, Math.min(720, window.innerWidth - event.clientX));
+      const nextWidth = Math.max(280, Math.min(760, window.innerWidth - event.clientX));
       setSecondarySidebarWidth(nextWidth);
     };
 
@@ -56,42 +53,8 @@ function WorkspaceContent() {
     };
   }, [isResizingSecondary, setSecondarySidebarWidth]);
 
-  const handleStartSecondaryResize = (event) => {
-    event.preventDefault();
-    setIsResizingSecondary(true);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  };
-
-  // Se configurações estiverem abertas, mostra a tela de configurações
-  if (isSettingsOpen) {
-    return (
-      <div className="flex flex-col h-full w-full bg-background-light dark:bg-background-dark">
-        <TitleBar
-          showPrimary={showPrimarySidebar}
-          onTogglePrimary={() => setShowPrimarySidebar(!showPrimarySidebar)}
-          showSecondary={showSecondarySidebar}
-          onToggleSecondary={() => setShowSecondarySidebar(!showSecondarySidebar)}
-        />
-        <SettingsScreen />
-        <AppDialog
-          isOpen={dialogState.isOpen}
-          type={dialogState.type}
-          variant={dialogState.variant}
-          title={dialogState.title}
-          message={dialogState.message}
-          confirmText={dialogState.confirmText}
-          cancelText={dialogState.cancelText}
-          onConfirm={() => closeDialog(true)}
-          onCancel={() => closeDialog(false)}
-        />
-      </div>
-    );
-  }
-
   return (
-    <div className="flex flex-col h-full w-full bg-background-light dark:bg-background-dark">
-      {/* Barra de título customizada */}
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[color:var(--bg-body)]">
       <TitleBar
         showPrimary={showPrimarySidebar}
         onTogglePrimary={() => setShowPrimarySidebar(!showPrimarySidebar)}
@@ -99,50 +62,66 @@ function WorkspaceContent() {
         onToggleSecondary={() => setShowSecondarySidebar(!showSecondarySidebar)}
       />
 
-      {/* Área de trabalho principal */}
-      <div className="flex-1 flex overflow-hidden relative bg-background-light dark:bg-background-dark">
-        {/* Sidebar esquerda - Home e Projetos */}
+      <div className="relative flex flex-1 overflow-hidden">
         {showPrimarySidebar && <Sidebar />}
 
-        {/* Área de conteúdo */}
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative border-r border-transparent dark:border-white/5">
-          {selectedWorkspace ? <WorkspaceChatArea /> : activeScreen === 'home' ? <HomeScreen /> : <ChatArea />}
+        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--bg-body)]">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isSettingsOpen ? 'settings' : selectedWorkspace ? 'workspace' : activeScreen}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.28, ease: 'easeOut' }}
+              className="flex h-full flex-1 flex-col overflow-hidden"
+            >
+              {isSettingsOpen ? (
+                <SettingsScreen />
+              ) : selectedWorkspace ? (
+                <WorkspaceChatArea />
+              ) : activeScreen === 'home' ? (
+                <HomeScreen />
+              ) : (
+                <ChatArea />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
-        {/* Sidebar direita - Auxiliar (Review & Terminal) */}
-        {showSecondarySidebar && (
-          <div
-            style={{ width: secondarySidebarWidth }}
-            className="relative flex-shrink-0 border-l border-slate-200 dark:border-white/10"
-          >
+        {showSecondarySidebar && !isSettingsOpen && (
+          <div className="relative border-l border-[color:var(--border-color)] bg-[color:var(--bg-surface)]" style={{ width: secondarySidebarWidth }}>
+            <div className="h-full overflow-hidden">
+              <SecondarySidebar />
+            </div>
             <div
-              onMouseDown={handleStartSecondaryResize}
-              className="absolute left-0 top-0 z-10 h-full w-[4px] -translate-x-1/2 cursor-col-resize rounded-full hover:bg-slate-500/40"
+              onMouseDown={(event) => {
+                event.preventDefault();
+                setIsResizingSecondary(true);
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+              }}
+              className="absolute left-0 top-0 h-full w-4 cursor-col-resize -translate-x-1/2"
               title="Redimensionar painel auxiliar"
             />
-            <SecondarySidebar />
           </div>
         )}
       </div>
 
-      {/* Barra de status inferior */}
-      <footer className="h-7 px-4 flex items-center justify-between 
-                         bg-surface-light dark:bg-surface-dark
-                         border-t border-slate-200 dark:border-white/5
-                         text-[11px] font-medium text-slate-500 dark:text-slate-400">
+      <footer className="h-10 border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-4 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[color:var(--text-secondary)]">
         <div className="flex items-center gap-4">
-          <span>Pronto</span>
-          {activeScreen === 'workspace' && (
-            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-200 dark:bg-white/5 text-slate-700 dark:text-slate-300">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-              Sessões: {activeSessionsCount}/8
+          <span className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-[color:var(--success-color)] animate-pulse"></span>
+            System ready
+          </span>
+          {selectedWorkspace && (
+            <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1">
+              Sessões {activeSessionsCount}/8
             </span>
           )}
         </div>
-        <span className="flex items-center gap-2">
-          <span>v1.0.0</span>
-        </span>
+        <span>v1.0.0</span>
       </footer>
+
       <AppDialog
         isOpen={dialogState.isOpen}
         type={dialogState.type}
@@ -158,9 +137,6 @@ function WorkspaceContent() {
   );
 }
 
-/**
- * Componente principal da aplicação
- */
 function App() {
   return (
     <WorkspaceProvider>

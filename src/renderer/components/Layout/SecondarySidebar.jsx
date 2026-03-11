@@ -275,19 +275,19 @@ export function SecondarySidebar() {
   };
 
   return (
-    <aside className="h-full flex flex-col bg-background-light dark:bg-background-dark border-l border-border-light dark:border-white/5 overflow-hidden">
+    <aside className="h-full flex flex-col bg-[color:var(--bg-body)] border-l border-[color:var(--border-color)] overflow-hidden">
       <div className="h-full p-2">
         {selectedWorkspace?.workspace?.path ? (
-          <div className="w-full h-full rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03]">
-            <div className="flex items-center justify-between px-3 py-2 border-b border-slate-200 dark:border-white/10">
+          <div className="w-full h-full rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)]">
               <div className="min-w-0">
-                <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">Repositorio do Worktree</p>
-                <p className="text-xs font-medium text-slate-700 dark:text-slate-200 truncate">{selectedWorkspace.workspace.name}</p>
+                <p className="text-[10px] uppercase tracking-wide text-[color:var(--text-tertiary)]">Repositorio do Worktree</p>
+                <p className="text-xs font-semibold text-[color:var(--text-primary)] truncate">{selectedWorkspace.workspace.name}</p>
               </div>
               <button
                 type="button"
                 onClick={() => loadWorktreeChanges(selectedWorkspace.workspace.path)}
-                className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400"
+                className="p-1 rounded-[8px] hover:bg-[#eff6ff] hover:text-[color:var(--primary-color)] dark:hover:bg-white/10 text-[color:var(--text-secondary)] transition-colors"
                 title="Atualizar alterações"
               >
                 <svg className={`w-3.5 h-3.5 ${isLoadingChanges ? 'animate-spin' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -296,31 +296,31 @@ export function SecondarySidebar() {
               </button>
             </div>
 
-            <div className="h-[calc(100%-41px)] px-2 py-2 flex flex-col gap-2">
+            <div className="flex-1 px-2 py-2 flex flex-col gap-2 min-h-0">
               <button
                 type="button"
                 onClick={handleMergeToMain}
                 disabled={Boolean(actionInProgress)}
-                className="w-full h-9 px-3 rounded-md text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-9 px-3 rounded-[8px] text-[0.85rem] font-semibold text-[color:var(--text-primary)] border border-[color:var(--success-color)] bg-[color:var(--success-color)]/10 hover:bg-[color:var(--success-color)]/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {actionInProgress === 'merge' ? 'Fazendo merge...' : 'Merge'}
               </button>
 
-              <div className="min-h-0 flex-1">
+              <div className="min-h-0 flex-1 overflow-hidden flex flex-col">
                 {changesError && (
-                  <p className="px-1 py-1 text-xs text-red-500">{changesError}</p>
+                  <p className="px-1 py-1 text-xs text-[color:var(--danger-color)]">{changesError}</p>
                 )}
 
                 {!changesError && isLoadingChanges && (
-                  <p className="px-1 py-1 text-xs text-slate-500 dark:text-slate-400">Carregando alteracoes...</p>
+                  <p className="px-1 py-1 text-xs text-[color:var(--text-tertiary)]">Carregando alteracoes...</p>
                 )}
 
                 {!changesError && !isLoadingChanges && changedFiles.length === 0 && (
-                  <p className="px-1 py-1 text-xs text-slate-500 dark:text-slate-400">Nenhum arquivo alterado</p>
+                  <p className="px-1 py-1 text-xs text-[color:var(--text-tertiary)]">Nenhum arquivo alterado</p>
                 )}
 
                 {!changesError && !isLoadingChanges && changedFiles.length > 0 && (
-                  <ul className="h-full overflow-y-auto scrollbar-thin space-y-1">
+                  <ul className="flex-1 overflow-y-auto scrollbar-thin space-y-1">
                     {changedFiles.map((file) => (
                       <li
                         key={file.path}
@@ -329,14 +329,14 @@ export function SecondarySidebar() {
                         <button
                           type="button"
                           onClick={() => handleOpenFilePreview(file.path)}
-                          className="w-full min-h-8 flex items-center justify-between gap-2 px-2 rounded-md hover:bg-slate-100 dark:hover:bg-white/5"
+                          className="w-full min-h-8 flex flex-col items-start justify-center gap-0.5 px-2 py-1 rounded-[6px] hover:bg-[#eff6ff] dark:hover:bg-white/5 transition-colors group"
                         >
-                          <span className="text-left text-xs text-slate-700 dark:text-slate-300 truncate">
+                          <span className="text-left py-0.5 text-xs text-[color:var(--text-primary)] truncate max-w-full block group-hover:text-[color:var(--primary-color)]">
                             {previewLoadingPath === file.path ? 'Abrindo...' : file.path}
                           </span>
-                          <span className="flex items-center gap-2 shrink-0 text-[11px] font-semibold">
-                            <span className="text-red-500">-{file.removed || 0}</span>
-                            <span className="text-emerald-500">+{file.added || 0}</span>
+                          <span className="flex items-center gap-2 shrink-0 text-[10px] font-semibold opacity-80">
+                            <span className="text-[color:var(--danger-color)]">-{file.removed || 0}</span>
+                            <span className="text-[color:var(--success-color)]">+{file.added || 0}</span>
                           </span>
                         </button>
                       </li>
@@ -345,12 +345,12 @@ export function SecondarySidebar() {
                 )}
               </div>
 
-              <div className="border-t border-slate-200 dark:border-white/10 pt-2 space-y-2">
+              <div className="pt-2 space-y-2 mt-auto shrink-0 border-t border-[color:var(--border-color)]">
                 <input
                   type="text"
                   value={commitMessage}
                   onChange={(event) => setCommitMessage(event.target.value)}
-                  className="w-full h-8 px-2 rounded-md border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 text-xs text-slate-700 dark:text-slate-200 outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full h-8 px-2 rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[0.85rem] text-[color:var(--text-primary)] outline-none focus:ring-1 focus:ring-[color:var(--primary-color)] focus:border-[color:var(--primary-color)] transition-colors placeholder:text-[color:var(--text-tertiary)]"
                   placeholder="Mensagem do commit"
                 />
                 <div className="relative" ref={actionsMenuRef}>
@@ -358,7 +358,7 @@ export function SecondarySidebar() {
                     type="button"
                     onClick={() => setIsActionsMenuOpen((prev) => !prev)}
                     disabled={Boolean(actionInProgress)}
-                    className="w-full h-8 px-2 rounded-md text-xs font-medium text-white bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between"
+                    className="w-full h-8 px-2 rounded-[8px] text-[0.85rem] font-medium text-white bg-[color:var(--primary-color)] hover:bg-[color:var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-colors shadow-sm"
                   >
                     <span>
                       {actionInProgress === 'commit' && 'Realizando commit...'}
@@ -372,7 +372,7 @@ export function SecondarySidebar() {
                   </button>
 
                   {isActionsMenuOpen && !actionInProgress && (
-                    <div className="absolute left-0 right-0 bottom-full mb-1 rounded-md border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 shadow-lg overflow-hidden z-20">
+                    <div className="absolute left-0 right-0 bottom-full mb-1 rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-lg overflow-hidden z-20">
                       <button
                         type="button"
                         onClick={() => {
@@ -380,7 +380,7 @@ export function SecondarySidebar() {
                           handleCommit();
                         }}
                         disabled={!commitMessage.trim()}
-                        className="w-full h-8 px-2 text-left text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full h-8 px-2 text-left text-xs text-[color:var(--text-primary)] hover:bg-[color:var(--bg-body)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Comitar alterações
                       </button>
@@ -390,7 +390,7 @@ export function SecondarySidebar() {
                           setIsActionsMenuOpen(false);
                           handlePush();
                         }}
-                        className="w-full h-8 px-2 text-left text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10"
+                        className="w-full h-8 px-2 text-left text-xs text-[color:var(--text-primary)] hover:bg-[color:var(--bg-body)] transition-colors"
                       >
                         Fazer push
                       </button>
@@ -401,7 +401,7 @@ export function SecondarySidebar() {
                           handleCommitAndPush();
                         }}
                         disabled={!commitMessage.trim()}
-                        className="w-full h-8 px-2 text-left text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full h-8 px-2 text-left text-xs text-[color:var(--text-primary)] hover:bg-[color:var(--bg-body)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                       >
                         Comitar e fazer push
                       </button>
@@ -409,7 +409,7 @@ export function SecondarySidebar() {
                   )}
                 </div>
                 {gitFeedback.text && (
-                  <p className={`px-1 text-xs ${gitFeedback.type === 'error' ? 'text-red-500' : 'text-emerald-500'}`}>
+                  <p className={`px-1 text-xs ${gitFeedback.type === 'error' ? 'text-[color:var(--danger-color)]' : 'text-[color:var(--success-color)]'}`}>
                     {gitFeedback.text}
                   </p>
                 )}
@@ -418,7 +418,7 @@ export function SecondarySidebar() {
                     type="button"
                     onClick={handleOpenPullRequest}
                     disabled={isOpeningPullRequest}
-                    className="w-full h-8 px-2 rounded-md text-xs font-medium text-slate-700 dark:text-slate-200 bg-slate-200 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full h-8 px-2 rounded-[8px] text-[0.85rem] font-medium text-[color:var(--text-secondary)] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] hover:bg-[color:var(--bg-surface)] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isOpeningPullRequest ? 'Abrindo pull request...' : 'Abrir pull request'}
                   </button>
@@ -427,8 +427,8 @@ export function SecondarySidebar() {
             </div>
           </div>
         ) : (
-          <div className="w-full h-full rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/[0.03] flex items-center justify-center px-4">
-            <p className="text-xs text-slate-500 dark:text-slate-400 text-center">
+          <div className="w-full h-full rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex items-center justify-center px-4">
+            <p className="text-[0.85rem] text-[color:var(--text-tertiary)] text-center">
               Selecione um workspace para ver alteracoes do repositorio
             </p>
           </div>

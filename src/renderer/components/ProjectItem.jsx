@@ -155,9 +155,9 @@ export function ProjectItem({ project }) {
     <li className="select-none w-full border-b border-slate-200/50 dark:border-white/10 last:border-b-0 py-1">
       {/* Header do Projeto */}
       <div
-        className="group w-full min-h-9 flex items-center gap-1 px-3 text-sm rounded-md
+        className="group w-full min-h-9 flex items-center gap-1 px-3 text-sm rounded-[6px]
                     cursor-pointer transition-colors duration-150
-                    hover:bg-slate-100 dark:hover:bg-white/5"
+                    hover:bg-white/10"
         onClick={handleHeaderClick}
         onMouseEnter={() => setShowActions(true)}
         onMouseLeave={() => setShowActions(false)}
@@ -165,12 +165,12 @@ export function ProjectItem({ project }) {
       >
         {/* Ícone de expansão */}
         <button
-          className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+          className="p-0.5 rounded text-slate-400 hover:text-white"
           aria-label={project.isExpanded ? 'Recolher' : 'Expandir'}
         >
           {project.isExpanded ? (
             <svg 
-              className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 rotate-90"
+              className="w-3.5 h-3.5 rotate-90"
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor" 
@@ -180,7 +180,7 @@ export function ProjectItem({ project }) {
             </svg>
           ) : (
             <svg 
-              className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400"
+              className="w-3.5 h-3.5"
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor" 
@@ -193,7 +193,7 @@ export function ProjectItem({ project }) {
         </button>
 
         {/* Nome do Projeto */}
-        <span className="flex-1 text-sm font-medium text-slate-700 dark:text-slate-200 truncate">
+        <span className="flex-1 text-[0.95rem] font-medium text-slate-200 truncate">
           {project.name}
         </span>
 
@@ -202,7 +202,7 @@ export function ProjectItem({ project }) {
           {/* Remover */}
           <button
             onClick={handleRemove}
-            className="p-1 rounded-md hover:bg-red-500 hover:text-white"
+            className="p-1 rounded-[6px] text-slate-400 hover:bg-[color:var(--danger-color)] hover:text-white"
             title="Remover"
             aria-label="Remover projeto"
           >
@@ -235,8 +235,8 @@ export function ProjectItem({ project }) {
             onClick={handleCreateWorkspace}
             disabled={isCreatingWorkspace}
             className="w-full min-h-9 flex items-center gap-2 px-3 text-sm font-medium
-                       text-slate-700 dark:text-slate-300
-                       hover:bg-slate-100 dark:hover:bg-white/5
+                       text-slate-300
+                       hover:bg-white/5
                        rounded-md transition-colors
                        disabled:opacity-50 disabled:cursor-not-allowed"
             title="Criar novo workspace com git worktree"

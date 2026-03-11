@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
+import { FolderPlus, Home, Settings2 } from 'lucide-react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { ProjectItem } from './ProjectItem';
 
-/**
- * Componente Sidebar
- * Barra lateral esquerda para gerenciamento de projetos e chats
- * 
- * @returns {JSX.Element} Sidebar com lista de projetos
- */
 export function Sidebar() {
   const {
     projects,
@@ -17,146 +12,128 @@ export function Sidebar() {
     activeScreen,
     setActiveScreen,
     setIsSettingsOpen,
-    setSelectedWorkspace
+    setSelectedWorkspace,
   } = useWorkspace();
   const [isResizing, setIsResizing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  /**
-   * Inicia redimensionamento da sidebar
-   */
-  const startResize = (e) => {
-    e.preventDefault();
-    setIsResizing(true);
-    document.body.style.cursor = 'col-resize';
-    document.body.style.userSelect = 'none';
-  };
-
-  /**
-   * Finaliza redimensionamento
-   */
   const stopResize = () => {
     setIsResizing(false);
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
 
-  /**
-   * Processa movimento do mouse durante redimensionamento
-   */
-  const resize = (e) => {
+  const resize = (event) => {
     if (!isResizing) return;
-
-    const newWidth = Math.max(200, Math.min(500, e.clientX));
+    const newWidth = Math.max(260, Math.min(520, event.clientX));
     setSidebarWidth(newWidth);
   };
 
-  // Adiciona/remove listeners de resize
   useEffect(() => {
-    if (isResizing) {
-      window.addEventListener('mousemove', resize);
-      window.addEventListener('mouseup', stopResize);
-      return () => {
-        window.removeEventListener('mousemove', resize);
-        window.removeEventListener('mouseup', stopResize);
-      };
+    if (!isResizing) {
+      return undefined;
     }
+
+    window.addEventListener('mousemove', resize);
+    window.addEventListener('mouseup', stopResize);
+
+    return () => {
+      window.removeEventListener('mousemove', resize);
+      window.removeEventListener('mouseup', stopResize);
+    };
   }, [isResizing]);
 
-  /**
-   * Handler para adicionar novo projeto via seleção de pasta
-   */
   const handleAddProject = async () => {
     if (isLoading) return;
 
     setIsLoading(true);
     try {
       const folderPath = await window.electronAPI.dialog.openDirectory();
-
       if (folderPath) {
         addProjectFromPath(folderPath);
       }
-    } catch (error) {
-      console.error('Erro ao selecionar pasta:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Handler para abrir tela Home
-   */
   const handleGoHome = () => {
     setSelectedWorkspace(null);
     setActiveScreen('home');
   };
 
   return (
-    <aside
-      className="flex flex-col bg-surface-light dark:bg-surface-dark border-r border-slate-200 dark:border-white/5 relative"
-      style={{ width: sidebarWidth }}
-    >
-      {/* Link Home e Ações Rápidas */}
-      <div className="flex items-center justify-between py-2 mt-2">
-        <div
-          className={`w-full min-h-9 flex items-center gap-2 px-3 text-sm rounded-md transition-colors cursor-pointer
-                      ${activeScreen === 'home'
-              ? 'bg-slate-200 dark:bg-white/10 text-slate-900 dark:text-white'
-              : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400'}`}
+    <aside className="dark relative flex flex-col h-full bg-[#0e1041] border-r border-[#374151] text-white transition-colors" style={{ width: sidebarWidth }}>
+      <div className="border-b border-white/10 px-4 pb-4 pt-5">
+        <div className="mb-6 px-2 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-[color:var(--primary-color)]">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            <h2 className="font-bold text-lg text-white">Code Workspace Orchestrator</h2>
+          </div>
+        </div>
+
+        <button
+          className={`flex w-full items-center gap-3 rounded-[8px] px-3 py-2 text-left transition-all ${
+            activeScreen === 'home'
+              ? 'bg-[color:var(--primary-color)] text-white font-medium'
+              : 'text-slate-400 hover:bg-white/5 hover:text-white'
+          }`}
           onClick={handleGoHome}
         >
-          <svg className="w-4 h-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round"
-              d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-          </svg>
-          <span className="text-sm font-medium ml-1">Home</span>
-        </div>
+          <Home className="h-5 w-5" />
+          <span className="font-medium text-[0.95rem]">Home</span>
+        </button>
       </div>
 
-      {/* Lista de Projetos */}
-      <div className="flex-1 overflow-y-auto scrollbar-thin py-2 mt-2">
+      <div className="flex-1 overflow-y-auto px-2 py-4 scrollbar-thin">
         {projects.length === 0 ? (
-          <div className="px-4 py-8 text-center opacity-50">
-            <p className="text-xs text-slate-500 mb-2">Nenhum repositório</p>
+          <div className="rounded-[8px] border border-dashed border-white/10 mx-2 bg-black/20 px-4 py-8 text-center text-slate-400">
+            <p className="font-semibold text-slate-200">Nenhum repositório</p>
+            <p className="mt-2 text-[0.85rem] leading-6">
+              Adicione um diretório Git para ativar chats, workspaces e sessões de terminal.
+            </p>
           </div>
         ) : (
-          <ul className="w-full border-t border-slate-200/60 dark:border-white/10 pt-2">
-            {projects.map(project => (
+          <ul className="space-y-1">
+            {projects.map((project) => (
               <ProjectItem key={project.id} project={project} />
             ))}
           </ul>
         )}
       </div>
 
-      {/* Footer da Sidebar - Ações Globais */}
-      <div className="p-3 flex items-center justify-between mt-auto">
-        <button
-          onClick={handleAddProject}
-          disabled={isLoading}
-          className="flex items-center gap-2 text-[13px] text-slate-500 hover:text-slate-300 transition-colors"
-        >
-          {isLoading ? (
-            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0H5zm2 5l3-2z" /></svg>
-          ) : (
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          )}
-          Adicionar repositório
-        </button>
-
-        <div className="flex items-center">
-          <button onClick={() => setIsSettingsOpen(true)} className="flex items-center gap-2 px-2 py-1.5 text-[13px] text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-            Configuração
+      <div className="border-t border-white/10 p-2">
+        <div className="grid gap-1">
+          <button
+            onClick={handleAddProject}
+            disabled={isLoading}
+            className="flex items-center gap-3 rounded-[8px] px-3 py-2 text-left text-slate-400 transition-all hover:bg-white/5 hover:text-white disabled:opacity-50"
+          >
+            <FolderPlus className={`h-5 w-5 ${isLoading ? 'animate-pulse' : ''}`} />
+            <span className="font-medium text-[0.95rem]">Adicionar repositório</span>
+          </button>
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex items-center gap-3 rounded-[8px] px-3 py-2 text-left text-slate-400 transition-all hover:bg-white/5 hover:text-white"
+          >
+            <Settings2 className="h-5 w-5" />
+            <span className="font-medium text-[0.95rem]">Configurações</span>
           </button>
         </div>
       </div>
 
-      {/* Alça de redimensionamento */}
       <div
-        className="absolute top-0 right-0 w-[3px] h-full cursor-col-resize hover:bg-slate-600/50 transition-colors z-10"
-        onMouseDown={startResize}
+        className="absolute right-0 top-0 h-full w-3 translate-x-1/2 cursor-col-resize z-10"
+        onMouseDown={(event) => {
+          event.preventDefault();
+          setIsResizing(true);
+          document.body.style.cursor = 'col-resize';
+          document.body.style.userSelect = 'none';
+        }}
       />
     </aside>
   );

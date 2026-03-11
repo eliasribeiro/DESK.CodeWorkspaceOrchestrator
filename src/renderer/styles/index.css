@@ -1,49 +1,102 @@
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap");
 @config "../../../tailwind.config.js";
 
-/* Configuração de Dark Mode para Tailwind v4 usando classe .dark */
 @variant dark (&:where(.dark, .dark *));
 
-/* Estilos globais personalizados */
 @layer base {
+  :root {
+    --primary-color: #0b5cff;
+    --primary-hover: #004ad4;
+    --secondary-color: #0e1041;
+    --secondary-hover: #1e205a;
+    
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --info-color: #3b82f6;
+
+    --bg-body: #f3f4f6;
+    --bg-surface: #ffffff;
+    --bg-sidebar: #0e1041;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --text-on-dark: #ffffff;
+    --border-color: #e5e7eb;
+
+    --bg: var(--bg-body);
+    --foreground: var(--text-primary);
+    --muted: var(--text-secondary);
+    --accent: var(--primary-color);
+    --ring: rgba(11, 92, 255, 0.44);
+  }
+
+  .dark {
+    --primary-color: #0b5cff;
+    --primary-hover: #3b82f6;
+    --secondary-color: #1e293b;
+    --secondary-hover: #334155;
+
+    --bg-body: #111827;
+    --bg-surface: #1f2937;
+    --bg-sidebar: #0e1041;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-tertiary: #6b7280;
+    --border-color: #374151;
+
+    --bg: var(--bg-body);
+    --foreground: var(--text-primary);
+    --muted: var(--text-secondary);
+    --accent: var(--primary-color);
+  }
+
   html {
-    @apply antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   body {
-    @apply bg-background-light dark:bg-background-dark;
-    @apply text-slate-800 dark:text-slate-200 font-sans;
-    @apply transition-colors duration-200;
-    overflow: hidden; /* Previne scroll na janela do Electron */
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    font-family: "Inter", system-ui, sans-serif;
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+    overflow: hidden;
   }
 
   #root {
-    @apply h-screen w-screen;
-    @apply flex flex-col;
+    height: 100vh;
+    width: 100vw;
+    display: flex;
+    flex-direction: column;
+  }
+
+  * {
+    scrollbar-color: rgba(148, 163, 184, 0.42) transparent;
   }
 }
 
-/* Região arrastável para a barra de título */
 .drag-region {
   -webkit-app-region: drag;
   app-region: drag;
 }
 
-/* Elementos clicáveis dentro da região arrastável */
 .no-drag {
   -webkit-app-region: no-drag;
   app-region: no-drag;
 }
 
-/* Estilos personalizados para scrollbar */
 @layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-    scrollbar-color: #94a3b8 transparent;
+  .font-display {
+    font-family: "Sora", "IBM Plex Sans", sans-serif;
   }
 
-  .dark .scrollbar-thin {
-    scrollbar-color: #475569 transparent;
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.42) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -56,17 +109,43 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #94a3b8;
-    border-radius: 4px;
+    background-color: rgba(148, 163, 184, 0.42);
+    border-radius: 9999px;
   }
 
-  .dark .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: #475569;
+  .app-shell {
+    background:
+      linear-gradient(180deg, rgba(7, 12, 22, 0.5), rgba(7, 12, 22, 0.2)),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
+    backdrop-filter: blur(26px);
   }
-}
 
-/* Animações */
-@layer utilities {
+  .panel-grid {
+    background-image:
+      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
+    background-size: 56px 56px;
+    background-position: center;
+  }
+
+  .panel-edge {
+    position: relative;
+  }
+
+  .panel-edge::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
   .fade-in {
     animation: fadeIn 0.2s ease-in-out;
   }
@@ -75,6 +154,7 @@
     from {
       opacity: 0;
     }
+
     to {
       opacity: 1;
     }

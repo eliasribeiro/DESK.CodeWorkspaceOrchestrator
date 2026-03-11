@@ -12,26 +12,26 @@ export function PromptInput() {
   };
 
   return (
-    <div className="p-4 bg-background-light dark:bg-background-dark border-t border-slate-200 dark:border-slate-800">
+    <div className="p-4 bg-[color:var(--bg-surface)] border-t border-[color:var(--border-color)]">
       <div className="max-w-4xl mx-auto relative group">
         <textarea
           value={prompt}
           onChange={handleChange}
           placeholder="Digite seu prompt aqui para a LLM..."
           className="w-full min-h-[120px] max-h-[300px] p-4 pr-12
-                     bg-white dark:bg-slate-900 
-                     border border-slate-200 dark:border-slate-800 
-                     rounded-xl shadow-sm focus:ring-2 focus:ring-slate-700/20 
-                     focus:border-slate-700 outline-none transition-all
-                     text-slate-800 dark:text-slate-100 placeholder:text-slate-400
+                     bg-[color:var(--bg-body)] 
+                     border border-[color:var(--border-color)] 
+                     rounded-[12px] shadow-sm focus:ring-2 focus:ring-[color:var(--primary-color)]/20 
+                     focus:border-[color:var(--primary-color)] outline-none transition-all
+                     text-[color:var(--text-primary)] placeholder:text-[color:var(--text-tertiary)]
                      resize-y scrollbar-thin"
         />
         
         <button 
           disabled={!prompt.trim()}
-          className="absolute right-3 bottom-3 p-2 rounded-lg
-                     bg-slate-900 hover:bg-black disabled:bg-slate-300 
-                     dark:disabled:bg-slate-800 text-white transition-colors
+          className="absolute right-3 bottom-3 p-2 rounded-[8px]
+                     bg-[color:var(--primary-color)] hover:bg-[color:var(--primary-hover)] disabled:bg-[color:var(--border-color)] 
+                     disabled:text-[color:var(--text-tertiary)] text-white transition-colors
                      shadow-sm flex items-center justify-center"
           title="Enviar Prompt"
         >
@@ -40,8 +40,8 @@ export function PromptInput() {
           </svg>
         </button>
       </div>
-      <p className="mt-2 text-[10px] text-center text-slate-400 dark:text-slate-500">
-        Pressione <kbd className="px-1 py-0.5 rounded bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 font-mono">Shift + Enter</kbd> para quebrar linha.
+      <p className="mt-2 text-[10px] text-center text-[color:var(--text-secondary)]">
+        Pressione <kbd className="px-1 py-0.5 rounded bg-[color:var(--bg-body)] border border-[color:var(--border-color)] font-mono">Shift + Enter</kbd> para quebrar linha.
       </p>
     </div>
   );

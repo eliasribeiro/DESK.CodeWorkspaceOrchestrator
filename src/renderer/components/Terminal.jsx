@@ -279,19 +279,19 @@ export function Terminal({
 
   return (
     <div
-      className={`relative h-full min-h-0 overflow-hidden text-slate-700 dark:text-slate-300 flex flex-col ${
+      className={`relative h-full min-h-0 overflow-hidden text-[color:var(--text-primary)] flex flex-col ${
         embedded
-          ? 'bg-surface-light dark:bg-surface-dark'
-          : 'border border-border-light bg-surface-light shadow-sm dark:border-white/5 dark:bg-surface-dark dark:shadow-md'
+          ? 'bg-[color:var(--bg-surface)]'
+          : 'border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-sm'
       }`}
       onMouseDown={() => onFocus?.()}
     >
       {!embedded && (
-        <header className={`shrink-0 border-b border-border-light bg-slate-50 dark:border-white/5 dark:bg-black/20 ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}>
+        <header className={`shrink-0 border-b border-[color:var(--border-color)] bg-[color:var(--bg-body)] ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className={`truncate font-semibold text-slate-900 dark:text-slate-100 ${compact ? 'text-xs' : 'text-sm'}`}>
+                <span className={`truncate font-semibold text-[color:var(--text-primary)] ${compact ? 'text-[0.75rem]' : 'text-[0.85rem]'}`}>
                   {title || workspaceName}
                 </span>
                 <span className={`rounded-full border px-2 py-0.5 uppercase tracking-wide ${statusClassName} ${compact ? 'text-[10px]' : 'text-[11px]'}`}>
@@ -300,7 +300,31 @@ export function Terminal({
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  onZoomOut?.();
+                  terminalRef.current?.focus();
+                  onFocus?.();
+                }}
+                className={`rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)] ${compact ? 'h-6 w-6 text-[0.75rem]' : 'h-7 w-7 text-[0.85rem]'} flex items-center justify-center font-semibold`}
+                aria-label="Diminuir zoom do terminal"
+                title="Diminuir zoom"
+              >
+                −
+              </button>
+              <button
+                onClick={() => {
+                  onZoomIn?.();
+                  terminalRef.current?.focus();
+                  onFocus?.();
+                }}
+                className={`rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)] ${compact ? 'h-6 w-6 text-[0.75rem]' : 'h-7 w-7 text-[0.85rem]'} flex items-center justify-center font-semibold`}
+                aria-label="Aumentar zoom do terminal"
+                title="Aumentar zoom"
+              >
+                +
+              </button>
               {showClear && (
                 <button
                   onClick={() => {
@@ -308,14 +332,14 @@ export function Terminal({
                     terminalRef.current?.focus();
                     onFocus?.();
                   }}
-                  className={`rounded-md border border-border-light text-slate-600 transition-colors hover:bg-slate-100 dark:border-white/10 dark:text-slate-300 dark:hover:bg-white/5 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+                  className={`rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)] ${compact ? 'px-2 py-1 text-[0.65rem]' : 'px-2.5 py-1 text-[0.75rem]'}`}
                 >
                   Limpar
                 </button>
               )}
               <button
                 onClick={onClose}
-                className={`rounded-md border border-rose-500/20 bg-rose-50 text-rose-600 transition-colors hover:bg-rose-100 dark:bg-rose-500/10 dark:text-rose-400 dark:hover:bg-rose-500/20 ${compact ? 'px-2 py-1 text-[10px]' : 'px-2.5 py-1 text-xs'}`}
+                className={`rounded-[6px] border border-[color:var(--danger-color)]/20 bg-[color:var(--danger-color)]/5 text-[color:var(--danger-color)] transition-colors hover:bg-[color:var(--danger-color)]/10 hover:text-[color:var(--danger-color)] ${compact ? 'px-2 py-1 text-[0.65rem]' : 'px-2.5 py-1 text-[0.75rem]'}`}
               >
                 Encerrar
               </button>
@@ -330,39 +354,41 @@ export function Terminal({
         </div>
       )}
 
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 min-h-0 bg-[#050505] p-1">
         <div
           ref={containerRef}
-          className="h-full w-full overflow-hidden bg-background-light dark:bg-background-dark"
+          className="h-full w-full overflow-hidden"
         />
       </div>
 
-      <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1">
-        <button
-          onClick={() => {
-            onZoomOut?.();
-            terminalRef.current?.focus();
-            onFocus?.();
-          }}
-          className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-border-light bg-slate-100 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800"
-          aria-label="Diminuir zoom do terminal"
-          title="Diminuir zoom"
-        >
-          −
-        </button>
-        <button
-          onClick={() => {
-            onZoomIn?.();
-            terminalRef.current?.focus();
-            onFocus?.();
-          }}
-          className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-md border border-border-light bg-slate-100 text-sm font-semibold text-slate-700 transition-colors hover:bg-slate-200 dark:border-white/10 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:bg-slate-800"
-          aria-label="Aumentar zoom do terminal"
-          title="Aumentar zoom"
-        >
-          +
-        </button>
-      </div>
+      {embedded && (
+        <div className="pointer-events-none absolute right-2 top-2 z-10 flex items-center gap-1">
+          <button
+            onClick={() => {
+              onZoomOut?.();
+              terminalRef.current?.focus();
+              onFocus?.();
+            }}
+            className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-sm text-[0.85rem] font-semibold text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)]"
+            aria-label="Diminuir zoom do terminal"
+            title="Diminuir zoom"
+          >
+            −
+          </button>
+          <button
+            onClick={() => {
+              onZoomIn?.();
+              terminalRef.current?.focus();
+              onFocus?.();
+            }}
+            className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-sm text-[0.85rem] font-semibold text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)]"
+            aria-label="Aumentar zoom do terminal"
+            title="Aumentar zoom"
+          >
+            +
+          </button>
+        </div>
+      )}
     </div>
   );
 }

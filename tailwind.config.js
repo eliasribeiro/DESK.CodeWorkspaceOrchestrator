@@ -9,25 +9,26 @@ export default {
     extend: {
       colors: {
         background: {
-          light: '#F9FAFB', // gray-50
-          dark: '#050505',
+          light: '#F3F4F6',
+          dark: '#111827',
         },
         surface: {
           light: '#FFFFFF',
-          dark: '#111111',
+          dark: '#1F2937',
         },
         border: {
-          light: '#E5E7EB', // gray-200
-          dark: '#222222',
+          light: '#E5E7EB',
+          dark: '#374151',
         },
         primary: {
-          light: '#3B82F6', // blue-500
-          dark: '#3B82F6',
+          light: '#0b5cff',
+          dark: '#0b5cff',
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['Cascadia Code', 'Consolas', 'Monaco', 'monospace'],
+        mono: ['"IBM Plex Mono"', 'Consolas', 'Monaco', 'monospace'],
+        display: ['Inter', 'sans-serif'],
       }
     },
   },

@@ -1,7 +1,14 @@
 import { useState } from 'react';
+import { motion } from 'motion/react';
+import { ArrowLeft, Globe2, Palette, PlugZap, RefreshCcw, Pencil, Trash2, Plus } from 'lucide-react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { languageOptions } from '@utils/i18n';
 import { ProviderModal } from './ProviderModal';
+import { Button } from '@components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/tabs';
+import { Switch } from '@components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@components/ui/select';
 
 export function SettingsScreen() {
   const {
@@ -42,16 +49,6 @@ export function SettingsScreen() {
     }
   };
 
-  const handleEditProvider = (provider) => {
-    setEditingProvider(provider);
-    setIsProviderModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setEditingProvider(null);
-    setIsProviderModalOpen(false);
-  };
-
   const toggleModelsExpand = (providerId) => {
     setExpandedModels((prev) => ({
       ...prev,
@@ -59,327 +56,249 @@ export function SettingsScreen() {
     }));
   };
 
-  const shouldShowExpandButton = (models) => {
-    if (!models) return false;
-    const modelList = models.split(',').filter((item) => item.trim());
-    return modelList.length > 6;
-  };
-
   const getDisplayedModels = (models, providerId) => {
     if (!models) return [];
     const modelList = models.split(',').filter((item) => item.trim());
-    const isExpanded = expandedModels[providerId];
-    return isExpanded || modelList.length <= 6 ? modelList : modelList.slice(0, 6);
+    return expandedModels[providerId] || modelList.length <= 6 ? modelList : modelList.slice(0, 6);
   };
 
   return (
-    <div className="flex-1 flex flex-col bg-background-light dark:bg-background-dark overflow-hidden">
-      <div className="h-14 px-6 flex items-center justify-between border-b border-border-light dark:border-white/5 bg-background-light dark:bg-background-dark/95">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => setIsSettingsOpen(false)}
-            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-          >
-            <svg className="w-5 h-5 text-slate-600 dark:text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">{t('settings.title')}</h1>
-        </div>
-      </div>
-
-      <div className="px-6 flex items-center gap-2 border-b border-border-light dark:border-white/5 bg-surface-light dark:bg-surface-dark/95">
-        <button
-          onClick={() => setActiveTab('geral')}
-          className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'geral'
-              ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-          }`}
-        >
-          {t('settings.general')}
-        </button>
-        <button
-          onClick={() => setActiveTab('provedores')}
-          className={`px-4 py-3 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === 'provedores'
-              ? 'border-slate-900 text-slate-900 dark:border-white dark:text-white'
-              : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-          }`}
-        >
-          {t('settings.providers')}
-        </button>
-      </div>
-
-      <div className="flex-1 overflow-y-auto p-8 scrollbar-thin">
-        <div className="max-w-4xl mx-auto">
-          {activeTab === 'geral' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <section className="space-y-4">
-                <div className="flex items-center gap-3 mb-6">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center shadow-lg shadow-slate-700/20">
-                    <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('settings.generalTitle')}</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{t('settings.generalDescription')}</p>
-                  </div>
-                </div>
-
-                <div className="p-8 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-white/5 shadow-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">
-                        {t('settings.languageTitle')}
-                      </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t('settings.languageDescription')}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <div className="relative w-full max-w-[240px]">
-                        <select
-                          value={language}
-                          onChange={(event) => setLanguage(event.target.value)}
-                          className="w-full h-11 px-4 pr-10 bg-background-light dark:bg-background-dark text-slate-900 dark:text-white text-sm font-medium border border-border-light dark:border-white/10 rounded-xl appearance-none cursor-pointer focus:outline-none focus:border-primary-light transition-all shadow-sm"
-                        >
-                          {languageOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-8 bg-surface-light dark:bg-surface-dark rounded-2xl border border-border-light dark:border-white/5 shadow-sm">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white mb-1">
-                        {t('settings.themeTitle')}
-                      </h3>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {t('settings.themeDescription')}
-                      </p>
-                    </div>
-
-                    <div className="flex justify-end">
-                      <div className="relative w-full max-w-[240px]">
-                        <select
-                          value={theme}
-                          onChange={(event) => setTheme(event.target.value)}
-                          className="w-full h-11 px-4 pr-10 bg-background-light dark:bg-background-dark text-slate-900 dark:text-white text-sm font-medium border border-border-light dark:border-white/10 rounded-xl appearance-none cursor-pointer focus:outline-none focus:border-primary-light transition-all shadow-sm"
-                        >
-                          <option value="dark">{t('settings.themeDark')}</option>
-                          <option value="light">{t('settings.themeLight')}</option>
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 dark:text-slate-500">
-                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </section>
+    <div className="panel-grid relative flex h-full flex-1 flex-col overflow-hidden px-6 pb-6">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(245,159,57,0.14),transparent_20%),radial-gradient(circle_at_bottom_right,rgba(56,189,248,0.12),transparent_22%)]" />
+      <div className="relative flex h-full flex-col pt-6">
+        <div className="mb-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => setIsSettingsOpen(false)}
+              className="flex h-12 w-12 items-center justify-center rounded-[20px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:text-[color:var(--text-primary)] hover:bg-[color:var(--bg-body)]"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-[color:var(--text-tertiary)]">Configuration deck</p>
+              <h1 className="font-display mt-2 text-4xl tracking-[-0.04em] text-[color:var(--text-primary)]">{t('settings.title')}</h1>
             </div>
-          )}
+          </div>
+          <div className="rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.22em] text-[color:var(--text-secondary)]">
+            {aiProviders.length} providers
+          </div>
+        </div>
 
-          {activeTab === 'provedores' && (
-            <div className="space-y-6 animate-in fade-in duration-200">
-              <section className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('settings.providersTitle')}</h2>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{t('settings.providersDescription')}</p>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex min-h-0 flex-1 flex-col">
+          <TabsList className="w-fit">
+            <TabsTrigger value="geral">{t('settings.general')}</TabsTrigger>
+            <TabsTrigger value="provedores">{t('settings.providers')}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="geral" className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="grid gap-6 xl:grid-cols-[0.95fr_1.05fr]"
+            >
+              <Card className="panel-edge">
+                <CardHeader>
+                  <CardTitle>Atmosfera da aplicação</CardTitle>
+                  <CardDescription>
+                    Ajustes globais que mudam como a interface se apresenta e como o conteúdo é localizado.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="rounded-[24px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-5">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] text-[color:var(--accent)]">
+                        <Globe2 className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[color:var(--text-primary)]">{t('settings.languageTitle')}</p>
+                        <p className="text-[0.85rem] text-[color:var(--text-secondary)]">{t('settings.languageDescription')}</p>
+                      </div>
+                    </div>
+                    <Select value={language} onValueChange={setLanguage}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um idioma" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languageOptions.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            {option.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                  <button
-                    onClick={() => setIsProviderModalOpen(true)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 rounded-lg text-sm font-medium transition-colors shadow-lg shadow-slate-900/20"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path d="M12 4v16m8-8H4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                    {t('settings.addProvider')}
-                  </button>
-                </div>
 
-                <div className="grid gap-4">
+                  <div className="rounded-[24px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-5">
+                    <div className="mb-4 flex items-center gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[18px] bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] text-[color:var(--accent)]">
+                        <Palette className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[color:var(--text-primary)]">{t('settings.themeTitle')}</p>
+                        <p className="text-[0.85rem] text-[color:var(--text-secondary)]">{t('settings.themeDescription')}</p>
+                      </div>
+                    </div>
+                    <Select value={theme} onValueChange={setTheme}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um tema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="dark">{t('settings.themeDark')}</SelectItem>
+                        <SelectItem value="light">{t('settings.themeLight')}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="panel-edge">
+                <CardHeader>
+                  <CardTitle>Operator notes</CardTitle>
+                  <CardDescription>
+                    A nova interface assume o app como uma estação de trabalho: módulos persistentes, alto contraste e foco em operação simultânea.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4 md:grid-cols-2">
+                  {[
+                    ['Shell', 'Navegação, título e barras auxiliares vivem em superfícies translúcidas.'],
+                    ['Workspace', 'A área principal ganha mais contraste para sessões paralelas e inspeção.'],
+                    ['Providers', 'Configuração migra para controles consistentes em Radix e camada shadcn-style.'],
+                    ['Motion', 'Transições curtas e intencionais em vez de microinterações genéricas.'],
+                  ].map(([title, description]) => (
+                    <div key={title} className="rounded-[22px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-5">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">{title}</p>
+                      <p className="mt-3 text-[0.85rem] leading-6 text-[color:var(--text-secondary)]">{description}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="provedores" className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+            <motion.div
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-6"
+            >
+              <Card className="panel-edge">
+                <CardHeader className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <CardTitle>{t('settings.providersTitle')}</CardTitle>
+                    <CardDescription>{t('settings.providersDescription')}</CardDescription>
+                  </div>
+                  <Button onClick={() => setIsProviderModalOpen(true)}>
+                    <Plus className="h-4 w-4" />
+                    {t('settings.addProvider')}
+                  </Button>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {aiProviders.length === 0 && (
+                    <div className="rounded-[28px] border border-dashed border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-10 text-center">
+                      <p className="font-display text-2xl text-[color:var(--text-primary)]">{t('settings.noProvidersTitle')}</p>
+                      <p className="mx-auto mt-3 max-w-xl text-[0.85rem] leading-6 text-[color:var(--text-secondary)]">
+                        {t('settings.noProvidersDescription')}
+                      </p>
+                      <Button className="mt-6" onClick={() => setIsProviderModalOpen(true)}>
+                        <Plus className="h-4 w-4" />
+                        {t('settings.addFirstProvider')}
+                      </Button>
+                    </div>
+                  )}
+
                   {aiProviders.map((provider) => {
+                    const modelList = provider.models ? provider.models.split(',').filter((item) => item.trim()) : [];
                     const displayedModels = getDisplayedModels(provider.models, provider.id);
-                    const showExpandButton = shouldShowExpandButton(provider.models);
-                    const isExpanded = expandedModels[provider.id];
+                    const remainingModels = Math.max(modelList.length - displayedModels.length, 0);
 
                     return (
-                      <div
-                        key={provider.id}
-                        className="p-5 bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-white/5 hover:border-slate-400 dark:hover:border-white/20 transition-all shadow-sm"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-slate-700/20">
-                              {provider.name ? provider.name.charAt(0).toUpperCase() : 'P'}
+                      <div key={provider.id} className="rounded-[28px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-5 shadow-sm">
+                        <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+                          <div className="flex min-w-0 items-start gap-4">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-[20px] bg-[color:var(--bg-surface)] border border-[color:var(--border-color)] font-display text-xl font-semibold text-[color:var(--accent)]">
+                              {(provider.name || 'P').charAt(0).toUpperCase()}
                             </div>
-                            <div>
-                              <h4 className="font-bold text-slate-900 dark:text-white">
-                                {provider.name || t('settings.noName')}
-                              </h4>
-                              <p className="text-sm text-slate-500 dark:text-slate-400">
-                                {provider.baseUrl || t('settings.noUrl')}
-                              </p>
+                            <div className="min-w-0">
+                              <div className="flex flex-wrap items-center gap-3">
+                                <h3 className="font-display text-2xl tracking-[-0.03em] text-[color:var(--text-primary)]">
+                                  {provider.name || t('settings.noName')}
+                               </h3>
+                                <button
+                                  type="button"
+                                  onClick={() => updateProvider(provider.id, { enabled: provider.enabled === false })}
+                                  className="flex items-center gap-2 rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-1.5 shadow-sm cursor-pointer transition-colors hover:border-[color:var(--text-tertiary)] hover:bg-[color:var(--bg-body)]"
+                                >
+                                  <Switch
+                                    checked={provider.enabled !== false}
+                                    onCheckedChange={(checked) => updateProvider(provider.id, { enabled: checked })}
+                                    onClick={(e) => e.stopPropagation()}
+                                  />
+                                  <span className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--text-secondary)]">
+                                    {provider.enabled !== false ? t('settings.active') : t('settings.inactive')}
+                                  </span>
+                                </button>
+                              </div>
+                              <p className="mt-2 truncate text-[0.85rem] text-[color:var(--text-secondary)]">{provider.baseUrl || t('settings.noUrl')}</p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <label className="inline-flex items-center gap-2 cursor-pointer select-none">
-                              <span className={`text-xs font-semibold ${provider.enabled !== false ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`}>
-                                {provider.enabled !== false ? t('settings.active') : t('settings.inactive')}
-                              </span>
-                              <button
-                                type="button"
-                                role="switch"
-                                aria-checked={provider.enabled !== false}
-                                onClick={() => updateProvider(provider.id, { enabled: provider.enabled === false })}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                  provider.enabled !== false ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
-                                }`}
-                              >
-                                <span
-                                  className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                                    provider.enabled !== false ? 'translate-x-5' : 'translate-x-1'
-                                  }`}
-                                />
-                              </button>
-                            </label>
-                            <div className="flex items-center gap-1 opacity-100">
-                              <button
-                                onClick={() => handleEditProvider(provider)}
-                                className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-white/10 rounded-lg transition-all"
-                                title={t('settings.editProvider')}
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={() => removeProvider(provider.id)}
-                                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all"
-                                title={t('settings.removeProvider')}
-                              >
-                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                              </button>
-                            </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button variant="ghost" size="sm" onClick={() => { setEditingProvider(provider); setIsProviderModalOpen(true); }} className="hover:text-[color:var(--primary-color)]">
+                              <Pencil className="h-3.5 w-3.5" />
+                              {t('settings.editProvider')}
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => removeProvider(provider.id)} className="text-[color:var(--danger-color)] hover:bg-[color:var(--danger-color)]/10 hover:text-[color:var(--danger-color)]">
+                              <Trash2 className="h-3.5 w-3.5" />
+                              {t('settings.removeProvider')}
+                            </Button>
+                            <Button variant="secondary" size="sm" onClick={() => handleFetchModels(provider)} disabled={isFetchingModels}>
+                              <RefreshCcw className={`h-3.5 w-3.5 ${isFetchingModels ? 'animate-spin' : ''}`} />
+                              {t('settings.refreshModels')}
+                            </Button>
                           </div>
                         </div>
 
-                        <div className="flex flex-wrap gap-2 mb-3">
+                        <div className="mt-5 flex flex-wrap gap-2">
                           {displayedModels.length > 0 ? (
-                            displayedModels.map((model, idx) => (
+                            displayedModels.map((model) => (
                               <span
-                                key={idx}
-                                className="px-3 py-1 bg-slate-100 dark:bg-white/5 text-black dark:text-slate-300 rounded-full text-xs font-medium"
+                                key={model}
+                                className="rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-1.5 text-[0.75rem] font-medium text-[color:var(--text-secondary)] shadow-sm"
                               >
                                 {model.trim()}
                               </span>
                             ))
                           ) : (
-                            <span className="text-sm text-slate-400 italic">{t('settings.noModelsConfigured')}</span>
+                            <span className="text-[0.85rem] italic text-[color:var(--text-tertiary)]">{t('settings.noModelsConfigured')}</span>
                           )}
                         </div>
 
-                        {showExpandButton && (
+                        {remainingModels > 0 && (
                           <button
                             onClick={() => toggleModelsExpand(provider.id)}
-                            className="flex items-center gap-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-600 transition-colors mb-4"
+                            className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--accent)]"
                           >
-                            {isExpanded ? (
-                              <>
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path d="M5 15l7-7 7 7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                                {t('settings.showLess')}
-                              </>
-                            ) : (
-                              <>
-                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path d="M19 9l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                </svg>
-                                {t('settings.showMore', { count: provider.models.split(',').filter((item) => item.trim()).length - 6 })}
-                              </>
-                            )}
+                            {expandedModels[provider.id] ? t('settings.showLess') : t('settings.showMore', { count: remainingModels })}
                           </button>
                         )}
-
-                        <div className="flex items-center gap-2 pt-4 border-t border-border-light dark:border-white/5">
-                          <button
-                            onClick={() => handleFetchModels(provider)}
-                            disabled={isFetchingModels}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-slate-900 dark:text-slate-600 bg-slate-100 dark:bg-slate-800/20 hover:bg-slate-200 dark:hover:bg-slate-800/40 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {isFetchingModels ? (
-                              <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                              </svg>
-                            ) : (
-                              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                            {t('settings.refreshModels')}
-                          </button>
-                        </div>
                       </div>
                     );
                   })}
-
-                  {aiProviders.length === 0 && (
-                    <div className="p-16 border-2 border-dashed border-border-light dark:border-white/10 rounded-2xl flex flex-col items-center justify-center text-center bg-surface-light dark:bg-surface-dark">
-                      <div className="w-20 h-20 rounded-full bg-slate-100 dark:bg-white/5 flex items-center justify-center mb-6">
-                        <svg className="w-10 h-10 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-                        </svg>
-                      </div>
-                      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">
-                        {t('settings.noProvidersTitle')}
-                      </h3>
-                      <p className="text-slate-500 dark:text-slate-400 text-sm mb-6 max-w-md">
-                        {t('settings.noProvidersDescription')}
-                      </p>
-                      <button
-                        onClick={() => setIsProviderModalOpen(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-slate-900 hover:bg-black text-white dark:bg-white dark:text-black dark:hover:bg-slate-200 rounded-xl text-sm font-medium transition-colors shadow-lg shadow-slate-900/20"
-                      >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path d="M12 4v16m8-8H4" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                        {t('settings.addFirstProvider')}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </section>
-            </div>
-          )}
-        </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <ProviderModal
         isOpen={isProviderModalOpen}
-        onClose={handleCloseModal}
+        onClose={() => {
+          setEditingProvider(null);
+          setIsProviderModalOpen(false);
+        }}
         editingProvider={editingProvider}
       />
     </div>
