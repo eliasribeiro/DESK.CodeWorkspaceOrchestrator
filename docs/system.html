@@ -5,20 +5,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Conductor - System Design Guide</title>
     <style>
-        :root {
-            /* Cores de Fundo */
+        /* ===================== TEMA: CONDUCTOR (Default) ===================== */
+        :root,
+        [data-theme="conductor"] {
             --bg-base: #121212;
             --bg-surface: #1e1e1e;
             --bg-surface-elevated: #252525;
             --bg-surface-hover: #2a2a2a;
             --bg-input: #1a1a1a;
-            
-            /* Cores de Texto */
             --text-primary: #ededed;
             --text-secondary: #a1a1aa;
             --text-muted: #71717a;
-            
-            /* Cores de Acento e Status */
             --accent-green: #3fb950;
             --accent-green-bg: rgba(63, 185, 80, 0.15);
             --accent-red: #f85149;
@@ -26,24 +23,125 @@
             --accent-yellow: #d29922;
             --accent-blue: #58a6ff;
             --brand-primary: #4f46e5;
-            
-            /* Bordas e Sombras */
             --border-subtle: rgba(255, 255, 255, 0.1);
             --border-focus: rgba(255, 255, 255, 0.2);
             --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
             --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
             --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.25);
-            
-            /* Raio de Borda (Border Radius) */
             --radius-sm: 4px;
             --radius-md: 8px;
             --radius-lg: 12px;
             --radius-full: 9999px;
-            
-            /* Fontes */
             --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
         }
+
+        /* ===================== TEMA: CURSOR ===================== */
+        [data-theme="cursor"] {
+            /* Fundo: preto frio com leve toque azul-acinzentado */
+            --bg-base: #0d0d10;
+            --bg-surface: #141418;
+            --bg-surface-elevated: #1c1c22;
+            --bg-surface-hover: #222230;
+            --bg-input: #111116;
+
+            /* Texto: branco levemente frio */
+            --text-primary: #e8e8f0;
+            --text-secondary: #9898b0;
+            --text-muted: #5c5c78;
+
+            /* Accent: roxo/violeta — identidade visual do Cursor */
+            --accent-green: #23d18b;
+            --accent-green-bg: rgba(35, 209, 139, 0.12);
+            --accent-red: #f87171;
+            --accent-red-bg: rgba(248, 113, 113, 0.12);
+            --accent-yellow: #e2a73e;
+            --accent-blue: #818cf8;
+            --brand-primary: #7c3aed;
+
+            /* Bordas com leve toque roxo */
+            --border-subtle: rgba(130, 100, 255, 0.15);
+            --border-focus: rgba(130, 100, 255, 0.35);
+
+            /* Sombras mais profundas */
+            --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 16px 32px -8px rgba(0, 0, 0, 0.8), 0 6px 12px -4px rgba(100, 60, 220, 0.12);
+
+            /* Border Radius — mais arredondado, moderno */
+            --radius-sm: 6px;
+            --radius-md: 10px;
+            --radius-lg: 16px;
+            --radius-full: 9999px;
+
+            /* Fontes monospace mais refinada */
+            --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, Menlo, Consolas, monospace;
+        }
+
+        /* ===================== THEME SWITCHER ===================== */
+        .theme-switcher {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--bg-surface-elevated);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-full);
+            padding: 6px 14px 6px 10px;
+            box-shadow: var(--shadow-md);
+            z-index: 1000;
+            transition: background 0.3s, border-color 0.3s;
+        }
+
+        .theme-switcher-label {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            user-select: none;
+        }
+
+        .theme-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            border-radius: var(--radius-full);
+            border: 1px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: var(--font-sans);
+            background: transparent;
+            color: var(--text-secondary);
+        }
+
+        .theme-btn:hover {
+            background: var(--bg-surface-hover);
+            color: var(--text-primary);
+        }
+
+        .theme-btn.active {
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: transparent;
+        }
+
+        .theme-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
+
+        .theme-dot-conductor { background: #4f46e5; }
+        .theme-dot-cursor { background: #7c3aed; }
 
         * {
             box-sizing: border-box;
@@ -424,6 +522,19 @@
 </head>
 <body>
 
+<!-- Theme Switcher -->
+<div class="theme-switcher" id="theme-switcher">
+    <span class="theme-switcher-label">Tema</span>
+    <button class="theme-btn active" id="btn-conductor" onclick="setTheme('conductor')">
+        <span class="theme-dot theme-dot-conductor"></span>
+        Conductor
+    </button>
+    <button class="theme-btn" id="btn-cursor" onclick="setTheme('cursor')">
+        <span class="theme-dot theme-dot-cursor"></span>
+        Cursor
+    </button>
+</div>
+
 <div class="container">
     <h1>Guia de System Design</h1>
     <p>O Design System do Conductor é baseado em um tema escuro sofisticado (Dark Mode). Ele foca em bordas sutis, superfícies de elevação com diferentes tons de preto/cinza, tipografia clara (sans-serif para principal e monoespaçada para código/atalhos) e uso estratégico de cores para indicar status.</p>
@@ -653,6 +764,27 @@
         </div>
     </div>
 </div>
+
+<script>
+    function setTheme(name) {
+        document.documentElement.setAttribute('data-theme', name);
+        document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById('btn-' + name).classList.add('active');
+        localStorage.setItem('conductor-theme', name);
+    }
+
+    // Restaurar tema salvo
+    (function() {
+        const saved = localStorage.getItem('conductor-theme') || 'conductor';
+        document.documentElement.setAttribute('data-theme', saved);
+        // Botões ainda não existem no DOM aqui, aplica após load
+        window.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            const btn = document.getElementById('btn-' + saved);
+            if (btn) btn.classList.add('active');
+        });
+    })();
+</script>
 
 </body>
 </html>
