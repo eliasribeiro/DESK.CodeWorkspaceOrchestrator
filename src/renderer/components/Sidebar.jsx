@@ -19,6 +19,8 @@ export function Sidebar() {
   const [isLoading, setIsLoading] = useState(false);
 
   const isConductor = theme === 'conductor';
+  const isConductorWhite = theme === 'conductor-white';
+  const isLightVariant = isConductorWhite; // sidebar clara
 
   const stopResize = () => {
     setIsResizing(false);
@@ -70,7 +72,9 @@ export function Sidebar() {
   // Wrapper <aside>
   const asideClass = isConductor
     ? 'relative flex flex-col h-full text-[#ededed] transition-colors'
-    : 'dark relative flex flex-col h-full bg-[#0e1041] border-r border-[#374151] text-white transition-colors';
+    : isConductorWhite
+      ? 'relative flex flex-col h-full transition-colors'
+      : 'dark relative flex flex-col h-full bg-[#0e1041] border-r border-[#374151] text-white transition-colors';
 
   const asideStyle = isConductor
     ? {
@@ -78,49 +82,79 @@ export function Sidebar() {
         background: '#161616',
         borderRight: '1px solid rgba(255,255,255,0.08)',
       }
-    : { width: sidebarWidth };
+    : isConductorWhite
+      ? {
+          width: sidebarWidth,
+          background: '#fffdf8',
+          borderRight: '1px solid rgba(34,31,26,0.1)',
+          color: '#221f1a',
+        }
+      : { width: sidebarWidth };
 
   // Divisores internos
   const dividerClass = isConductor
     ? 'border-b border-white/[0.08]'
-    : 'border-b border-white/10';
+    : isConductorWhite
+      ? 'border-b border-[rgba(34,31,26,0.1)]'
+      : 'border-b border-white/10';
 
   const dividerFooterClass = isConductor
     ? 'border-t border-white/[0.08] p-2'
-    : 'border-t border-white/10 p-2';
+    : isConductorWhite
+      ? 'border-t border-[rgba(34,31,26,0.1)] p-2'
+      : 'border-t border-white/10 p-2';
 
   // Logo / título
-  const logoIconColor = isConductor ? '#4f46e5' : 'var(--primary-color)';
+  const logoIconColor = isConductor
+    ? '#4f46e5'
+    : isConductorWhite
+      ? '#3157c8'
+      : 'var(--primary-color)';
+
   const logoTextClass = isConductor
     ? 'font-semibold text-sm leading-tight text-[#ededed] tracking-tight'
-    : 'font-bold text-sm leading-tight text-white';
+    : isConductorWhite
+      ? 'font-semibold text-sm leading-tight text-[#221f1a] tracking-tight'
+      : 'font-bold text-sm leading-tight text-white';
 
   // Botão Home ativo
   const homeActiveClass = isConductor
     ? 'bg-[#4f46e5]/20 text-[#a5b4fc] border border-[#4f46e5]/40 font-medium'
-    : 'bg-[color:var(--primary-color)] text-white font-medium';
+    : isConductorWhite
+      ? 'bg-[#3157c8]/10 text-[#3157c8] border border-[#3157c8]/25 font-medium'
+      : 'bg-[color:var(--primary-color)] text-white font-medium';
 
   const homeInactiveClass = isConductor
     ? 'text-[#a1a1aa] hover:bg-white/[0.06] hover:text-[#ededed]'
-    : 'text-slate-400 hover:bg-white/5 hover:text-white';
+    : isConductorWhite
+      ? 'text-[#60584f] hover:bg-[rgba(34,31,26,0.06)] hover:text-[#221f1a]'
+      : 'text-slate-400 hover:bg-white/5 hover:text-white';
 
   // Texto do estado vazio
   const emptyBorderClass = isConductor
     ? 'rounded-[6px] border border-dashed border-white/[0.08] mx-2 bg-black/30 px-4 py-8 text-center'
-    : 'rounded-[8px] border border-dashed border-white/10 mx-2 bg-black/20 px-4 py-8 text-center text-slate-400';
+    : isConductorWhite
+      ? 'rounded-[6px] border border-dashed border-[rgba(34,31,26,0.12)] mx-2 bg-[rgba(34,31,26,0.03)] px-4 py-8 text-center'
+      : 'rounded-[8px] border border-dashed border-white/10 mx-2 bg-black/20 px-4 py-8 text-center text-slate-400';
 
   const emptyTitleClass = isConductor
     ? 'font-medium text-[#ededed] text-[0.9rem]'
-    : 'font-semibold text-slate-200';
+    : isConductorWhite
+      ? 'font-medium text-[#221f1a] text-[0.9rem]'
+      : 'font-semibold text-slate-200';
 
   const emptyDescClass = isConductor
     ? 'mt-2 text-[0.8rem] leading-6 text-[#71717a]'
-    : 'mt-2 text-[0.85rem] leading-6';
+    : isConductorWhite
+      ? 'mt-2 text-[0.8rem] leading-6 text-[#8b8276]'
+      : 'mt-2 text-[0.85rem] leading-6';
 
   // Botões do rodapé
   const footerBtnClass = isConductor
     ? 'flex items-center gap-3 rounded-[6px] px-3 py-2 text-left text-[#71717a] transition-all hover:bg-white/[0.06] hover:text-[#ededed] disabled:opacity-40'
-    : 'flex items-center gap-3 rounded-[8px] px-3 py-2 text-left text-slate-400 transition-all hover:bg-white/5 hover:text-white disabled:opacity-50';
+    : isConductorWhite
+      ? 'flex items-center gap-3 rounded-[6px] px-3 py-2 text-left text-[#8b8276] transition-all hover:bg-[rgba(34,31,26,0.06)] hover:text-[#221f1a] disabled:opacity-40'
+      : 'flex items-center gap-3 rounded-[8px] px-3 py-2 text-left text-slate-400 transition-all hover:bg-white/5 hover:text-white disabled:opacity-50';
 
   return (
     <aside className={asideClass} style={asideStyle}>

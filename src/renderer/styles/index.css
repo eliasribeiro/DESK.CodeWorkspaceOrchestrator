@@ -108,6 +108,70 @@
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   }
 
+  /* ======================== TEMA: CONDUCTOR WHITE ======================== */
+  /* Variante clara e quente do Conductor – superfícies cremosas, texto escuro, accent azul royal */
+  .conductor-white {
+    /* Cores de ação */
+    --primary-color: #3157c8;
+    --primary-hover: #2649b0;
+    --secondary-color: #efe6d8;
+    --secondary-hover: #e5d9c8;
+
+    --success-color: #2f8f5b;
+    --warning-color: #c58a1f;
+    --danger-color: #c95b4e;
+    --info-color: #4b72d6;
+
+    /* Superfícies */
+    --bg-body: #f6f2ea;
+    --bg-surface: #fffdf8;
+    --bg-sidebar: #fffdf8;
+    --bg-surface-elevated: #ffffff;
+    --bg-surface-hover: #f3ecdf;
+    --bg-input: #fffaf1;
+
+    /* Tipografia */
+    --text-primary: #221f1a;
+    --text-secondary: #60584f;
+    --text-tertiary: #8b8276;
+    --text-on-dark: #ffffff;
+
+    /* Bordas e sombras */
+    --border-color: rgba(34, 31, 26, 0.12);
+    --border-subtle: rgba(34, 31, 26, 0.12);
+    --border-focus: rgba(49, 87, 200, 0.28);
+    --shadow-sm: 0 1px 2px rgba(34, 31, 26, 0.06);
+    --shadow-md: 0 12px 24px rgba(93, 72, 46, 0.08);
+    --shadow-lg: 0 28px 60px rgba(72, 53, 26, 0.12);
+
+    /* Alias tokens */
+    --bg: var(--bg-body);
+    --foreground: var(--text-primary);
+    --muted: var(--text-secondary);
+    --accent: var(--primary-color);
+    --ring: rgba(49, 87, 200, 0.28);
+
+    /* Tokens extras de acentuação */
+    --accent-green: #2f8f5b;
+    --accent-green-bg: rgba(47, 143, 91, 0.12);
+    --accent-red: #c95b4e;
+    --accent-red-bg: rgba(201, 91, 78, 0.12);
+    --accent-yellow: #c58a1f;
+    --accent-yellow-bg: rgba(197, 138, 31, 0.12);
+    --accent-blue: #4b72d6;
+    --brand-primary: #3157c8;
+
+    /* Raios */
+    --radius-sm: 6px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-full: 9999px;
+
+    /* Tipografia */
+    --font-sans: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  }
+
   html {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;

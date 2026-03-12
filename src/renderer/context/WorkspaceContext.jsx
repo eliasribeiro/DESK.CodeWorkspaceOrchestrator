@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import { SUPPORTED_LANGUAGES, translate } from '@utils/i18n';
 
 const WorkspaceContext = createContext(null);
-export const SUPPORTED_THEMES = ['dark', 'light', 'conductor'];
+export const SUPPORTED_THEMES = ['dark', 'light', 'conductor', 'conductor-white'];
 
 const defaultPreferences = {
   projects: [],
@@ -251,9 +251,9 @@ export function WorkspaceProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const themeClasses = ['dark', 'conductor'];
+    const themeClasses = ['dark', 'conductor', 'conductor-white'];
     themeClasses.forEach((cls) => document.documentElement.classList.remove(cls));
-    if (theme === 'dark' || theme === 'conductor') {
+    if (theme === 'dark' || theme === 'conductor' || theme === 'conductor-white') {
       document.documentElement.classList.add(theme);
     }
   }, [theme]);

@@ -518,6 +518,361 @@
             color: var(--text-primary);
         }
 
+        /* ===================== PDF VIEWER + AUDIO PLAYER ===================== */
+
+        .pdf-player-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border-subtle);
+            overflow: hidden;
+            max-width: 860px;
+            box-shadow: var(--shadow-lg);
+        }
+
+        /* Header do viewer */
+        .pdf-viewer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg-surface-elevated);
+            border-bottom: 1px solid var(--border-subtle);
+            user-select: none;
+        }
+
+        .pdf-viewer-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-family: var(--font-mono);
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .pdf-viewer-info {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+        }
+
+        /* Área de scroll do PDF */
+        .pdf-scroll-area {
+            height: 420px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: var(--bg-base);
+            position: relative;
+            scroll-behavior: auto; /* controlado via JS */
+        }
+
+        .pdf-scroll-area::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .pdf-scroll-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .pdf-scroll-area::-webkit-scrollbar-thumb {
+            background: var(--border-focus);
+            border-radius: 999px;
+        }
+
+        /* Conteúdo simulado de PDF */
+        .pdf-content {
+            padding: 32px 48px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .pdf-page {
+            background: #ffffff;
+            border-radius: 6px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.45);
+            padding: 52px 56px;
+            min-height: 560px;
+            color: #1a1a1a;
+            font-family: Georgia, 'Times New Roman', serif;
+            line-height: 1.8;
+            position: relative;
+        }
+
+        .pdf-page-number {
+            position: absolute;
+            bottom: 20px;
+            right: 32px;
+            font-size: 0.75rem;
+            color: #999;
+        }
+
+        .pdf-page h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            color: #111;
+            border-bottom: none;
+            padding-bottom: 0;
+            margin-top: 0;
+        }
+
+        .pdf-page p {
+            color: #333;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+        }
+
+        .pdf-page ul {
+            padding-left: 24px;
+            margin-bottom: 16px;
+        }
+
+        .pdf-page li {
+            color: #333;
+            font-size: 0.95rem;
+            margin-bottom: 8px;
+        }
+
+        /* Marcadores de posição no PDF (indicadores visuais) */
+        .pdf-marker {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 2px;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .pdf-marker.visible {
+            opacity: 1;
+        }
+
+        .pdf-marker-start {
+            background: linear-gradient(90deg, transparent, #3fb950 30%, #3fb950 70%, transparent);
+            box-shadow: 0 0 8px rgba(63, 185, 80, 0.6);
+        }
+
+        .pdf-marker-end {
+            background: linear-gradient(90deg, transparent, #58a6ff 30%, #58a6ff 70%, transparent);
+            box-shadow: 0 0 8px rgba(88, 166, 255, 0.6);
+        }
+
+        /* Player de áudio */
+        .audio-player {
+            background: var(--bg-surface-elevated);
+            border-top: 1px solid var(--border-subtle);
+            padding: 14px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .audio-player-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        /* Botões do player */
+        .player-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            cursor: pointer;
+            transition: all 0.18s;
+            font-family: var(--font-mono);
+            background: var(--bg-surface-hover);
+            color: var(--text-secondary);
+            letter-spacing: 0.02em;
+        }
+
+        .player-btn:hover {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border-color: var(--border-focus);
+        }
+
+        .player-btn:active {
+            transform: scale(0.97);
+        }
+
+        .player-btn-start {
+            color: #3fb950;
+            border-color: rgba(63, 185, 80, 0.3);
+            background: rgba(63, 185, 80, 0.08);
+        }
+
+        .player-btn-start:hover {
+            background: rgba(63, 185, 80, 0.15);
+            border-color: rgba(63, 185, 80, 0.5);
+            color: #3fb950;
+        }
+
+        .player-btn-end {
+            color: #58a6ff;
+            border-color: rgba(88, 166, 255, 0.3);
+            background: rgba(88, 166, 255, 0.08);
+        }
+
+        .player-btn-end:hover {
+            background: rgba(88, 166, 255, 0.15);
+            border-color: rgba(88, 166, 255, 0.5);
+            color: #58a6ff;
+        }
+
+        .player-btn-play {
+            padding: 7px 20px;
+            background: var(--brand-primary);
+            color: #fff;
+            border-color: transparent;
+            border-radius: var(--radius-sm);
+        }
+
+        .player-btn-play:hover {
+            filter: brightness(1.15);
+            color: #fff;
+        }
+
+        .player-btn-play:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            transform: none;
+            filter: none;
+        }
+
+        .player-btn-play.playing {
+            background: var(--accent-red);
+        }
+
+        /* Separador vertical */
+        .player-sep {
+            width: 1px;
+            height: 28px;
+            background: var(--border-subtle);
+            flex-shrink: 0;
+        }
+
+        /* Barra de progresso */
+        .player-progress-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .player-progress-bar {
+            flex: 1;
+            height: 4px;
+            background: var(--bg-surface-hover);
+            border-radius: 99px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .player-progress-fill {
+            height: 100%;
+            background: var(--brand-primary);
+            border-radius: 99px;
+            transition: width 0.1s linear;
+            width: 0%;
+        }
+
+        .player-time {
+            font-size: 0.72rem;
+            color: var(--text-muted);
+            font-family: var(--font-mono);
+            white-space: nowrap;
+        }
+
+        /* Status badges */
+        .player-status-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .pos-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.7rem;
+            font-family: var(--font-mono);
+            padding: 3px 9px;
+            border-radius: var(--radius-full);
+            border: 1px solid var(--border-subtle);
+            color: var(--text-muted);
+            background: transparent;
+        }
+
+        .pos-badge.set {
+            color: inherit;
+            background: rgba(255,255,255,0.04);
+        }
+
+        .pos-badge-start.set {
+            color: #3fb950;
+            border-color: rgba(63, 185, 80, 0.4);
+            background: rgba(63, 185, 80, 0.06);
+        }
+
+        .pos-badge-end.set {
+            color: #58a6ff;
+            border-color: rgba(88, 166, 255, 0.4);
+            background: rgba(88, 166, 255, 0.06);
+        }
+
+        /* Console de debug */
+        .debug-console {
+            background: #0d0d0d;
+            border-top: 1px solid var(--border-subtle);
+            padding: 10px 16px;
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            max-height: 120px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .debug-console::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .debug-console::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 99px;
+        }
+
+        .log-line {
+            display: flex;
+            gap: 8px;
+            line-height: 1.5;
+        }
+
+        .log-time {
+            color: #555;
+            flex-shrink: 0;
+        }
+
+        .log-tag-info  { color: #58a6ff; }
+        .log-tag-start { color: #3fb950; }
+        .log-tag-end   { color: #58a6ff; }
+        .log-tag-play  { color: #d29922; }
+        .log-tag-prog  { color: #a1a1aa; }
+        .log-tag-done  { color: #3fb950; }
+        .log-tag-warn  { color: #f85149; }
+        .log-msg       { color: #ccc; }
+
     </style>
 </head>
 <body>
@@ -763,9 +1118,168 @@
             </div>
         </div>
     </div>
+
+    <!-- ===================== PDF VIEWER + AUDIO PLAYER ===================== -->
+    <h2>PDF Viewer + Audio Player Sincronizado</h2>
+    <p>O usuário marca o <strong>Início</strong> e o <strong>Fim</strong> do trecho a percorrer. Ao clicar em <strong>Play</strong>, o scroll desloca-se suavemente de <code style="font-family:var(--font-mono);color:var(--accent-green);font-size:0.85em;">startPosition</code> até <code style="font-family:var(--font-mono);color:var(--accent-blue);font-size:0.85em;">endPosition</code> durante toda a reprodução do áudio.</p>
+
+    <div class="pdf-player-wrapper" id="pdf-player-wrapper">
+
+        <!-- Header do viewer -->
+        <div class="pdf-viewer-header">
+            <span class="pdf-viewer-title">📄 Document Viewer</span>
+            <span class="pdf-viewer-info" id="scroll-pos-display">scroll: 0px</span>
+        </div>
+
+        <!-- Marcadores de posição (linhas visuais sobrepostas) -->
+        <div style="position:relative; overflow:hidden;">
+            <div class="pdf-scroll-area" id="pdf-scroll-area">
+                <div class="pdf-content">
+
+                    <!-- Página 1 -->
+                    <div class="pdf-page">
+                        <h2>Capítulo 1 — Introdução ao Sistema</h2>
+                        <p>Este documento descreve a arquitetura e os componentes fundamentais do sistema de orquestração de workspaces. A plataforma foi projetada para oferecer uma experiência unificada de desenvolvimento, integrando múltiplos agentes de IA em um único ambiente coeso.</p>
+                        <p>Os principais objetivos são:</p>
+                        <ul>
+                            <li>Orquestrar sessões de agentes de IA de forma eficiente e transparente.</li>
+                            <li>Fornecer um ambiente de desenvolvimento integrado com suporte a múltiplos worktrees Git.</li>
+                            <li>Permitir a visualização em tempo real das alterações de código produzidas pelos agentes.</li>
+                            <li>Oferecer um sistema de logging e observabilidade para todas as operações realizadas.</li>
+                        </ul>
+                        <p>A arquitetura segue o padrão Electron com separação clara entre o processo main, o processo renderer e a camada de preload. Cada worktree é tratado como um isolamento completo, com seu próprio processo de agente e ciclo de vida gerenciado pelo sistema.</p>
+                        <p>O sistema foi construído com foco em extensibilidade. Novos provedores de IA podem ser adicionados sem modificar o núcleo da aplicação, bastando implementar a interface de provedor definida na camada de abstração.</p>
+                        <span class="pdf-page-number">1</span>
+                    </div>
+
+                    <!-- Página 2 -->
+                    <div class="pdf-page">
+                        <h2>Capítulo 2 — Arquitetura de Componentes</h2>
+                        <p>A aplicação é estruturada em três camadas bem definidas que colaboram por meio de canais IPC seguros e tipados.</p>
+                        <p><strong>Processo Main (Node.js):</strong> Responsável pelo ciclo de vida das janelas, gerenciamento de worktrees, comunicação com a API dos provedores e operações de sistema de arquivos. Toda a lógica sensível reside aqui.</p>
+                        <p><strong>Processo Renderer (React):</strong> Interface gráfica completa construída com React e estilizada com Tailwind CSS. Toda a comunicação com o processo main ocorre exclusivamente via Bridge, garantindo isolamento e segurança.</p>
+                        <p><strong>Preload Bridge:</strong> Camada de exposição segura de APIs do Node.js para o renderer. Utiliza <code>contextBridge</code> para expor apenas as funções necessárias, sem vazar referências diretas ao Node.</p>
+                        <p>A coordenação entre as camadas segue um modelo síncrono-assíncrono híbrido: operações rápidas utilizam handlers síncronos, enquanto operações longas (spawn de agentes, clone de repositórios) retornam Promises com streaming de eventos.</p>
+                        <span class="pdf-page-number">2</span>
+                    </div>
+
+                    <!-- Página 3 -->
+                    <div class="pdf-page">
+                        <h2>Capítulo 3 — Fluxo de Execução do Agente</h2>
+                        <p>Quando o usuário inicia uma sessão de agente, o seguinte fluxo é executado:</p>
+                        <ul>
+                            <li><strong>Criação do Worktree:</strong> Um novo branch Git é criado a partir da branch de referência do projeto. O worktree é colocado em um diretório isolado.</li>
+                            <li><strong>Inicialização do Agente:</strong> O processo do agente de IA é iniciado com as variáveis de ambiente e o contexto do sistema de arquivos apontando para o worktree.</li>
+                            <li><strong>Streaming de Mensagens:</strong> As respostas do agente são transmitidas em tempo real para o renderer via IPC events, sendo renderizadas de forma incremental na interface.</li>
+                            <li><strong>Rastreamento de Mudanças:</strong> Cada modificação no worktree é detectada e exibida no painel lateral com diff detalhado, linha por linha.</li>
+                        </ul>
+                        <p>O ciclo de vida do agente é completamente gerenciado pelo processo main, que monitora o processo filho e trata eventos de encerramento, erro e timeout automaticamente.</p>
+                        <span class="pdf-page-number">3</span>
+                    </div>
+
+                    <!-- Página 4 -->
+                    <div class="pdf-page">
+                        <h2>Capítulo 4 — Design System e Temas</h2>
+                        <p>A aplicação suporta múltiplos temas visuais, cada um com sua paleta de cores, tipografia e raios de borda definidos como variáveis CSS. A troca de tema é instantânea e persistida no armazenamento local.</p>
+                        <p>Os temas disponíveis seguem diferentes filosofias de design:</p>
+                        <ul>
+                            <li><strong>Conductor:</strong> Dark mode sofisticado com tons de cinza quentes e accent verde inspirado no GitHub. Foco em legibilidade e contraste adequado.</li>
+                            <li><strong>Cursor:</strong> Dark mode com identidade violeta/roxa, fontes premium (Inter + JetBrains Mono) e sombras mais profundas para um visual mais dramático.</li>
+                        </ul>
+                        <p>Todos os componentes da biblioteca são construídos sobre as variáveis CSS do tema ativo, garantindo consistência visual em toda a interface. Novos temas podem ser adicionados definindo apenas um novo conjunto de variáveis.</p>
+                        <p>O sistema de tipografia prioriza legibilidade: fontes sans-serif para textos corridos e fontes monoespaçadas para código, atalhos de teclado e tokens de configuração.</p>
+                        <span class="pdf-page-number">4</span>
+                    </div>
+
+                    <!-- Página 5 -->
+                    <div class="pdf-page">
+                        <h2>Capítulo 5 — Considerações Finais</h2>
+                        <p>O sistema de orquestração representa uma abordagem nova para o desenvolvimento assistido por IA, colocando o desenvolvedor no centro do fluxo de trabalho e os agentes de IA como colaboradores especializados.</p>
+                        <p>As próximas iterações planejadas incluem:</p>
+                        <ul>
+                            <li>Suporte a múltiplos agentes simultâneos no mesmo worktree com controle de concorrência.</li>
+                            <li>Sistema de revisão automatizada de pull requests com geração de comentários contextuais.</li>
+                            <li>Integração com sistemas de CI/CD para validação automática das mudanças geradas.</li>
+                            <li>Painel de métricas e observabilidade para acompanhar a qualidade das gerações ao longo do tempo.</li>
+                        </ul>
+                        <p>O objetivo final é criar um ecossistema onde a colaboração humano-IA seja tão fluida que a fronteira entre os dois se torne imperceptível, beneficiando a qualidade e a velocidade de entrega de software.</p>
+                        <span class="pdf-page-number">5</span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Linha marcadora de Início -->
+            <div class="pdf-marker pdf-marker-start" id="pdf-marker-start"></div>
+            <!-- Linha marcadora de Fim -->
+            <div class="pdf-marker pdf-marker-end" id="pdf-marker-end"></div>
+        </div>
+
+        <!-- Player de áudio -->
+        <div class="audio-player">
+
+            <!-- Controles principais -->
+            <div class="audio-player-controls">
+                <button class="player-btn player-btn-start" id="btn-start" onclick="markStart()" title="Registrar posição de Início">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="1"/></svg>
+                    Início
+                </button>
+
+                <button class="player-btn player-btn-end" id="btn-end" onclick="markEnd()" title="Registrar posição de Fim">
+                    <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="1"/></svg>
+                    Fim
+                </button>
+
+                <div class="player-sep"></div>
+
+                <button class="player-btn player-btn-play" id="btn-play" onclick="togglePlay()" title="Reproduzir áudio e sincronizar scroll">
+                    <svg id="play-icon" width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2.5l11 5.5-11 5.5z"/></svg>
+                    <svg id="stop-icon" width="13" height="13" viewBox="0 0 16 16" fill="currentColor" style="display:none"><rect x="3" y="3" width="10" height="10" rx="1"/></svg>
+                    <span id="play-btn-label">Play</span>
+                </button>
+
+                <!-- Elemento de áudio oculto (usando Web Audio API gerado por JS) -->
+                <audio id="audio-element" style="display:none;"></audio>
+
+                <div class="player-sep"></div>
+
+                <!-- Barra de progresso -->
+                <div class="player-progress-wrap" style="flex:1;">
+                    <div class="player-progress-bar">
+                        <div class="player-progress-fill" id="progress-fill"></div>
+                    </div>
+                    <span class="player-time" id="player-time">0:00 / 0:00</span>
+                </div>
+            </div>
+
+            <!-- Status das posições marcadas -->
+            <div class="player-status-row">
+                <span class="pos-badge pos-badge-start" id="badge-start">
+                    <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#3fb950"/></svg>
+                    Início: —
+                </span>
+                <span class="pos-badge pos-badge-end" id="badge-end">
+                    <svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="#58a6ff"/></svg>
+                    Fim: —
+                </span>
+                <span id="anim-status" style="font-size:0.7rem;font-family:var(--font-mono);color:var(--text-muted);margin-left:auto;"></span>
+            </div>
+        </div>
+
+        <!-- Console de debug -->
+        <div class="debug-console" id="debug-console">
+            <div class="log-line">
+                <span class="log-time">00:00:00</span>
+                <span class="log-tag-info">[INFO]</span>
+                <span class="log-msg">Sistema iniciado — marque Início e Fim para configurar o trecho.</span>
+            </div>
+        </div>
+
+    </div>
 </div>
 
 <script>
+    /* ===================== THEME SWITCHER ===================== */
     function setTheme(name) {
         document.documentElement.setAttribute('data-theme', name);
         document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
@@ -773,17 +1287,347 @@
         localStorage.setItem('conductor-theme', name);
     }
 
-    // Restaurar tema salvo
     (function() {
         const saved = localStorage.getItem('conductor-theme') || 'conductor';
         document.documentElement.setAttribute('data-theme', saved);
-        // Botões ainda não existem no DOM aqui, aplica após load
         window.addEventListener('DOMContentLoaded', function() {
             document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
             const btn = document.getElementById('btn-' + saved);
             if (btn) btn.classList.add('active');
         });
     })();
+
+    /* ===================== PDF + AUDIO PLAYER ===================== */
+
+    // Estado global do player
+    const playerState = {
+        startPosition: null,   // scrollTop do início
+        endPosition:   null,   // scrollTop do fim
+        isPlaying:     false,
+        animFrameId:   null,
+        audioCtx:      null,
+        audioSource:   null,
+        audioBuffer:   null,
+        startTs:       0,      // performance.now() quando Play foi pressionado
+        duration:      10,     // duração do áudio sintético em segundos
+    };
+
+    /* ---- Utilitários ---- */
+
+    function nowStr() {
+        const d = new Date();
+        return [d.getHours(), d.getMinutes(), d.getSeconds()]
+            .map(n => String(n).padStart(2, '0')).join(':');
+    }
+
+    function addLog(tag, msg, level) {
+        level = level || 'info';
+        const cons = document.getElementById('debug-console');
+        if (!cons) return;
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.innerHTML =
+            '<span class="log-time">' + nowStr() + '</span>' +
+            '<span class="log-tag-' + level + '">[' + tag.toUpperCase() + ']</span>' +
+            '<span class="log-msg"> ' + msg + '</span>';
+        cons.appendChild(line);
+        cons.scrollTop = cons.scrollHeight;
+        // Também imprime no console do navegador para debug
+        window.console.log('[' + tag.toUpperCase() + '] ' + msg);
+    }
+
+    function formatTime(sec) {
+        const m = Math.floor(sec / 60);
+        const s = Math.floor(sec % 60);
+        return m + ':' + String(s).padStart(2, '0');
+    }
+
+    function updateScrollDisplay() {
+        const area = document.getElementById('pdf-scroll-area');
+        const el   = document.getElementById('scroll-pos-display');
+        if (area && el) el.textContent = 'scroll: ' + Math.round(area.scrollTop) + 'px';
+    }
+
+    /* ---- Áudio sintético via Web Audio API ---- */
+    async function ensureAudioBuffer() {
+        if (playerState.audioBuffer) return true;
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            playerState.audioCtx = ctx;
+            const sr  = ctx.sampleRate;
+            const dur = playerState.duration;
+            const buf = ctx.createBuffer(1, sr * dur, sr);
+            const ch  = buf.getChannelData(0);
+            // Tom suave de 440 Hz com envelope de fade in/out
+            for (let i = 0; i < ch.length; i++) {
+                const t   = i / sr;
+                const env = Math.min(t * 3, 1) * Math.min((dur - t) * 3, 1);
+                ch[i] = Math.sin(2 * Math.PI * 440 * t) * env * 0.15;
+            }
+            playerState.audioBuffer = buf;
+            return true;
+        } catch (e) {
+            addLog('warn', 'Não foi possível criar contexto de áudio: ' + e.message, 'warn');
+            return false;
+        }
+    }
+
+    /* ---- Marcadores visuais ---- */
+    function updateMarker(markerId, scrollTop) {
+        const area   = document.getElementById('pdf-scroll-area');
+        const marker = document.getElementById(markerId);
+        if (!area || !marker) return;
+        const totalH = area.scrollHeight;
+        const areaH  = area.clientHeight;
+        const maxScroll = totalH - areaH;
+        const ratio  = maxScroll > 0 ? scrollTop / maxScroll : 0;
+        // Linha posicionada proporcionalmente dentro da área visível
+        const topPx  = Math.round(ratio * areaH);
+        marker.style.top = topPx + 'px';
+        marker.classList.add('visible');
+    }
+
+    function updateBadge(id, value) {
+        const el    = document.getElementById(id);
+        if (!el) return;
+        const label = id === 'badge-start' ? 'Início' : 'Fim';
+        const color = id === 'badge-start' ? '#3fb950' : '#58a6ff';
+        el.innerHTML =
+            '<svg width="8" height="8" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="' + color + '"/></svg> ' +
+            label + ': ' + (value !== null ? value + 'px' : '—');
+        el.classList.toggle('set', value !== null);
+    }
+
+    /* ---- Ações dos botões ---- */
+
+    function markStart() {
+        const area = document.getElementById('pdf-scroll-area');
+        if (!area) return;
+        playerState.startPosition = Math.round(area.scrollTop);
+        console.log('[INÍCIO] startPosition:', playerState.startPosition, 'px');
+        addLog('start', 'startPosition marcado em ' + playerState.startPosition + 'px', 'start');
+        updateBadge('badge-start', playerState.startPosition);
+        updateMarker('pdf-marker-start', playerState.startPosition);
+        flashBtn('btn-start');
+    }
+
+    function markEnd() {
+        const area = document.getElementById('pdf-scroll-area');
+        if (!area) return;
+        playerState.endPosition = Math.round(area.scrollTop);
+        console.log('[FIM] endPosition:', playerState.endPosition, 'px');
+        addLog('end', 'endPosition marcado em ' + playerState.endPosition + 'px', 'end');
+        updateBadge('badge-end', playerState.endPosition);
+        updateMarker('pdf-marker-end', playerState.endPosition);
+        flashBtn('btn-end');
+    }
+
+    function flashBtn(id) {
+        const btn = document.getElementById(id);
+        if (!btn) return;
+        btn.style.transform = 'scale(0.92)';
+        setTimeout(function() { btn.style.transform = ''; }, 150);
+    }
+
+    function togglePlay() {
+        if (playerState.isPlaying) {
+            stopPlayback(false);
+        } else {
+            startPlayback();
+        }
+    }
+
+    async function startPlayback() {
+        // Validação
+        if (playerState.startPosition === null || playerState.endPosition === null) {
+            addLog('warn', 'Defina Início e Fim antes de pressionar Play.', 'warn');
+            console.warn('[WARN] Defina Início e Fim antes de pressionar Play.');
+            return;
+        }
+        if (playerState.startPosition === playerState.endPosition) {
+            addLog('warn', 'startPosition e endPosition são iguais. Role o PDF entre as marcações.', 'warn');
+            console.warn('[WARN] startPosition === endPosition');
+            return;
+        }
+
+        const from = playerState.startPosition;
+        const to   = playerState.endPosition;
+        const dur  = playerState.duration;
+
+        addLog('play',
+            'Reprodução iniciada — scroll de ' + from + 'px → ' + to + 'px por ' + dur + 's',
+            'play');
+        console.log('[PLAY] Início da reprodução. from=' + from + 'px, to=' + to + 'px, duration=' + dur + 's');
+
+        // Posicionar imediatamente no ponto de início
+        const area = document.getElementById('pdf-scroll-area');
+        area.scrollTop = from;
+        updateScrollDisplay();
+
+        playerState.isPlaying = true;
+        playerState.startTs   = performance.now();
+
+        setPlayingUI(true);
+
+        // Iniciar áudio sintético
+        const ok = await ensureAudioBuffer();
+        if (ok && playerState.audioCtx) {
+            try {
+                // Resumir contexto se suspenso (política de autoplay)
+                if (playerState.audioCtx.state === 'suspended') {
+                    await playerState.audioCtx.resume();
+                }
+                playerState.audioSource = playerState.audioCtx.createBufferSource();
+                playerState.audioSource.buffer = playerState.audioBuffer;
+                playerState.audioSource.connect(playerState.audioCtx.destination);
+                playerState.audioSource.start(0);
+                playerState.audioSource.onended = function() {
+                    if (playerState.isPlaying) stopPlayback(true);
+                };
+            } catch (e) {
+                addLog('warn', 'Falha ao iniciar áudio: ' + e.message, 'warn');
+            }
+        }
+
+        // Iniciar loop de animação do scroll
+        runScrollAnimation(from, to, dur * 1000, playerState.startTs);
+    }
+
+    // Mapa de logs de progresso já emitidos nesta sessão
+    const progressLogged = {};
+
+    function runScrollAnimation(from, to, durationMs, startTs) {
+        // Limpar logs de progresso anteriores
+        for (var k in progressLogged) delete progressLogged[k];
+
+        function tick() {
+            if (!playerState.isPlaying) return;
+
+            const elapsed  = performance.now() - startTs;
+            const progress = Math.min(elapsed / durationMs, 1);
+
+            // Easing: easeInOutCubic para movimento suave e natural
+            let eased;
+            if (progress < 0.5) {
+                eased = 4 * progress * progress * progress;
+            } else {
+                eased = 1 - Math.pow(-2 * progress + 2, 3) / 2;
+            }
+
+            const currentScroll = from + (to - from) * eased;
+            const area = document.getElementById('pdf-scroll-area');
+            if (area) {
+                area.scrollTop = currentScroll;
+                updateScrollDisplay();
+            }
+
+            // Atualizar barra de progresso
+            const fillEl = document.getElementById('progress-fill');
+            if (fillEl) fillEl.style.width = (progress * 100).toFixed(1) + '%';
+
+            // Atualizar exibição de tempo
+            const timeEl = document.getElementById('player-time');
+            if (timeEl) {
+                const elapsedSec = elapsed / 1000;
+                timeEl.textContent = formatTime(elapsedSec) + ' / ' + formatTime(playerState.duration);
+            }
+
+            // Log de progresso a cada 10% (apenas uma vez por faixa)
+            const pct = Math.round(progress * 100);
+            if (pct > 0 && pct < 100 && pct % 10 === 0 && !progressLogged[pct]) {
+                progressLogged[pct] = true;
+                const curPx = Math.round(currentScroll);
+                addLog('prog', 'Progresso: ' + pct + '% — scroll: ' + curPx + 'px', 'prog');
+                console.log('[PROG] ' + pct + '% — scroll: ' + curPx + 'px');
+            }
+
+            // Status em tempo real
+            const statusEl = document.getElementById('anim-status');
+            if (statusEl) statusEl.textContent = pct + '% — ' + Math.round(currentScroll) + 'px';
+
+            if (progress < 1) {
+                playerState.animFrameId = requestAnimationFrame(tick);
+            } else {
+                stopPlayback(true);
+            }
+        }
+
+        playerState.animFrameId = requestAnimationFrame(tick);
+    }
+
+    function stopPlayback(finished) {
+        playerState.isPlaying = false;
+
+        if (playerState.animFrameId) {
+            cancelAnimationFrame(playerState.animFrameId);
+            playerState.animFrameId = null;
+        }
+
+        if (playerState.audioSource) {
+            try { playerState.audioSource.stop(); } catch (_) {}
+            playerState.audioSource = null;
+        }
+
+        if (finished) {
+            // Garantir posição final exata
+            const area = document.getElementById('pdf-scroll-area');
+            if (area && playerState.endPosition !== null) area.scrollTop = playerState.endPosition;
+            updateScrollDisplay();
+
+            const fillEl = document.getElementById('progress-fill');
+            if (fillEl) fillEl.style.width = '100%';
+
+            const timeEl = document.getElementById('player-time');
+            if (timeEl) {
+                timeEl.textContent = formatTime(playerState.duration) + ' / ' + formatTime(playerState.duration);
+            }
+
+            addLog('done', 'Reprodução concluída — scroll em ' + playerState.endPosition + 'px', 'done');
+            console.log('[DONE] Reprodução concluída. endPosition=' + playerState.endPosition + 'px');
+
+            const statusEl = document.getElementById('anim-status');
+            if (statusEl) statusEl.textContent = 'Concluído ✓';
+        } else {
+            addLog('info', 'Reprodução interrompida pelo usuário.', 'info');
+            console.log('[INFO] Reprodução interrompida.');
+
+            const statusEl = document.getElementById('anim-status');
+            if (statusEl) statusEl.textContent = '';
+        }
+
+        setPlayingUI(false);
+    }
+
+    function setPlayingUI(playing) {
+        const btn      = document.getElementById('btn-play');
+        const playIcon = document.getElementById('play-icon');
+        const stopIcon = document.getElementById('stop-icon');
+        const label    = document.getElementById('play-btn-label');
+
+        if (btn)      btn.classList.toggle('playing', playing);
+        if (playIcon) playIcon.style.display = playing ? 'none' : '';
+        if (stopIcon) stopIcon.style.display = playing ? ''     : 'none';
+        if (label)    label.textContent = playing ? 'Parar' : 'Play';
+
+        // Desabilitar botões de marcação durante reprodução
+        const btnStart = document.getElementById('btn-start');
+        const btnEnd   = document.getElementById('btn-end');
+        if (btnStart) btnStart.disabled = playing;
+        if (btnEnd)   btnEnd.disabled   = playing;
+
+        // Reiniciar barra quando volta ao estado parado (sem ter finalizado)
+        if (!playing && !playerState.isPlaying) {
+            // barra fica como está (pode ser 100% se finalizou)
+        }
+    }
+
+    /* ---- Listener de scroll para atualizar display ---- */
+    document.addEventListener('DOMContentLoaded', function() {
+        const area = document.getElementById('pdf-scroll-area');
+        if (area) {
+            area.addEventListener('scroll', updateScrollDisplay, { passive: true });
+        }
+    });
 </script>
 
 </body>
