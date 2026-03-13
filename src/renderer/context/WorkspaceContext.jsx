@@ -1,5 +1,9 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { SUPPORTED_LANGUAGES, translate } from '@utils/i18n';
+import {
+  fetchModelsFromProvider,
+  normalizeProviderApiType,
+} from '@lib/providerApi';
 
 const WorkspaceContext = createContext(null);
 export const SUPPORTED_THEMES = ['dark', 'light', 'conductor', 'conductor-white'];
@@ -24,6 +28,7 @@ const defaultPreferences = {
 function normalizeProvider(provider = {}) {
   return {
     ...provider,
+    apiType: normalizeProviderApiType(provider.apiType),
     enabled: provider.enabled !== false,
   };
 }
@@ -528,6 +533,7 @@ export function WorkspaceProvider({ children }) {
     const newProvider = normalizeProvider({
       id: providerData?.id || `prov-${Date.now()}`,
       name: providerData?.name || '',
+      apiType: providerData?.apiType,
       baseUrl: providerData?.baseUrl || '',
       apiKey: providerData?.apiKey || '',
       models: providerData?.models || '',
@@ -556,15 +562,8 @@ export function WorkspaceProvider({ children }) {
     }
 
     try {
-      const response = await fetch(`${provider.baseUrl}/models`, {
-        headers: { Authorization: `Bearer ${provider.apiKey}` },
-      });
-      const data = await response.json();
-
-      if (Array.isArray(data.data)) {
-        const modelNames = data.data.map((model) => model.id).join(',');
-        updateProvider(providerId, { models: modelNames });
-      }
+      const models = await fetchModelsFromProvider(provider);
+      updateProvider(providerId, { models: models.join(',') });
     } catch (error) {
       console.error('Erro ao buscar modelos:', error);
     }

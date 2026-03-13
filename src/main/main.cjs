@@ -45,6 +45,10 @@ const defaultUserPreferences = {
   selectedWorkspace: null,
 };
 
+function normalizeProviderApiType(apiType) {
+  return apiType === 'anthropic' ? 'anthropic' : 'openai';
+}
+
 function resolveSupportedLanguage(locale) {
   const normalized = String(locale || '').toLowerCase();
 
@@ -508,6 +512,7 @@ function buildLaunchFingerprint({ editor, provider, model, yoloMode }) {
   return JSON.stringify({
     editor,
     providerId: provider?.id || null,
+    providerApiType: provider?.apiType ? normalizeProviderApiType(provider.apiType) : null,
     providerBaseUrl: provider?.baseUrl || null,
     providerAuthHash: provider?.apiKey ? hashValue(provider.apiKey) : null,
     model: model || null,
@@ -712,6 +717,8 @@ async function killProcessTreeByPid(pid) {
 }
 
 function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yoloMode }) {
+  const providerApiType = normalizeProviderApiType(provider?.apiType);
+
   if (editor === 'codex') {
     return {
       command: yoloMode ? 'codex --yolo' : 'codex',
@@ -761,6 +768,9 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
     const providerId = provider.id || 'workspace-provider';
     const modelKey = `${providerId}/${model}`;
     const configPath = path.join(workspacePath, 'opencode.jsonc');
+    const providerPackage = providerApiType === 'anthropic'
+      ? '@ai-sdk/anthropic'
+      : '@ai-sdk/openai-compatible';
 
     updateJsoncFile(configPath, (existingConfig) => {
       const existingProviders = existingConfig.provider || {};
@@ -776,7 +786,7 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
           path: ['provider', providerId],
           value: {
             ...existingProviderConfig,
-            npm: '@ai-sdk/openai-compatible',
+            npm: providerPackage,
             name: provider.name || provider.baseUrl || providerId,
             options: {
               ...(existingProviderConfig.options || {}),

@@ -3,6 +3,7 @@ import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceToolbar } from '@components/WorkspaceToolbar';
 import { Terminal } from '@components/Terminal';
 import { WorkspaceFilePreviewModal } from '@components/WorkspaceFilePreviewModal';
+import { providerSupportsEditor } from '@lib/providerApi';
 
 const MAX_TERMINAL_SESSIONS = 8;
 const TERMINAL_MIN_ZOOM_LEVEL = -4;
@@ -78,6 +79,11 @@ export function WorkspaceChatArea() {
   const selectedProvider = useMemo(() => {
     return enabledProviders.find((provider) => provider.id === selectedProviderId) || null;
   }, [enabledProviders, selectedProviderId]);
+  const isSelectedProviderCompatible = useMemo(() => (
+    selectedEditor === 'codex' || selectedEditor === 'qwen-code'
+      ? true
+      : providerSupportsEditor(selectedProvider, selectedEditor)
+  ), [selectedEditor, selectedProvider]);
 
   const selectedProviderModels = useMemo(() => {
     if (!selectedProvider?.models) {
@@ -112,8 +118,8 @@ export function WorkspaceChatArea() {
   }, [sessions.length, setActiveSessionsCount]);
 
   useEffect(() => {
-    if (!selectedProviderId && aiProviders.length > 0) {
-      setSelectedProviderId(aiProviders[0].id);
+    if (!selectedProviderId && enabledProviders.length > 0) {
+      setSelectedProviderId(enabledProviders[0].id);
     }
   }, [enabledProviders, selectedProviderId]);
 
@@ -139,7 +145,7 @@ export function WorkspaceChatArea() {
       return;
     }
 
-    if (!selectedProvider || selectedProviderModels.length === 0) {
+    if (!selectedProvider || !isSelectedProviderCompatible || selectedProviderModels.length === 0) {
       setSelectedModelLocal('');
       setSelectedModel('');
       return;
@@ -151,7 +157,7 @@ export function WorkspaceChatArea() {
 
     setSelectedModelLocal(nextModel);
     setSelectedModel(nextModel);
-  }, [selectedEditor, selectedModelLocal, selectedProvider, selectedProviderModels, setSelectedModel]);
+  }, [isSelectedProviderCompatible, selectedEditor, selectedModelLocal, selectedProvider, selectedProviderModels, setSelectedModel]);
 
   useEffect(() => {
     if (selectedEditor === 'codex' || selectedEditor === 'claude-code') {
@@ -381,6 +387,14 @@ export function WorkspaceChatArea() {
       return;
     }
 
+    if (selectedEditor !== 'codex' && selectedEditor !== 'qwen-code' && !isSelectedProviderCompatible) {
+      updateWorkspaceView((currentView) => ({
+        ...currentView,
+        terminalError: 'O provedor selecionado nao e compativel com o editor atual.',
+      }));
+      return;
+    }
+
     setIsStartingSession(true);
 
     try {
@@ -392,6 +406,7 @@ export function WorkspaceChatArea() {
           : {
             id: selectedProvider?.id || '',
             name: selectedProvider?.name || '',
+            apiType: selectedProvider?.apiType || 'openai',
             baseUrl: selectedProvider?.baseUrl || '',
             apiKey: selectedProvider?.apiKey || '',
           },

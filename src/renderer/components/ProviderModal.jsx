@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
+import {
+  fetchModelsFromProvider,
+  PROVIDER_API_TYPES,
+  getProviderApiTypeLabel,
+} from '@lib/providerApi';
 
 export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
-  const { addProvider, updateProvider, fetchProviderModels } = useWorkspace();
+  const { addProvider, updateProvider, language } = useWorkspace();
   const [formData, setFormData] = useState({
     name: '',
+    apiType: PROVIDER_API_TYPES.OPENAI,
     baseUrl: '',
     apiKey: '',
-    models: ''
+    models: '',
   });
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
@@ -19,16 +25,18 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
       if (editingProvider) {
         setFormData({
           name: editingProvider.name || '',
+          apiType: editingProvider.apiType || PROVIDER_API_TYPES.OPENAI,
           baseUrl: editingProvider.baseUrl || '',
           apiKey: editingProvider.apiKey || '',
-          models: editingProvider.models || ''
+          models: editingProvider.models || '',
         });
       } else {
         setFormData({
           name: '',
+          apiType: PROVIDER_API_TYPES.OPENAI,
           baseUrl: '',
           apiKey: '',
-          models: ''
+          models: '',
         });
       }
     }
@@ -43,15 +51,11 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
 
     setIsFetchingModels(true);
     try {
-      const response = await fetch(`${formData.baseUrl}/models`, {
-        headers: { 'Authorization': `Bearer ${formData.apiKey}` }
-      });
-      const data = await response.json();
-      if (data.data && Array.isArray(data.data)) {
-        const modelNames = data.data.map(m => m.id).join(',');
+      const models = await fetchModelsFromProvider(formData);
+      if (models.length > 0) {
+        const modelNames = models.join(',');
         handleChange('models', modelNames);
 
-        // Se estiver editando, atualiza diretamente
         if (editingProvider) {
           updateProvider(editingProvider.id, { models: modelNames });
         }
@@ -126,6 +130,24 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
 
           <div className="space-y-1.5">
             <label className="text-[0.85rem] font-bold text-[color:var(--text-tertiary)] uppercase ml-1">
+              Tipo de API
+            </label>
+            <select
+              value={formData.apiType}
+              onChange={(e) => handleChange('apiType', e.target.value)}
+              className="w-full px-3 py-2.5 bg-[color:var(--bg-body)] border border-[color:var(--border-color)] rounded-[12px] focus:outline-none focus:border-[color:var(--primary-color)] transition-all text-[0.95rem] text-[color:var(--text-primary)] shadow-sm"
+            >
+              <option value={PROVIDER_API_TYPES.OPENAI}>
+                {getProviderApiTypeLabel(PROVIDER_API_TYPES.OPENAI, language)}
+              </option>
+              <option value={PROVIDER_API_TYPES.ANTHROPIC}>
+                {getProviderApiTypeLabel(PROVIDER_API_TYPES.ANTHROPIC, language)}
+              </option>
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[0.85rem] font-bold text-[color:var(--text-tertiary)] uppercase ml-1">
               Base URL
             </label>
             <input
@@ -136,6 +158,11 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
               className="w-full px-3 py-2.5 bg-[color:var(--bg-body)] border border-[color:var(--border-color)] rounded-[12px] focus:outline-none focus:border-[color:var(--primary-color)] transition-all text-[0.95rem] text-[color:var(--text-primary)] shadow-sm"
               required
             />
+            <p className="text-[0.8rem] text-[color:var(--text-tertiary)] ml-1">
+              {formData.apiType === PROVIDER_API_TYPES.ANTHROPIC
+                ? 'Use a base que exponha /models no formato Anthropic, por exemplo https://api.anthropic.com/v1.'
+                : 'Use a base compatível com OpenAI, por exemplo http://localhost:11434/v1.'}
+            </p>
           </div>
 
           <div className="space-y-1.5">

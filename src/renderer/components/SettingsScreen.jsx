@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { ArrowLeft, Globe2, Palette, PlugZap, RefreshCcw, Pencil, Trash2, Plus } from 'lucide-react';
 import { SUPPORTED_THEMES, useWorkspace } from '@context/WorkspaceContext';
 import { getThemeOptions, languageOptions } from '@utils/i18n';
+import { getProviderApiTypeLabel } from '@lib/providerApi';
 import { ProviderModal } from './ProviderModal';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
@@ -15,6 +16,7 @@ export function SettingsScreen() {
     aiProviders,
     updateProvider,
     removeProvider,
+    fetchProviderModels,
     setIsSettingsOpen,
     theme,
     setTheme,
@@ -35,14 +37,7 @@ export function SettingsScreen() {
 
     setIsFetchingModels(true);
     try {
-      const response = await fetch(`${provider.baseUrl}/models`, {
-        headers: { Authorization: `Bearer ${provider.apiKey}` },
-      });
-      const data = await response.json();
-      if (data.data && Array.isArray(data.data)) {
-        const modelNames = data.data.map((item) => item.id).join(',');
-        updateProvider(provider.id, { models: modelNames });
-      }
+      await fetchProviderModels(provider.id);
     } catch (error) {
       console.error('Erro ao buscar modelos:', error);
     } finally {
@@ -228,7 +223,10 @@ export function SettingsScreen() {
                               <div className="flex flex-wrap items-center gap-3">
                                 <h3 className="font-display text-2xl tracking-[-0.03em] text-[color:var(--text-primary)]">
                                   {provider.name || t('settings.noName')}
-                               </h3>
+                                </h3>
+                                <span className="rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-secondary)]">
+                                  {getProviderApiTypeLabel(provider.apiType, language)}
+                                </span>
                                 <button
                                   type="button"
                                   onClick={() => updateProvider(provider.id, { enabled: provider.enabled === false })}
