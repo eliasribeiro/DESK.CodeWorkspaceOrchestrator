@@ -20,6 +20,21 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(workspace.name);
 
+  const formatBlockingProcesses = (processes = []) => {
+    return processes
+      .slice(0, 3)
+      .map((processInfo) => {
+        const pid = processInfo?.pid ?? '-';
+        const name = processInfo?.name || 'processo';
+        const commandLine = processInfo?.commandLine || processInfo?.executablePath || '';
+        const shortCommand = commandLine.length > 140
+          ? `${commandLine.slice(0, 140)}...`
+          : commandLine;
+        return `• PID ${pid} - ${name}${shortCommand ? `\n  ${shortCommand}` : ''}`;
+      })
+      .join('\n\n');
+  };
+
   /**
    * Handler para remover workspace
    */
@@ -91,10 +106,40 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
 
       await new Promise((resolve) => setTimeout(resolve, 700));
 
-      const result = await window.electronAPI.git.removeWorktree({
+      let result = await window.electronAPI.git.removeWorktree({
         projectPath,
         worktreePath: workspace.path
       });
+
+      if (!result.success && result.canKillBlockingProcesses && Array.isArray(result.blockingProcesses) && result.blockingProcesses.length > 0) {
+        const processDescription = formatBlockingProcesses(result.blockingProcesses);
+        const shouldKillProcess = await showConfirm({
+          title: 'Processo bloqueando remoção',
+          message: `Encontramos processo(s) impedindo o fechamento do workspace "${workspace.name}".\n\n${processDescription}\n\nDeseja autorizar o app a encerrar esses processos e tentar remover novamente?`,
+          confirmText: 'Encerrar processos e remover',
+          cancelText: 'Cancelar',
+          variant: 'danger',
+        });
+
+        if (shouldKillProcess) {
+          const killResult = await window.electronAPI.git.killProcesses({
+            processIds: result.blockingProcesses.map((processInfo) => processInfo.pid),
+          });
+
+          if (!killResult?.success) {
+            const failedMessage = Array.isArray(killResult?.failed) && killResult.failed.length > 0
+              ? `\n\nFalhas:\n${killResult.failed.map((entry) => `• PID ${entry.pid}: ${entry.error}`).join('\n')}`
+              : '';
+            throw new Error(`Nao foi possivel encerrar os processos bloqueantes.${failedMessage}`);
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 500));
+          result = await window.electronAPI.git.removeWorktree({
+            projectPath,
+            worktreePath: workspace.path
+          });
+        }
+      }
       
       if (result.success) {
         // Se este era o workspace selecionado, limpar seleção

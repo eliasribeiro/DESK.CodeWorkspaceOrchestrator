@@ -18,6 +18,15 @@ const embeddedTerminalSessions = new Map();
 const embeddedTerminalSessionsById = new Map();
 const USER_PREFERENCES_FILENAME = 'preferences.json';
 const SUPPORTED_LANGUAGES = ['en', 'pt', 'es'];
+const WORKSPACE_LOCK_ERROR_PATTERNS = [
+  'permission denied',
+  'access is denied',
+  'resource busy',
+  'used by another process',
+  'operation not permitted',
+  'ebusy',
+  'eperm',
+];
 
 const defaultUserPreferences = {
   projects: [],
@@ -79,6 +88,37 @@ function generateSessionId() {
 function delay(ms) {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
+  });
+}
+
+function runChildProcess(command, args = []) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      windowsHide: true,
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let stdout = '';
+    let stderr = '';
+
+    child.stdout.on('data', (chunk) => {
+      stdout += chunk.toString();
+    });
+
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk.toString();
+    });
+
+    child.on('error', (error) => {
+      reject(error);
+    });
+
+    child.on('close', (code) => {
+      resolve({
+        code,
+        stdout,
+        stderr,
+      });
+    });
   });
 }
 
@@ -495,6 +535,179 @@ async function isRegisteredWorktree(git, worktreePath) {
       .some((line) => line.trim() === `worktree ${worktreePath}`);
   } catch (_error) {
     return false;
+  }
+}
+
+function normalizeBranchName(branchName) {
+  const normalized = String(branchName || '').trim();
+  if (!normalized || normalized === 'HEAD') {
+    return '';
+  }
+  if (normalized.startsWith('refs/heads/')) {
+    return normalized.slice('refs/heads/'.length);
+  }
+  return normalized;
+}
+
+async function resolveWorktreeBranchName(git, worktreePath) {
+  try {
+    const worktreeGit = simpleGit(worktreePath);
+    const currentBranch = normalizeBranchName(
+      await worktreeGit.raw(['rev-parse', '--abbrev-ref', 'HEAD']),
+    );
+    if (currentBranch) {
+      return currentBranch;
+    }
+  } catch (_error) {
+  }
+
+  try {
+    const worktreesRaw = await git.raw(['worktree', 'list', '--porcelain']);
+    const lines = worktreesRaw.split('\n');
+    let currentPath = '';
+    let currentBranch = '';
+
+    const flush = () => {
+      if (currentPath === worktreePath) {
+        return normalizeBranchName(currentBranch);
+      }
+      currentPath = '';
+      currentBranch = '';
+      return '';
+    };
+
+    for (const line of lines) {
+      if (!line.trim()) {
+        const resolvedBranch = flush();
+        if (resolvedBranch) {
+          return resolvedBranch;
+        }
+        continue;
+      }
+      if (line.startsWith('worktree ')) {
+        currentPath = line.replace('worktree ', '').trim();
+        continue;
+      }
+      if (line.startsWith('branch ')) {
+        currentBranch = line.replace('branch ', '').trim();
+      }
+    }
+
+    const resolvedBranch = flush();
+    if (resolvedBranch) {
+      return resolvedBranch;
+    }
+  } catch (_error) {
+  }
+
+  return normalizeBranchName(path.basename(worktreePath));
+}
+
+async function deleteBranchIfExists(git, branchName) {
+  const normalizedBranchName = normalizeBranchName(branchName);
+  if (!normalizedBranchName) {
+    return;
+  }
+
+  const localBranchesBefore = await git.branchLocal();
+  if (!localBranchesBefore.all.includes(normalizedBranchName)) {
+    return;
+  }
+
+  await git.branch(['-D', normalizedBranchName]);
+
+  const localBranchesAfter = await git.branchLocal();
+  if (localBranchesAfter.all.includes(normalizedBranchName)) {
+    throw new Error(`Nao foi possivel remover a branch "${normalizedBranchName}"`);
+  }
+}
+
+function removeWorkspaceDirectory(worktreePath) {
+  if (!fs.existsSync(worktreePath)) {
+    return;
+  }
+
+  fs.rmSync(worktreePath, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 200,
+  });
+}
+
+function isWorkspaceLockError(error) {
+  const message = String(error?.message || '').toLowerCase();
+  return WORKSPACE_LOCK_ERROR_PATTERNS.some((pattern) => message.includes(pattern));
+}
+
+function toProcessArray(value) {
+  if (!value) {
+    return [];
+  }
+
+  return Array.isArray(value) ? value : [value];
+}
+
+async function detectWorkspaceBlockingProcesses(worktreePath) {
+  if (process.platform !== 'win32') {
+    return [];
+  }
+
+  const normalizedPath = String(worktreePath || '').trim().toLowerCase();
+  if (!normalizedPath) {
+    return [];
+  }
+
+  const escapedPath = normalizedPath.replace(/'/g, "''");
+  const powershellScript = [
+    `$workspace='${escapedPath}'`,
+    '$processes = Get-CimInstance Win32_Process | Where-Object {',
+    '  $_.ProcessId -ne $PID -and (',
+    '    ($_.ExecutablePath -and $_.ExecutablePath.ToLower().StartsWith($workspace)) -or',
+    '    ($_.CommandLine -and $_.CommandLine.ToLower().Contains($workspace))',
+    '  )',
+    '} | Select-Object ProcessId, Name, ExecutablePath, CommandLine',
+    '$processes | ConvertTo-Json -Compress',
+  ].join('; ');
+
+  try {
+    const result = await runChildProcess('powershell.exe', [
+      '-NoProfile',
+      '-NonInteractive',
+      '-ExecutionPolicy',
+      'Bypass',
+      '-Command',
+      powershellScript,
+    ]);
+
+    if (result.code !== 0 || !result.stdout.trim()) {
+      return [];
+    }
+
+    const rawProcesses = toProcessArray(JSON.parse(result.stdout.trim()));
+    return rawProcesses
+      .map((entry) => ({
+        pid: Number(entry.ProcessId),
+        name: String(entry.Name || '').trim() || 'processo',
+        executablePath: String(entry.ExecutablePath || '').trim(),
+        commandLine: String(entry.CommandLine || '').trim(),
+      }))
+      .filter((entry) => Number.isFinite(entry.pid) && entry.pid > 0 && entry.pid !== process.pid)
+      .slice(0, 10);
+  } catch (_error) {
+    return [];
+  }
+}
+
+async function killProcessTreeByPid(pid) {
+  if (!Number.isFinite(pid) || pid <= 0) {
+    throw new Error('PID invalido');
+  }
+
+  const killResult = await runChildProcess('taskkill', ['/PID', String(pid), '/T', '/F']);
+  if (killResult.code !== 0) {
+    const message = String(killResult.stderr || killResult.stdout || '').trim();
+    throw new Error(message || `Nao foi possivel encerrar o processo ${pid}`);
   }
 }
 
@@ -1051,7 +1264,7 @@ function setupIpcHandlers() {
       }
 
       const git = simpleGit(projectPath);
-      const worktreeName = path.basename(worktreePath);
+      const worktreeBranch = await resolveWorktreeBranchName(git, worktreePath);
       const workspaceSessions = embeddedTerminalSessions.get(worktreePath);
 
       if (workspaceSessions?.size) {
@@ -1094,21 +1307,90 @@ function setupIpcHandlers() {
         throw removeError;
       }
 
-      try {
-        await git.branch(['-D', worktreeName]);
-      } catch (_branchError) {
-        console.log(`Branch "${worktreeName}" ja foi removida ou nao existe`);
+      let directoryError = null;
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          removeWorkspaceDirectory(worktreePath);
+          if (!fs.existsSync(worktreePath)) {
+            directoryError = null;
+            break;
+          }
+          directoryError = new Error(`A pasta do workspace ainda existe: ${worktreePath}`);
+        } catch (error) {
+          directoryError = error;
+        }
+
+        if (attempt < 2) {
+          await delay(700);
+        }
       }
+
+      if (directoryError) {
+        throw directoryError;
+      }
+
+      await deleteBranchIfExists(git, worktreeBranch);
 
       return {
         success: true,
         message: 'Worktree e branch removidos com sucesso',
       };
     } catch (error) {
+      const blockingProcesses = isWorkspaceLockError(error)
+        ? await detectWorkspaceBlockingProcesses(worktreePath)
+        : [];
       console.error('Erro ao remover worktree:', error);
       return {
         success: false,
         error: error.message || 'Erro ao remover worktree',
+        blockingProcesses,
+        canKillBlockingProcesses: blockingProcesses.length > 0,
+      };
+    }
+  });
+
+  ipcMain.handle('git:killProcesses', async (_event, { processIds }) => {
+    try {
+      const ids = Array.isArray(processIds)
+        ? processIds
+          .map((value) => Number(value))
+          .filter((value) => Number.isFinite(value) && value > 0 && value !== process.pid)
+        : [];
+
+      if (ids.length === 0) {
+        return { success: false, error: 'Nenhum PID valido foi informado', killed: [], failed: [] };
+      }
+
+      const uniqueIds = Array.from(new Set(ids));
+      const killed = [];
+      const failed = [];
+
+      for (const pid of uniqueIds) {
+        try {
+          await killProcessTreeByPid(pid);
+          killed.push(pid);
+        } catch (error) {
+          failed.push({
+            pid,
+            error: String(error?.message || 'Falha ao encerrar processo'),
+          });
+        }
+      }
+
+      return {
+        success: failed.length === 0,
+        killed,
+        failed,
+        error: failed.length > 0
+          ? 'Nao foi possivel encerrar todos os processos informados'
+          : null,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message || 'Erro ao encerrar processos',
+        killed: [],
+        failed: [],
       };
     }
   });

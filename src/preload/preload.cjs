@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createWorktree: (options) => ipcRenderer.invoke('git:createWorktree', options),
     listWorktrees: (options) => ipcRenderer.invoke('git:listWorktrees', options),
     removeWorktree: (options) => ipcRenderer.invoke('git:removeWorktree', options),
+    killProcesses: (options) => ipcRenderer.invoke('git:killProcesses', options),
     renameWorktree: (options) => ipcRenderer.invoke('git:renameWorktree', options),
     getWorktreeChanges: (options) => ipcRenderer.invoke('git:getWorktreeChanges', options),
     getWorktreeFilePreview: (options) => ipcRenderer.invoke('git:getWorktreeFilePreview', options),
