@@ -6,7 +6,7 @@ import {
 } from '@lib/providerApi';
 
 const WorkspaceContext = createContext(null);
-export const SUPPORTED_THEMES = ['dark', 'light', 'conductor', 'conductor-white'];
+export const SUPPORTED_THEMES = ['dark', 'light'];
 
 const defaultPreferences = {
   projects: [],
@@ -256,10 +256,9 @@ export function WorkspaceProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    const themeClasses = ['dark', 'conductor', 'conductor-white'];
-    themeClasses.forEach((cls) => document.documentElement.classList.remove(cls));
-    if (theme === 'dark' || theme === 'conductor' || theme === 'conductor-white') {
-      document.documentElement.classList.add(theme);
+    document.documentElement.classList.remove('dark');
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
     }
   }, [theme]);
 

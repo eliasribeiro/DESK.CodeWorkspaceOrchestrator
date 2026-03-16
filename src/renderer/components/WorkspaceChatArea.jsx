@@ -140,24 +140,27 @@ export function WorkspaceChatArea() {
 
   useEffect(() => {
     if (selectedEditor === 'codex' || selectedEditor === 'qwen-code') {
-      setSelectedModelLocal('');
-      setSelectedModel('');
+      if (selectedModelLocal !== '') {
+        setSelectedModelLocal('');
+        setSelectedModel('');
+      }
       return;
     }
 
     if (!selectedProvider || !isSelectedProviderCompatible || selectedProviderModels.length === 0) {
-      setSelectedModelLocal('');
-      setSelectedModel('');
+      if (selectedModelLocal !== '') {
+        setSelectedModelLocal('');
+        setSelectedModel('');
+      }
       return;
     }
 
-    const nextModel = selectedProviderModels.includes(selectedModelLocal)
-      ? selectedModelLocal
-      : selectedProviderModels[0];
-
-    setSelectedModelLocal(nextModel);
-    setSelectedModel(nextModel);
-  }, [isSelectedProviderCompatible, selectedEditor, selectedModelLocal, selectedProvider, selectedProviderModels, setSelectedModel]);
+    if (!selectedProviderModels.includes(selectedModelLocal)) {
+      const nextModel = selectedProviderModels[0];
+      setSelectedModelLocal(nextModel);
+      setSelectedModel(nextModel);
+    }
+  }, [isSelectedProviderCompatible, selectedEditor, selectedProvider, selectedProviderModels]);
 
   useEffect(() => {
     if (selectedEditor === 'codex' || selectedEditor === 'claude-code') {
@@ -467,11 +470,11 @@ export function WorkspaceChatArea() {
     <div className="flex-1 flex flex-col bg-[color:var(--bg-body)]">
       <header className="h-[60px] px-6 flex items-center justify-between border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] backdrop-blur-xl z-40 transition-all">
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-[8px] flex items-center justify-center border border-[color:var(--primary-color)] bg-[#eff6ff] dark:bg-[color:var(--primary-color)]">
-            <svg className="w-5 h-5 text-[color:var(--primary-color)] dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+          <div className="h-9 w-9 rounded-md flex items-center justify-center bg-[color:var(--text-primary)] text-[color:var(--bg-body)]">
+            <svg className="w-5 h-5 text-[color:var(--bg-body)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
           </div>
           <div>
-            <p className="font-semibold text-[1.1rem] text-[color:var(--text-primary)] tracking-tight">
+            <p className="font-display font-medium text-[1.1rem] text-[color:var(--text-primary)] tracking-tight">
               {projectLabel}
             </p>
           </div>
@@ -489,7 +492,7 @@ export function WorkspaceChatArea() {
           </div>
           <button
             onClick={() => window.electronAPI.shell.openPath(workspace.path)}
-            className="p-2 rounded-[8px] hover:bg-[#eff6ff] hover:text-[color:var(--primary-color)] dark:hover:bg-white/5 text-[color:var(--text-secondary)] transition-colors"
+            className="p-2 rounded-md hover:bg-[color:var(--border-color)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
             title="Abrir pasta no explorador"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
@@ -562,8 +565,8 @@ export function WorkspaceChatArea() {
                             onClick={() => handleFocusSession(session.sessionId)}
                             className={`group relative min-w-0 max-w-xs flex items-center gap-2.5 rounded-t-[8px] border-t border-x px-4 py-2 text-left text-[0.95rem] font-medium transition-all duration-200 ${
                               isActive
-                                ? 'border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--primary-color)] z-10'
-                                : 'border-transparent bg-transparent text-[color:var(--text-secondary)] hover:bg-[#eff6ff] dark:hover:bg-white/5 hover:text-[color:var(--text-primary)]'
+                                ? 'border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-primary)] font-semibold z-10'
+                                : 'border-transparent bg-transparent text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/30 hover:text-[color:var(--text-primary)]'
                             }`}
                           >
                             <span className={`inline-flex h-2 w-2 rounded-full align-middle transition-colors shadow-sm ${
@@ -592,7 +595,7 @@ export function WorkspaceChatArea() {
                               <div className="absolute -bottom-[1px] left-0 right-0 h-[2px] bg-[color:var(--bg-surface)]" />
                             )}
                             {isActive && (
-                              <div className="absolute top-0 left-0 right-0 h-[2px] bg-[color:var(--primary-color)] rounded-t-[8px]" />
+                              <div className="absolute top-0 left-0 right-0 h-[2px] bg-[color:var(--text-primary)] rounded-t-[8px]" />
                             )}
                           </button>
                         );
@@ -625,17 +628,17 @@ export function WorkspaceChatArea() {
 ) : (
           <div className="h-full flex items-center justify-center px-6 relative overflow-hidden">
             <div className="max-w-md text-center rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-10 py-12 shadow-sm relative z-10 transition-all">
-              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-[12px] bg-[#eff6ff] text-[color:var(--primary-color)] dark:border dark:border-[color:var(--primary-color)] dark:bg-[color:var(--bg-sidebar)]">
+              <div className="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-[12px] bg-[color:var(--text-primary)] text-[color:var(--bg-body)]">
                 <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 9l3 3-3 3m5 0h3M4 5h16a1 1 0 011 1v12a1 1 0 01-1 1H4a1 1 0 01-1-1V6a1 1 0 011-1z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-bold text-[color:var(--text-primary)] tracking-tight">
-                Sessões inline do workspace
+              <h3 className="text-xl font-display font-medium text-[color:var(--text-primary)] tracking-tight">
+                Workspace Sessions
               </h3>
               <p className="mt-4 text-[0.95rem] leading-relaxed text-[color:var(--text-secondary)]">
-                Escolha o editor, defina o layout em abas ou grade e clique em <span className="font-semibold text-[color:var(--primary-color)] px-1.5 py-0.5 rounded-[4px] bg-[#eff6ff] dark:bg-white/10 dark:text-[color:var(--primary-color)]">Executar</span>. 
-                Cada novo launch abre um terminal embutido nesta área.
+                Pick your editor, layout mode, and hit <span className="font-semibold px-2 py-0.5 rounded-[4px] bg-[color:var(--border-color)] text-[color:var(--text-primary)]">Execute</span>. 
+                Each launch creates an integrated terminal session.
               </p>
               {terminalError && (
                 <div className="mt-6 p-4 rounded-[8px] bg-red-50 text-[0.9rem] text-red-600 dark:bg-red-900/10 dark:text-red-400">

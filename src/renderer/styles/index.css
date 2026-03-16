@@ -1,175 +1,60 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&family=Inter:wght@300;400;500;600&family=Outfit:wght@300;400;500;600;700&display=swap");
 @config "../../../tailwind.config.js";
 
 @variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  /* ======================== TEMA: LIGHT (default) ======================== */
+  /* ======================== THEME: MINIMAL LIGHT ======================== */
   :root {
-    --primary-color: #0b5cff;
-    --primary-hover: #004ad4;
-    --secondary-color: #0e1041;
-    --secondary-hover: #1e205a;
+    --primary-color: #000000;
+    --primary-hover: #333333;
+    --secondary-color: #f4f4f5;
+    --secondary-hover: #e4e4e7;
 
     --success-color: #10b981;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
     --info-color: #3b82f6;
 
-    --bg-body: #f3f4f6;
-    --bg-surface: #ffffff;
-    --bg-sidebar: #0e1041;
-    --text-primary: #111827;
-    --text-secondary: #6b7280;
-    --text-tertiary: #9ca3af;
+    --bg-body: #ffffff;
+    --bg-surface: #fafafa;
+    --bg-sidebar: #f4f4f5;
+    --text-primary: #09090b;
+    --text-secondary: #71717a;
+    --text-tertiary: #a1a1aa;
     --text-on-dark: #ffffff;
-    --border-color: #e5e7eb;
+    --border-color: #e4e4e7;
 
     --bg: var(--bg-body);
     --foreground: var(--text-primary);
     --muted: var(--text-secondary);
     --accent: var(--primary-color);
-    --ring: rgba(11, 92, 255, 0.44);
+    --ring: rgba(0, 0, 0, 0.15);
   }
 
-  /* ======================== TEMA: DARK ======================== */
+  /* ======================== THEME: ELEGANT DARK ======================== */
   .dark {
-    --primary-color: #0b5cff;
-    --primary-hover: #3b82f6;
-    --secondary-color: #1e293b;
-    --secondary-hover: #334155;
+    --primary-color: #ffffff;
+    --primary-hover: #e4e4e7;
+    --secondary-color: #27272a;
+    --secondary-hover: #3f3f46;
 
-    --bg-body: #111827;
-    --bg-surface: #1f2937;
-    --bg-sidebar: #0e1041;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --text-tertiary: #6b7280;
-    --border-color: #374151;
-
-    --bg: var(--bg-body);
-    --foreground: var(--text-primary);
-    --muted: var(--text-secondary);
-    --accent: var(--primary-color);
-  }
-
-  /* ======================== TEMA: CONDUCTOR ======================== */
-  /* Inspirado no Design System do Conductor – dark sofisticado com acentos índigo */
-  .conductor {
-    /* Superfícies — escuro neutro quente */
-    --primary-color: #4f46e5;
-    --primary-hover: #4338ca;
-    --secondary-color: #252525;
-    --secondary-hover: #2a2a2a;
-
-    --success-color: #3fb950;
-    --warning-color: #d29922;
-    --danger-color: #f85149;
-    --info-color: #58a6ff;
-
-    --bg-body: #121212;
-    --bg-surface: #1e1e1e;
-    --bg-sidebar: #161616;
-    --text-primary: #ededed;
+    --bg-body: #050505;
+    --bg-surface: #0a0a0b;
+    --bg-sidebar: #0a0a0b;
+    --text-primary: #fafafa;
     --text-secondary: #a1a1aa;
-    --text-tertiary: #71717a;
-    --text-on-dark: #ededed;
-    --border-color: rgba(255, 255, 255, 0.1);
+    --text-tertiary: #52525b;
+    --text-on-dark: #000000;
+    /* Soft borders for dark mode aesthetics */
+    --border-color: #1a1a1a;
 
-    /* Alias tokens */
     --bg: var(--bg-body);
     --foreground: var(--text-primary);
     --muted: var(--text-secondary);
     --accent: var(--primary-color);
-    --ring: rgba(79, 70, 229, 0.5);
-
-    /* Tokens extras do Conductor */
-    --bg-surface-elevated: #252525;
-    --bg-surface-hover: #2a2a2a;
-    --bg-input: #1a1a1a;
-    --accent-green: #3fb950;
-    --accent-green-bg: rgba(63, 185, 80, 0.15);
-    --accent-red: #f85149;
-    --accent-red-bg: rgba(248, 81, 73, 0.15);
-    --accent-yellow: #d29922;
-    --accent-blue: #58a6ff;
-    --brand-primary: #4f46e5;
-    --border-subtle: rgba(255, 255, 255, 0.1);
-    --border-focus: rgba(255, 255, 255, 0.2);
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.4), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.7), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
-    --radius-sm: 4px;
-    --radius-md: 8px;
-    --radius-lg: 12px;
-    --radius-full: 9999px;
-    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-  }
-
-  /* ======================== TEMA: CONDUCTOR WHITE ======================== */
-  /* Variante clara e quente do Conductor – superfícies cremosas, texto escuro, accent azul royal */
-  .conductor-white {
-    /* Cores de ação */
-    --primary-color: #3157c8;
-    --primary-hover: #2649b0;
-    --secondary-color: #efe6d8;
-    --secondary-hover: #e5d9c8;
-
-    --success-color: #2f8f5b;
-    --warning-color: #c58a1f;
-    --danger-color: #c95b4e;
-    --info-color: #4b72d6;
-
-    /* Superfícies */
-    --bg-body: #f6f2ea;
-    --bg-surface: #fffdf8;
-    --bg-sidebar: #fffdf8;
-    --bg-surface-elevated: #ffffff;
-    --bg-surface-hover: #f3ecdf;
-    --bg-input: #fffaf1;
-
-    /* Tipografia */
-    --text-primary: #221f1a;
-    --text-secondary: #60584f;
-    --text-tertiary: #8b8276;
-    --text-on-dark: #ffffff;
-
-    /* Bordas e sombras */
-    --border-color: rgba(34, 31, 26, 0.12);
-    --border-subtle: rgba(34, 31, 26, 0.12);
-    --border-focus: rgba(49, 87, 200, 0.28);
-    --shadow-sm: 0 1px 2px rgba(34, 31, 26, 0.06);
-    --shadow-md: 0 12px 24px rgba(93, 72, 46, 0.08);
-    --shadow-lg: 0 28px 60px rgba(72, 53, 26, 0.12);
-
-    /* Alias tokens */
-    --bg: var(--bg-body);
-    --foreground: var(--text-primary);
-    --muted: var(--text-secondary);
-    --accent: var(--primary-color);
-    --ring: rgba(49, 87, 200, 0.28);
-
-    /* Tokens extras de acentuação */
-    --accent-green: #2f8f5b;
-    --accent-green-bg: rgba(47, 143, 91, 0.12);
-    --accent-red: #c95b4e;
-    --accent-red-bg: rgba(201, 91, 78, 0.12);
-    --accent-yellow: #c58a1f;
-    --accent-yellow-bg: rgba(197, 138, 31, 0.12);
-    --accent-blue: #4b72d6;
-    --brand-primary: #3157c8;
-
-    /* Raios */
-    --radius-sm: 6px;
-    --radius-md: 12px;
-    --radius-lg: 18px;
-    --radius-full: 9999px;
-
-    /* Tipografia */
-    --font-sans: "Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+    --ring: rgba(255, 255, 255, 0.2);
   }
 
   html {
@@ -181,9 +66,9 @@
     background-color: var(--bg-body);
     color: var(--text-primary);
     font-family: "Inter", system-ui, sans-serif;
-    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms;
+    transition-property: color, background-color, border-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+    transition-duration: 400ms;
     overflow: hidden;
   }
 
@@ -194,8 +79,9 @@
     flex-direction: column;
   }
 
-  * {
-    scrollbar-color: rgba(148, 163, 184, 0.42) transparent;
+  h1, h2, h3, h4, h5, h6, .font-display {
+    font-family: "Outfit", sans-serif;
+    letter-spacing: -0.02em;
   }
 }
 
@@ -211,17 +97,18 @@
 
 @layer utilities {
   .font-display {
-    font-family: "Sora", "IBM Plex Sans", sans-serif;
+    font-family: "Outfit", sans-serif;
   }
 
+  /* ELEGANT SCROLLBAR */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgba(148, 163, 184, 0.42) transparent;
+    scrollbar-color: rgba(161, 161, 170, 0.3) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-track {
@@ -229,54 +116,57 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgba(148, 163, 184, 0.42);
+    background-color: rgba(161, 161, 170, 0.3);
     border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
+  }
+  
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(161, 161, 170, 0.5);
   }
 
   .app-shell {
-    background:
-      linear-gradient(180deg, rgba(7, 12, 22, 0.5), rgba(7, 12, 22, 0.2)),
-      linear-gradient(135deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0));
-    backdrop-filter: blur(26px);
+    background: transparent;
   }
 
   .panel-grid {
     background-image:
-      linear-gradient(rgba(148, 163, 184, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(148, 163, 184, 0.08) 1px, transparent 1px);
-    background-size: 56px 56px;
+      linear-gradient(rgba(161, 161, 170, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(161, 161, 170, 0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
     background-position: center;
   }
 
   .panel-edge {
     position: relative;
-  }
-
-  .panel-edge::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.04));
-    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.1);
   }
 
   .fade-in {
-    animation: fadeIn 0.2s ease-in-out;
+    animation: fadeIn 0.4s cubic-bezier(0.23, 1, 0.32, 1);
   }
 
   @keyframes fadeIn {
     from {
       opacity: 0;
+      transform: translateY(4px);
     }
-
     to {
       opacity: 1;
+      transform: translateY(0);
     }
+  }
+
+  .glass-panel {
+    background: rgba(10, 10, 11, 0.7);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid var(--border-color);
+  }
+
+  html:not(.dark) .glass-panel {
+    background: rgba(255, 255, 255, 0.8);
   }
 }

@@ -228,7 +228,7 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-[color:var(--primary-color)] hover:bg-[color:var(--primary-hover)] text-white rounded-[8px] text-[0.95rem] font-medium transition-colors shadow-sm"
+              className="px-6 py-2 bg-[color:var(--primary-color)] hover:bg-[color:var(--primary-hover)] text-[color:var(--text-on-dark)] rounded-[8px] text-[0.95rem] font-medium transition-colors shadow-sm"
             >
               {editingProvider ? 'Salvar Alterações' : 'Cadastrar Provedor'}
             </button>

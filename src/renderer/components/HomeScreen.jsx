@@ -1,11 +1,7 @@
-import { FolderOpen } from 'lucide-react';
+import { FolderOpen, Terminal } from 'lucide-react';
 import { motion } from 'motion/react';
-import Lottie from 'lottie-react';
-import rippleAnimation from 'lottie-web/test/animations/ripple.json';
 import { useEffect, useState, useCallback } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
-import { Button } from '@components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 
 export function HomeScreen() {
   const { projects, activeScreen, addProjectFromPath, selectWorkspace, showAlert } = useWorkspace();
@@ -85,7 +81,7 @@ export function HomeScreen() {
       console.error('Erro ao carregar workspaces:', error);
       await showAlert({
         title: 'Erro',
-        message: 'Não foi possível carregar os workspaces desse projeto.',
+        message: 'Não foi possível carregar os workspaces.',
         confirmText: 'Fechar',
         variant: 'danger'
       });
@@ -93,98 +89,83 @@ export function HomeScreen() {
   };
 
   return (
-    <div className="panel-grid relative flex-1 overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(245,159,57,0.15),transparent_20%),radial-gradient(circle_at_80%_0%,rgba(56,189,248,0.12),transparent_24%)]" />
-      <div className="relative flex h-full flex-col gap-4 overflow-auto px-6 pb-6 pt-6 scrollbar-thin">
+    <div className="relative flex-1 overflow-auto bg-[color:var(--bg-body)] scrollbar-thin">
+      <div className="mx-auto max-w-5xl px-8 py-12 md:py-24">
         <motion.div
-          initial={{ opacity: 0, y: 18 }}
+          initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: 'easeOut' }}
-          className="flex flex-col gap-4"
+          transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+          className="flex flex-col gap-16"
         >
-          {/* Command Center Card — compacto */}
-          <Card className="overflow-hidden">
-            <CardContent className="p-6">
-              <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr] items-center">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-[color:var(--border-color)] bg-[#eff6ff] dark:bg-white/5 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.2em] text-[color:var(--primary-color)]">
-                    <span className="h-2 w-2 rounded-full bg-[color:var(--primary-color)]" />
-                    Command center
-                  </div>
-                  <div className="space-y-2">
-                    <h1 className="font-display max-w-3xl text-2xl font-semibold tracking-[-0.04em] text-[color:var(--text-primary)] md:text-3xl">
-                      Orquestre projetos, workspaces e sessões AI em uma única superfície operacional.
-                    </h1>
-                    <p className="max-w-2xl text-sm leading-6 text-[color:var(--text-secondary)]">
-                      Contexto persistente, acesso rápido aos worktrees e sessões paralelas com Codex, Claude, Qwen e OpenCode.
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <Button onClick={handleOpenProject}>
-                      <FolderOpen className="h-4 w-4 mr-2" />
-                      Abrir repositório
-                    </Button>
-                    <Button variant="secondary" type="button">
-                      {projects.length} projetos indexados
-                    </Button>
-                  </div>
-                </div>
-                <div className="relative flex min-h-[180px] items-center justify-center rounded-[16px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)]">
-                  <div className="absolute inset-6 rounded-full border border-dashed border-[color:var(--border-color)]" />
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1),transparent_36%)]" />
-                  <Lottie animationData={rippleAnimation} loop className="h-full w-full max-w-[280px]" />
-                </div>
+          {/* Header Section */}
+          <div className="flex flex-col gap-6 max-w-2xl">
+            <h1 className="font-display text-4xl md:text-5xl font-medium tracking-tight text-[color:var(--text-primary)]">
+              Orchestrate your code<br />environments seamlessly.
+            </h1>
+            <p className="text-lg leading-relaxed text-[color:var(--text-secondary)]">
+              Manage multiple git worktrees, persistent AI sessions, and terminals from a single, unified surface. Precision tools for profound work.
+            </p>
+            <div className="flex items-center gap-4 pt-4">
+              <button 
+                onClick={handleOpenProject}
+                className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--text-primary)] px-6 text-sm font-medium text-[color:var(--bg-body)] transition-transform hover:scale-105"
+              >
+                <FolderOpen className="mr-2 h-4 w-4" />
+                Open Repository
+              </button>
+              <div className="text-sm font-medium text-[color:var(--text-tertiary)]">
+                {projects.length} indexed projects
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          {/* Projetos Recentes Card */}
-          <Card className="flex flex-col overflow-hidden">
-            <CardHeader className="rounded-t-[12px] border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] py-4">
-              <CardTitle className="text-[color:var(--text-primary)]">Projetos recentes</CardTitle>
-              <CardDescription className="text-[color:var(--text-secondary)]">
-                Atalhos persistentes para voltar ao contexto de trabalho sem reconfigurar providers ou workspaces.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3 p-6">
-              {projects.length === 0 && (
-                <div className="rounded-[12px] border border-dashed border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-8 text-center">
-                  <p className="font-display text-xl text-[color:var(--text-primary)]">Nenhum repositório conectado</p>
-                  <p className="mt-2 text-[0.95rem] leading-6 text-[color:var(--text-secondary)]">
-                    Abra uma pasta para começar a operar múltiplos workspaces e terminais a partir da sidebar.
-                  </p>
-                </div>
-              )}
+          {/* Projects List */}
+          <div className="flex flex-col gap-6 border-t border-[color:var(--border-color)] pt-12">
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xl font-medium tracking-tight text-[color:var(--text-primary)]">Recent Projects</h2>
+            </div>
 
-              <div className="grid gap-3 grid-cols-1">
+            {projects.length === 0 ? (
+              <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-[color:var(--border-color)] bg-[color:var(--bg-surface)] p-8 text-center">
+                <Terminal className="mb-4 h-8 w-8 text-[color:var(--text-tertiary)]" />
+                <p className="font-display text-lg tracking-tight text-[color:var(--text-primary)]">No projects connected</p>
+                <p className="mt-2 text-sm text-[color:var(--text-secondary)] max-w-md">
+                  Open a directory to start managing workspaces and terminal sessions.
+                </p>
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {projects.slice(0, 6).map((project, index) => (
                   <motion.div
                     key={project.id}
-                    initial={{ opacity: 0, y: 12 }}
+                    initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.14 + index * 0.06, duration: 0.35 }}
+                    transition={{ delay: 0.2 + index * 0.05, duration: 0.5 }}
                     onClick={() => handleProjectClick(project)}
-                    className="group rounded-[12px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-4 transition-colors hover:border-[color:var(--text-tertiary)] shadow-sm cursor-pointer"
+                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] p-6 transition-all hover:border-[color:var(--text-tertiary)] hover:shadow-sm cursor-pointer"
                   >
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[8px] bg-[#eff6ff] font-display text-base font-bold text-[color:var(--primary-color)] dark:bg-[color:var(--primary-color)]/10">
+                    <div className="mb-8">
+                      <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[color:var(--text-primary)] font-display text-lg font-medium text-[color:var(--bg-body)]">
                         {project.name.charAt(0).toUpperCase()}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-3">
-                          <p className="truncate font-semibold text-[color:var(--text-primary)]">{project.name}</p>
-                          <span className="rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-[color:var(--text-tertiary)] group-hover:bg-[#eff6ff] group-hover:text-[color:var(--primary-color)] dark:group-hover:bg-white/5 transition-colors">
-                            {workspaceCounts[project.id] ?? '—'} workspaces
-                          </span>
-                        </div>
-                        <p className="mt-1 truncate text-[0.8rem] text-[color:var(--text-secondary)]">{project.path}</p>
-                      </div>
+                      <h3 className="truncate font-display text-lg font-medium tracking-tight text-[color:var(--text-primary)]">
+                        {project.name}
+                      </h3>
+                      <p className="mt-1 truncate text-xs text-[color:var(--text-tertiary)] font-mono">
+                        {project.path}
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between border-t border-[color:var(--border-color)] pt-4">
+                      <span className="text-sm font-medium text-[color:var(--text-secondary)]">
+                        {workspaceCounts[project.id] ?? '0'} Workspaces
+                      </span>
+                      <span className="text-[color:var(--text-primary)] opacity-0 transition-opacity group-hover:opacity-100">&rarr;</span>
                     </div>
                   </motion.div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
+            )}
+          </div>
         </motion.div>
       </div>
     </div>

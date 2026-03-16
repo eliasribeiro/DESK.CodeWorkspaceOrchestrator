@@ -54,7 +54,7 @@ function WorkspaceContent() {
   }, [isResizingSecondary, setSecondarySidebarWidth]);
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[color:var(--bg-body)]">
+    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[color:var(--bg-body)] transition-colors duration-400">
       <TitleBar
         showPrimary={showPrimarySidebar}
         onTogglePrimary={() => setShowPrimarySidebar(!showPrimarySidebar)}
@@ -65,14 +65,14 @@ function WorkspaceContent() {
       <div className="relative flex flex-1 overflow-hidden">
         {showPrimarySidebar && <Sidebar />}
 
-        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--bg-body)]">
+        <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--bg-body)] transition-colors duration-400">
           <AnimatePresence mode="wait">
             <motion.div
               key={isSettingsOpen ? 'settings' : selectedWorkspace ? 'workspace' : activeScreen}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.28, ease: 'easeOut' }}
+              initial={{ opacity: 0, scale: 0.98, filter: 'blur(4px)' }}
+              animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, scale: 0.98, filter: 'blur(4px)' }}
+              transition={{ duration: 0.35, ease: [0.23, 1, 0.32, 1] }}
               className="flex h-full flex-1 flex-col overflow-hidden"
             >
               {isSettingsOpen ? (
@@ -89,7 +89,7 @@ function WorkspaceContent() {
         </main>
 
         {showSecondarySidebar && !isSettingsOpen && (
-          <div className="relative border-l border-[color:var(--border-color)] bg-[color:var(--bg-surface)]" style={{ width: secondarySidebarWidth }}>
+          <div className="relative border-l border-[color:var(--border-color)] bg-[color:var(--bg-surface)] transition-colors duration-400" style={{ width: secondarySidebarWidth }}>
             <div className="h-full overflow-hidden">
               <SecondarySidebar />
             </div>
@@ -100,26 +100,26 @@ function WorkspaceContent() {
                 document.body.style.cursor = 'col-resize';
                 document.body.style.userSelect = 'none';
               }}
-              className="absolute left-0 top-0 h-full w-4 cursor-col-resize -translate-x-1/2"
-              title="Redimensionar painel auxiliar"
+              className="absolute left-0 top-0 h-full w-4 cursor-col-resize -translate-x-1/2 hover:bg-[color:var(--border-color)]/30 transition-colors"
+              title="Resize secondary panel"
             />
           </div>
         )}
       </div>
 
-      <footer className="h-10 border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-4 flex items-center justify-between text-[11px] font-semibold tracking-wider text-[color:var(--text-secondary)]">
+      <footer className="h-8 border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-4 flex items-center justify-between text-[10px] uppercase font-mono tracking-widest text-[color:var(--text-tertiary)] transition-colors duration-400">
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-2">
-            <span className="h-2 w-2 rounded-full bg-[color:var(--success-color)] animate-pulse"></span>
-            System ready
+          <span className="flex items-center gap-2 border border-[color:var(--border-color)] px-2 py-0.5 rounded-full">
+            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success-color)] shadow-[0_0_8px_currentColor]"></span>
+            System Online
           </span>
           {selectedWorkspace && (
-            <span className="rounded-full bg-slate-100 dark:bg-slate-800 px-3 py-1">
-              Sessões {activeSessionsCount}/8
+            <span className="rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-2 py-0.5">
+              Sessions: {activeSessionsCount}/8
             </span>
           )}
         </div>
-        <span>v1.0.0</span>
+        <span>CWO v1.0.0</span>
       </footer>
 
       <AppDialog

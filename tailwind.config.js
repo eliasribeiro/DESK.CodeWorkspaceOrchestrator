@@ -9,26 +9,29 @@ export default {
     extend: {
       colors: {
         background: {
-          light: '#F3F4F6',
-          dark: '#111827',
+          light: '#ffffff',
+          dark: '#0a0a0b', /* Refined pure-ish dark background */
         },
         surface: {
-          light: '#FFFFFF',
-          dark: '#1F2937',
+          light: '#f9fafb',
+          dark: '#121214', /* Slightly lighter surface for dark mode */
         },
         border: {
-          light: '#E5E7EB',
-          dark: '#374151',
+          light: '#e5e7eb',
+          dark: '#27272a', /* Minimal border contrast */
         },
         primary: {
-          light: '#0b5cff',
-          dark: '#0b5cff',
+          light: '#000000',
+          dark: '#ffffff',
         }
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],
-        mono: ['"IBM Plex Mono"', 'Consolas', 'Monaco', 'monospace'],
-        display: ['Inter', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'Menlo', 'monospace'],
+        display: ['Outfit', 'sans-serif'],
+      },
+      transitionTimingFunction: {
+        'smooth': 'cubic-bezier(0.23, 1, 0.32, 1)',
       }
     },
   },

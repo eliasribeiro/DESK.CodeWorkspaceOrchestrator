@@ -78,7 +78,7 @@ function SearchableSelect({
           setIsOpen((current) => !current);
         }}
         disabled={disabled}
-        className="flex h-10 w-full items-center justify-between rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 text-[0.95rem] font-medium text-[color:var(--text-secondary)] shadow-sm outline-none transition-colors hover:border-[color:var(--text-tertiary)] focus:border-[color:var(--primary-color)] disabled:cursor-not-allowed disabled:opacity-50"
+        className="flex h-10 w-full items-center justify-between rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 text-[0.95rem] font-medium text-[color:var(--text-secondary)] shadow-sm outline-none transition-colors hover:border-[color:var(--text-primary)] focus:border-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-50"
       >
         <span className="block truncate pr-3">{selectedOption?.label || placeholder}</span>
         <svg
@@ -110,7 +110,7 @@ function SearchableSelect({
                 }
               }}
               placeholder={searchPlaceholder}
-              className="h-9 w-full rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 text-[0.95rem] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--primary-color)]"
+              className="h-9 w-full rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 text-[0.95rem] text-[color:var(--text-primary)] outline-none transition focus:border-[color:var(--text-primary)]"
             />
           </div>
           <div className="max-h-56 overflow-y-auto py-1">
@@ -121,11 +121,15 @@ function SearchableSelect({
                 <button
                   key={option.value}
                   type="button"
+                  onMouseDown={(e) => {
+                    e.preventDefault();
+                    handleSelect(option.value);
+                  }}
                   onClick={() => handleSelect(option.value)}
                   className={`w-full px-3 py-2 text-left text-[0.95rem] transition-colors ${
                     option.value === value
-                      ? 'bg-[color:var(--primary-color)] text-white font-medium'
-                      : 'text-[color:var(--text-secondary)] hover:bg-[#eff6ff] hover:text-[color:var(--primary-color)] dark:hover:bg-white/5 dark:hover:text-white'
+                      ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] font-medium'
+                      : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/30 hover:text-[color:var(--text-primary)]'
                   }`}
                 >
                   {option.label}
@@ -197,7 +201,7 @@ export function WorkspaceToolbar({
             <select
               value={editor}
               onChange={(event) => onEditorChange?.(event.target.value)}
-              className="h-10 w-full appearance-none rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 pr-10 text-[0.95rem] font-medium text-[color:var(--text-secondary)] shadow-sm outline-none transition hover:border-[color:var(--text-tertiary)] focus:border-[color:var(--primary-color)]"
+              className="h-10 w-full appearance-none rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 pr-10 text-[0.95rem] font-medium text-[color:var(--text-secondary)] shadow-sm outline-none transition hover:border-[color:var(--text-primary)] focus:border-[color:var(--text-primary)]"
             >
               {editorOptions.map((editorOption) => (
                 <option key={editorOption.value} value={editorOption.value}>
@@ -257,7 +261,7 @@ export function WorkspaceToolbar({
             className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-[8px] px-4 text-[0.95rem] font-semibold transition ${
               isLaunchDisabled
                 ? 'cursor-not-allowed border border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-tertiary)]'
-                : 'bg-[color:var(--primary-color)] text-white hover:bg-[color:var(--primary-hover)]'
+                : 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] hover:opacity-90'
             }`}
           >
             {isRunning ? (
@@ -297,8 +301,8 @@ export function WorkspaceToolbar({
                     onClick={() => onLayoutChange?.(option.value)}
                     className={`inline-flex h-[28px] items-center gap-2 rounded-[6px] px-3 text-[0.85rem] font-medium transition ${
                       isActive
-                        ? 'bg-[color:var(--primary-color)] text-white shadow-sm'
-                        : 'text-[color:var(--text-secondary)] hover:text-[color:var(--primary-color)]'
+                        ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] shadow-sm'
+                        : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/30 hover:text-[color:var(--text-primary)]'
                     }`}
                     title={option.label}
                     aria-pressed={isActive}
@@ -327,7 +331,7 @@ export function WorkspaceToolbar({
               aria-checked={yoloMode}
               className={`ml-auto inline-flex h-10 w-full max-w-[200px] items-center justify-between gap-3 rounded-[8px] border px-3 py-2 transition shadow-sm ${
                 yoloMode
-                  ? 'border-[color:var(--primary-color)] bg-[#eff6ff] text-[color:var(--primary-color)] dark:border-[color:var(--primary-color)] dark:bg-[color:var(--primary-color)]/10 dark:text-white'
+                  ? 'border-[color:var(--text-primary)] bg-[color:var(--text-primary)] text-[color:var(--bg-body)]'
                   : 'border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-secondary)] hover:border-[color:var(--text-tertiary)] hover:text-[color:var(--text-primary)]'
               }`}
             >
@@ -337,12 +341,12 @@ export function WorkspaceToolbar({
               </span>
               <span
                 className={`relative inline-block h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  yoloMode ? 'bg-[color:var(--primary-color)]' : 'bg-[color:var(--border-color)]'
+                  yoloMode ? 'bg-[color:var(--bg-body)]' : 'bg-[color:var(--border-color)]'
                 }`}
               >
                 <span
-                  className={`absolute top-[2px] left-[2px] h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
-                    yoloMode ? 'translate-x-[22px]' : 'translate-x-0'
+                  className={`absolute top-[2px] left-[2px] h-5 w-5 rounded-full shadow-sm transition-transform ${
+                    yoloMode ? 'translate-x-[22px] bg-[color:var(--text-primary)]' : 'translate-x-0 bg-[color:var(--text-tertiary)]'
                   }`}
                 />
               </span>

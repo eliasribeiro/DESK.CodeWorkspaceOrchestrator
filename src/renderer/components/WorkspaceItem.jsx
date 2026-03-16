@@ -1,17 +1,9 @@
 import { useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { isValidWorkspaceName } from '@utils/nameGenerator';
+import { GitBranch, Pencil, Trash2 } from 'lucide-react';
+import { cn } from '@lib/utils';
 
-/**
- * Componente WorkspaceItem
- * Item de workspace (git worktree) dentro de um projeto
- * 
- * @param {Object} props
- * @param {Object} props.workspace - Workspace a ser renderizado
- * @param {string} props.projectId - ID do projeto pai
- * @param {string} props.projectPath - Caminho do projeto
- * @returns {JSX.Element} Item de workspace
- */
 export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, onRenamed }) {
   const { removeWorkspace, renameWorkspace, selectWorkspace, selectedWorkspace, showConfirm, showAlert } = useWorkspace();
   const [showActions, setShowActions] = useState(false);
@@ -35,9 +27,6 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       .join('\n\n');
   };
 
-  /**
-   * Handler para remover workspace
-   */
   const handleRemove = async (e) => {
     e.stopPropagation();
     
@@ -56,27 +45,27 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
 
       if (hasPendingWork) {
         shouldRemove = await showConfirm({
-          title: 'Descartar trabalho não enviado?',
-          message: `O workspace "${workspace.name}" possui alterações sem commit ou commits ainda não enviados. Deseja descartar todo o trabalho realizado?`,
-          confirmText: 'Descartar workspace',
-          cancelText: 'Cancelar',
+          title: 'Discard uncommitted work?',
+          message: `The workspace "${workspace.name}" has uncommitted changes. Are you sure you want to discard them?`,
+          confirmText: 'Discard',
+          cancelText: 'Cancel',
           variant: 'danger',
         });
       } else {
         shouldRemove = await showConfirm({
-          title: 'Remover workspace?',
-          message: `Tem certeza que deseja remover o workspace "${workspace.name}"?`,
-          confirmText: 'Remover workspace',
-          cancelText: 'Cancelar',
+          title: 'Remove workspace?',
+          message: `Are you sure you want to remove the workspace "${workspace.name}"?`,
+          confirmText: 'Remove',
+          cancelText: 'Cancel',
           variant: 'danger',
         });
       }
     } catch (_error) {
       shouldRemove = await showConfirm({
-        title: 'Confirmar remoção',
-        message: `Não foi possível validar o estado de commit/push do workspace "${workspace.name}". Deseja prosseguir com a remoção?`,
-        confirmText: 'Remover workspace',
-        cancelText: 'Cancelar',
+        title: 'Confirm removal',
+        message: `Could not validate the commit status of "${workspace.name}". Proceed with removal?`,
+        confirmText: 'Remove',
+        cancelText: 'Cancel',
         variant: 'danger',
       });
     }
@@ -101,7 +90,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       });
 
       if (!closeSessionsResult?.success) {
-        throw new Error(closeSessionsResult?.error || 'Nao foi possivel encerrar os terminais do workspace');
+        throw new Error(closeSessionsResult?.error || 'Could not close terminals');
       }
 
       await new Promise((resolve) => setTimeout(resolve, 700));
@@ -114,10 +103,10 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       if (!result.success && result.canKillBlockingProcesses && Array.isArray(result.blockingProcesses) && result.blockingProcesses.length > 0) {
         const processDescription = formatBlockingProcesses(result.blockingProcesses);
         const shouldKillProcess = await showConfirm({
-          title: 'Processo bloqueando remoção',
-          message: `Encontramos processo(s) impedindo o fechamento do workspace "${workspace.name}".\n\n${processDescription}\n\nDeseja autorizar o app a encerrar esses processos e tentar remover novamente?`,
-          confirmText: 'Encerrar processos e remover',
-          cancelText: 'Cancelar',
+          title: 'Blocking processes found',
+          message: `We found processes blocking the removal of "${workspace.name}".\n\n${processDescription}\n\nDo you want to force kill these processes?`,
+          confirmText: 'Kill and remove',
+          cancelText: 'Cancel',
           variant: 'danger',
         });
 
@@ -127,10 +116,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
           });
 
           if (!killResult?.success) {
-            const failedMessage = Array.isArray(killResult?.failed) && killResult.failed.length > 0
-              ? `\n\nFalhas:\n${killResult.failed.map((entry) => `• PID ${entry.pid}: ${entry.error}`).join('\n')}`
-              : '';
-            throw new Error(`Nao foi possivel encerrar os processos bloqueantes.${failedMessage}`);
+            throw new Error(`Could not kill processes.`);
           }
 
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -142,22 +128,19 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       }
       
       if (result.success) {
-        // Se este era o workspace selecionado, limpar seleção
         if (workspace.isSelected) {
           selectWorkspace(null, null);
         }
-        
         removeWorkspace(projectId, workspace.name, workspace.path);
         if (onDeleted) onDeleted();
       } else {
-        throw new Error(result.error || 'Erro desconhecido');
+        throw new Error(result.error || 'Unknown error');
       }
     } catch (error) {
-      console.error('Erro ao remover workspace:', error);
       await showAlert({
-        title: 'Erro ao remover workspace',
-        message: error.message || 'Erro desconhecido',
-        confirmText: 'Fechar',
+        title: 'Error removing workspace',
+        message: error.message || 'Unknown error',
+        confirmText: 'Dismiss',
         variant: 'danger',
       });
     } finally {
@@ -165,9 +148,6 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
     }
   };
 
-  /**
-   * Handler para selecionar workspace e abrir chat
-   */
   const handleSelect = () => {
     selectWorkspace(projectId, workspace);
   };
@@ -189,9 +169,9 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
 
     if (!isValidWorkspaceName(nextName)) {
       await showAlert({
-        title: 'Nome de workspace inválido',
-        message: 'Use apenas letras, números, hífen e underscore.',
-        confirmText: 'Entendi',
+        title: 'Invalid workspace name',
+        message: 'Use only letters, numbers, hyphens, and underscores.',
+        confirmText: 'Got it',
         variant: 'danger',
       });
       return;
@@ -206,18 +186,17 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       });
 
       if (!result.success || !result.workspace) {
-        throw new Error(result.error || 'Erro ao renomear workspace');
+        throw new Error(result.error || 'Failed to rename workspace');
       }
 
       renameWorkspace(projectId, workspace.path, result.workspace);
       if (onRenamed) onRenamed();
       setIsEditing(false);
     } catch (error) {
-      console.error('Erro ao renomear workspace:', error);
       await showAlert({
-        title: 'Erro ao renomear workspace',
-        message: error.message || 'Erro desconhecido',
-        confirmText: 'Fechar',
+        title: 'Failed to rename workspace',
+        message: error.message || 'Unknown error',
+        confirmText: 'Dismiss',
         variant: 'danger',
       });
     } finally {
@@ -226,96 +205,96 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
   };
 
   return (
-    <li
-      className={`group w-full min-h-9 flex items-center gap-2 px-3 text-[0.85rem] rounded-[8px]
-                  cursor-pointer transition-colors duration-150
-                  hover:bg-[#eff6ff] dark:hover:bg-white/5
-                  ${workspace.isSelected
-                    ? 'bg-[#eff6ff] dark:bg-white/10' 
-                    : ''}`}
+    <div
+      className={cn(
+        "group w-full min-h-8 flex items-center justify-between gap-2 px-2.5 text-xs rounded-md cursor-pointer transition-all duration-300",
+        workspace.isSelected
+          ? "bg-[color:var(--text-primary)] text-[color:var(--bg-body)] shadow-sm"
+          : "hover:bg-[color:var(--border-color)]/30 text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]"
+      )}
       onClick={handleSelect}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
       title={workspace.path}
     >
-      {/* Ícone do Workspace (Branch) */}
-      <svg 
-        className={`w-4 h-4 flex-shrink-0 ${workspace.isSelected ? 'text-[color:var(--primary-color)]' : 'text-[color:var(--text-tertiary)]'}`}
-        viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-      >
-        <line x1="6" y1="3" x2="6" y2="15"></line>
-        <circle cx="18" cy="6" r="3"></circle>
-        <circle cx="6" cy="18" r="3"></circle>
-        <path d="M18 9a9 9 0 0 1-9 9"></path>
-      </svg>
-
-      {isEditing ? (
-        <input
-          type="text"
-          value={editName}
-          onChange={(e) => setEditName(e.target.value)}
-          onClick={(e) => e.stopPropagation()}
-          onBlur={handleRename}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              handleRename();
-            } else if (e.key === 'Escape') {
-              setEditName(workspace.name);
-              setIsEditing(false);
-            }
-          }}
-          autoFocus
-          className="flex-1 px-1 py-0.5 text-[0.85rem] rounded-[4px]
-                     bg-[color:var(--bg-body)]
-                     border border-[color:var(--border-color)]
-                     focus:outline-none focus:ring-1 focus:ring-[color:var(--primary-color)]
-                     text-[color:var(--text-primary)]"
+      <div className="flex items-center gap-2 overflow-hidden flex-1">
+        <GitBranch 
+          className={cn(
+            "h-3 w-3 shrink-0", 
+            workspace.isSelected ? "text-[color:var(--bg-body)]" : "text-[color:var(--text-tertiary)] group-hover:text-[color:var(--text-primary)]"
+          )} 
         />
-      ) : (
-        <span className={`flex-1 text-[0.85rem] truncate ${workspace.isSelected ? 'font-bold text-[color:var(--primary-color)]' : 'text-[color:var(--text-primary)]'}`}>
-          {workspace.name}
-        </span>
-      )}
 
-      {/* Indicador de workspace atual */}
-      {workspace.isCurrent && (
-        <span className="text-[0.75rem] text-[color:var(--text-secondary)] font-semibold mr-1 bg-[color:var(--bg-surface)] px-1.5 py-0.5 rounded-[4px]">
-          Git
-        </span>
-      )}
+        {isEditing ? (
+          <input
+            type="text"
+            value={editName}
+            onChange={(e) => setEditName(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
+            onBlur={handleRename}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleRename();
+              } else if (e.key === 'Escape') {
+                setEditName(workspace.name);
+                setIsEditing(false);
+              }
+            }}
+            autoFocus
+            className="flex-1 px-1.5 py-0.5 mt-0 text-xs font-mono rounded bg-[color:var(--bg-body)] border border-[color:var(--border-color)] focus:outline-none focus:border-[color:var(--text-primary)] text-[color:var(--text-primary)] transition-all"
+          />
+        ) : (
+          <span className={cn(
+            "flex-1 font-mono tracking-tight truncate", 
+            workspace.isSelected && "font-semibold"
+          )}>
+            {workspace.name}
+          </span>
+        )}
 
-      {/* Ações do Workspace */}
-      <div className={`flex items-center gap-0.5 ${showActions ? 'opacity-100' : 'opacity-0'} transition-opacity`}>
+        {workspace.isCurrent && (
+          <span className={cn(
+            "text-[9px] font-bold px-1.5 py-0.5 rounded-[3px] uppercase tracking-wider",
+            workspace.isSelected 
+              ? "bg-[color:var(--bg-body)]/20 text-[color:var(--bg-body)]" 
+              : "bg-[color:var(--border-color)]/50 text-[color:var(--text-primary)]"
+          )}>
+            Git
+          </span>
+        )}
+      </div>
+
+      <div className={cn(
+        "flex items-center gap-0.5 transition-opacity duration-300",
+        showActions && !isEditing ? "opacity-100" : "opacity-0"
+      )}>
         <button
           onClick={handleStartRename}
           disabled={isRenaming || isRemoving}
-          className="p-1 rounded-[6px] hover:bg-[#eff6ff] hover:text-[color:var(--primary-color)] dark:hover:bg-white/10 text-[color:var(--text-tertiary)]
-                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          title="Renomear"
-          aria-label="Renomear workspace"
+          className={cn(
+            "p-1 rounded transition-colors disabled:opacity-50",
+            workspace.isSelected 
+              ? "hover:bg-[color:var(--bg-body)]/20 text-[color:var(--bg-body)]/70 hover:text-[color:var(--bg-body)]" 
+              : "hover:bg-[color:var(--border-color)] text-[color:var(--text-tertiary)] hover:text-[color:var(--text-primary)]"
+          )}
+          title="Rename"
         >
-          <svg className="w-3.5 h-3.5"
-               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round"
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-          </svg>
+          <Pencil className="h-3 w-3" />
         </button>
-        {/* Remover */}
         <button
           onClick={handleRemove}
           disabled={isRemoving || isRenaming}
-          className="p-1 rounded-[6px] hover:bg-[color:var(--danger-color)] hover:text-[color:var(--bg-body)] text-[color:var(--text-tertiary)]
-                     disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          title="Remover"
-          aria-label="Remover workspace"
+          className={cn(
+            "p-1 rounded transition-colors disabled:opacity-50",
+            workspace.isSelected 
+              ? "hover:bg-red-500/20 text-[color:var(--bg-body)]/70 hover:text-red-300" 
+              : "hover:bg-red-500/10 text-[color:var(--text-tertiary)] hover:text-red-500"
+          )}
+          title="Remove"
         >
-          <svg className="w-3.5 h-3.5" 
-               fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-            <path strokeLinecap="round" strokeLinejoin="round" 
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-          </svg>
+          <Trash2 className="h-3 w-3" />
         </button>
       </div>
-    </li>
+    </div>
   );
 }
