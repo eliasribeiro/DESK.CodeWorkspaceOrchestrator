@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 
 export function HomeScreen() {
-  const { projects, activeScreen, addProjectFromPath, selectWorkspace, showAlert } = useWorkspace();
+  const { projects, activeScreen, addProjectFromPath, selectWorkspace, showAlert, t } = useWorkspace();
   const [workspaceCounts, setWorkspaceCounts] = useState({});
 
   const fetchWorkspaceCounts = useCallback(async () => {
@@ -71,18 +71,18 @@ export function HomeScreen() {
           selectWorkspace(project.id, formattedWorkspaces[0]);
         } else {
           await showAlert({
-            title: 'Nenhum workspace',
-            message: `O projeto "${project.name}" ainda não possui workspaces criados. Expanda o projeto na barra lateral para criar um.`,
-            confirmText: 'Entendi'
+            title: t('home.noWorkspace'),
+            message: t('home.noWorkspaceDescription', { name: project.name }),
+            confirmText: t('home.gotIt')
           });
         }
       }
     } catch (error) {
       console.error('Erro ao carregar workspaces:', error);
       await showAlert({
-        title: 'Erro',
-        message: 'Não foi possível carregar os workspaces.',
-        confirmText: 'Fechar',
+        title: t('home.error'),
+        message: t('home.loadWorkspacesError'),
+        confirmText: t('home.close'),
         variant: 'danger'
       });
     }
@@ -100,10 +100,10 @@ export function HomeScreen() {
           {/* Header Section */}
           <div className="flex flex-col gap-6 max-w-2xl">
             <h1 className="font-display text-4xl md:text-5xl font-medium tracking-tight text-[color:var(--text-primary)]">
-              Orchestrate your code<br />environments seamlessly.
+              {t('home.titlePart1')}<br />{t('home.titlePart2')}
             </h1>
             <p className="text-lg leading-relaxed text-[color:var(--text-secondary)]">
-              Manage multiple git worktrees, persistent AI sessions, and terminals from a single, unified surface. Precision tools for profound work.
+              {t('home.description')}
             </p>
             <div className="flex items-center gap-4 pt-4">
               <button 
@@ -111,26 +111,26 @@ export function HomeScreen() {
                 className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--text-primary)] px-6 text-sm font-medium text-[color:var(--bg-body)] transition-transform hover:scale-105"
               >
                 <FolderOpen className="mr-2 h-4 w-4" />
-                Open Repository
+                {t('home.openRepository')}
               </button>
               <div className="text-sm font-medium text-[color:var(--text-tertiary)]">
-                {projects.length} indexed projects
+                {t('home.indexedProjects', { count: projects.length })}
               </div>
             </div>
           </div>
 
           {/* Projects List */}
-          <div className="flex flex-col gap-6 border-t border-[color:var(--border-color)] pt-12">
+            <div className="flex flex-col gap-6 border-t border-[color:var(--border-color)] pt-12">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-xl font-medium tracking-tight text-[color:var(--text-primary)]">Recent Projects</h2>
+              <h2 className="font-display text-xl font-medium tracking-tight text-[color:var(--text-primary)]">{t('home.recentProjects')}</h2>
             </div>
 
             {projects.length === 0 ? (
               <div className="flex min-h-[200px] flex-col items-center justify-center rounded-2xl border border-dashed border-[color:var(--border-color)] bg-[color:var(--bg-surface)] p-8 text-center">
                 <Terminal className="mb-4 h-8 w-8 text-[color:var(--text-tertiary)]" />
-                <p className="font-display text-lg tracking-tight text-[color:var(--text-primary)]">No projects connected</p>
+                <p className="font-display text-lg tracking-tight text-[color:var(--text-primary)]">{t('home.noProjects')}</p>
                 <p className="mt-2 text-sm text-[color:var(--text-secondary)] max-w-md">
-                  Open a directory to start managing workspaces and terminal sessions.
+                  {t('home.noProjectsDescription')}
                 </p>
               </div>
             ) : (
@@ -157,7 +157,7 @@ export function HomeScreen() {
                     </div>
                     <div className="flex items-center justify-between border-t border-[color:var(--border-color)] pt-4">
                       <span className="text-sm font-medium text-[color:var(--text-secondary)]">
-                        {workspaceCounts[project.id] ?? '0'} Workspaces
+                        {t('home.workspacesCount', { count: workspaceCounts[project.id] ?? '0' })}
                       </span>
                       <span className="text-[color:var(--text-primary)] opacity-0 transition-opacity group-hover:opacity-100">&rarr;</span>
                     </div>

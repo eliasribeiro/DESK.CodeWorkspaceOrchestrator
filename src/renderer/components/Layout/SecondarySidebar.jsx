@@ -358,7 +358,7 @@ export function SecondarySidebar() {
                     type="button"
                     onClick={() => setIsActionsMenuOpen((prev) => !prev)}
                     disabled={Boolean(actionInProgress)}
-                    className="w-full h-8 px-2 rounded-[8px] text-[0.85rem] font-medium text-white bg-[color:var(--primary-color)] hover:bg-[color:var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-colors shadow-sm"
+                    className="w-full h-8 px-2 rounded-[8px] text-[0.85rem] font-medium text-[color:var(--bg-body)] bg-[color:var(--primary-color)] hover:bg-[color:var(--primary-hover)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-between transition-colors shadow-sm"
                   >
                     <span>
                       {actionInProgress === 'commit' && 'Realizando commit...'}
