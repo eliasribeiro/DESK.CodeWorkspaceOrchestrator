@@ -19,7 +19,7 @@ const defaultPreferences = {
   showSecondarySidebar: false,
   workspaceViewMode: 'chat',
   selectedModel: '',
-  selectedEditor: 'claude-code',
+  selectedEditor: 'claude-code-native',
   selectedProvider: '',
   selectedChatId: null,
   selectedWorkspace: null,

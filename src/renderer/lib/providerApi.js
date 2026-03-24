@@ -89,6 +89,10 @@ export async function fetchModelsFromProvider(provider = {}) {
 }
 
 export function providerSupportsEditor(provider, editor) {
+  if (editor === 'codex' || editor === 'qwen-code' || editor === 'claude-code-native' || editor === 'gemini-cli') {
+    return true;
+  }
+
   if (!provider || typeof provider !== 'object') {
     return editor !== 'claude-code' && editor !== 'opcode';
   }

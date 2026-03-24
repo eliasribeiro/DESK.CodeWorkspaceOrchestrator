@@ -2,8 +2,10 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 
 const editorOptions = [
-  { value: 'claude-code', label: 'Claude Code' },
+  { value: 'claude-code-native', label: 'Claude Code' },
+  { value: 'claude-code', label: 'Claude Code (Provider)' },
   { value: 'codex', label: 'Codex' },
+  { value: 'gemini-cli', label: 'Gemini CLI' },
   { value: 'qwen-code', label: 'Qwen Code' },
   { value: 'opcode', label: 'OpenCode' },
 ];
@@ -176,22 +178,26 @@ export function WorkspaceToolbar({
   const currentProvider = providerOptions.find((providerOption) => providerOption.value === selectedProvider);
   const isCodexSelected = editor === 'codex';
   const isClaudeSelected = editor === 'claude-code';
+  const isClaudeNativeSelected = editor === 'claude-code-native';
+  const isGeminiSelected = editor === 'gemini-cli';
   const isQwenSelected = editor === 'qwen-code';
   const isOpenCodeSelected = editor === 'opcode';
-  const showYolo = isCodexSelected || isClaudeSelected || isQwenSelected;
-  const requiresProvider = !isCodexSelected && !isQwenSelected;
+  const showYolo = isCodexSelected || isClaudeSelected || isClaudeNativeSelected || isQwenSelected || isGeminiSelected;
+  const requiresProvider = !isCodexSelected && !isQwenSelected && !isClaudeNativeSelected && !isGeminiSelected;
   const isLaunchDisabled =
     isRunning || sessionCount >= 8 || (requiresProvider ? !selectedProvider || !selectedModel : false);
 
   const currentActionLabel = isCodexSelected
     ? 'Run Codex'
-    : isClaudeSelected
+    : isClaudeSelected || isClaudeNativeSelected
       ? 'Run Claude'
-      : isQwenSelected
-        ? 'Run Qwen'
-        : isOpenCodeSelected
-          ? 'Run OpenCode'
-          : 'Run';
+      : isGeminiSelected
+        ? 'Run Gemini'
+        : isQwenSelected
+          ? 'Run Qwen'
+          : isOpenCodeSelected
+            ? 'Run OpenCode'
+            : 'Run';
 
   return (
     <div className="relative z-30 border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-6 py-3 backdrop-blur transition-colors">

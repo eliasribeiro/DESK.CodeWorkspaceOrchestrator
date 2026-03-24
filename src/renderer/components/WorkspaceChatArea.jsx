@@ -22,7 +22,9 @@ function getDefaultWorkspaceView() {
 function getSessionTitle(session) {
   const editorLabelMap = {
     codex: 'Codex',
-    'claude-code': 'Claude',
+    'claude-code': 'Claude (P)',
+    'claude-code-native': 'Claude',
+    'gemini-cli': 'Gemini',
     'qwen-code': 'Qwen',
     opcode: 'OpenCode',
   };
@@ -64,7 +66,7 @@ export function WorkspaceChatArea() {
     closeFilePreview,
   } = useWorkspace();
   const [isStartingSession, setIsStartingSession] = useState(false);
-  const [selectedEditor, setSelectedEditor] = useState('claude-code');
+  const [selectedEditor, setSelectedEditor] = useState('claude-code-native');
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [selectedModelLocal, setSelectedModelLocal] = useState('');
   const [yoloMode, setYoloMode] = useState(false);
@@ -80,7 +82,7 @@ export function WorkspaceChatArea() {
     return enabledProviders.find((provider) => provider.id === selectedProviderId) || null;
   }, [enabledProviders, selectedProviderId]);
   const isSelectedProviderCompatible = useMemo(() => (
-    selectedEditor === 'codex' || selectedEditor === 'qwen-code'
+    selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli'
       ? true
       : providerSupportsEditor(selectedProvider, selectedEditor)
   ), [selectedEditor, selectedProvider]);
@@ -124,7 +126,7 @@ export function WorkspaceChatArea() {
   }, [enabledProviders, selectedProviderId]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code') {
+    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli') {
       return;
     }
 
@@ -139,7 +141,7 @@ export function WorkspaceChatArea() {
   }, [enabledProviders, selectedEditor, selectedProviderId]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code') {
+    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli') {
       if (selectedModelLocal !== '') {
         setSelectedModelLocal('');
         setSelectedModel('');
@@ -163,7 +165,7 @@ export function WorkspaceChatArea() {
   }, [isSelectedProviderCompatible, selectedEditor, selectedProvider, selectedProviderModels]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'claude-code') {
+    if (selectedEditor === 'codex' || selectedEditor === 'claude-code' || selectedEditor === 'claude-code-native') {
       setYoloMode(true);
     } else {
       setYoloMode(false);
@@ -390,7 +392,7 @@ export function WorkspaceChatArea() {
       return;
     }
 
-    if (selectedEditor !== 'codex' && selectedEditor !== 'qwen-code' && !isSelectedProviderCompatible) {
+    if (selectedEditor !== 'codex' && selectedEditor !== 'qwen-code' && selectedEditor !== 'claude-code-native' && selectedEditor !== 'gemini-cli' && !isSelectedProviderCompatible) {
       updateWorkspaceView((currentView) => ({
         ...currentView,
         terminalError: 'O provedor selecionado nao e compativel com o editor atual.',
@@ -404,7 +406,7 @@ export function WorkspaceChatArea() {
       const result = await window.electronAPI.terminal.launchSession({
         workspacePath,
         editor: selectedEditor,
-        provider: selectedEditor === 'codex' || selectedEditor === 'qwen-code'
+        provider: selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli'
           ? null
           : {
             id: selectedProvider?.id || '',
@@ -413,7 +415,7 @@ export function WorkspaceChatArea() {
             baseUrl: selectedProvider?.baseUrl || '',
             apiKey: selectedProvider?.apiKey || '',
           },
-        model: selectedEditor === 'codex' || selectedEditor === 'qwen-code' ? '' : selectedModelLocal,
+        model: selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli' ? '' : selectedModelLocal,
         yoloMode,
         cols: isGridMode ? 56 : 120,
         rows: isGridMode ? 18 : 32,
