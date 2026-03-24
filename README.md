@@ -1,9 +1,25 @@
+<div align="center">
+  <a href="README.md">🇧🇷 Português</a> |
+  <a href="README.en.md">🇺🇸 English</a> |
+  <a href="README.es.md">🇪🇸 Español</a>
+</div>
+
 # Code Workspace Orchestrator
+
+Esse é um aplicativo desktop para gerenciar ambientes de codificação de terminal (CLI) como Claude Code, Codex CLI, Gemini CLI, Qwen CLI, OpenCode integrados ao Git worktree de forma que você consiga aumentar sua produtividade abrindo vários terminais e worktrees para desenvolvimento em paralelo de funcionalidades nos seus projetos.
 
 Aplicativo desktop moderno construído com **Electron + React + Vite + Tailwind CSS**.
 
+## 🌐 Suporte a Múltiplos Idiomas
+
+A interface do aplicativo suporta nativamente 3 idiomas. Você pode ler a documentação no seu idioma preferido:
+- [🇺🇸 Inglês (English)](README.en.md)
+- [🇧🇷 Português (Português)](README.md)
+- [🇪🇸 Espanhol (Español)](README.es.md)
+
 ## 🚀 Funcionalidades
 
+- ✅ **Múltiplos Provedores de IA**: Conecte-se facilmente a diversos provedores (OpenAI, Anthropic, Ollama, etc) e gerencie os seus modelos em uma única interface.
 - ✅ Janela frameless com barra de título customizada
 - ✅ Controles de janela (minimizar, maximizar/restaurar, fechar)
 - ✅ Alternância de tema claro/escuro com persistência

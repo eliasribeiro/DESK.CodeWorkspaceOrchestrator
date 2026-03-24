@@ -10,8 +10,7 @@ export function getThemeOptions(t) {
   return [
     { value: 'dark', label: t('settings.themeDark') },
     { value: 'light', label: t('settings.themeLight') },
-    { value: 'conductor', label: t('settings.themeConductor') },
-    { value: 'conductor-white', label: t('settings.themeConductorWhite') },
+    { value: 'graphite', label: t('settings.themeGraphite') },
   ];
 }
 
@@ -57,8 +56,7 @@ const translations = {
     'settings.themeDescription': 'Choose one of the available themes for your experience.',
     'settings.themeDark': 'Darker tones',
     'settings.themeLight': 'Light',
-    'settings.themeConductor': 'Conductor',
-    'settings.themeConductorWhite': 'Conductor White',
+    'settings.themeGraphite': 'Graphite (Dark Gray)',
     'settings.providersTitle': 'AI Providers',
     'settings.providersDescription': 'Configure your AI providers to use across chats',
     'settings.addProvider': 'Add Provider',
@@ -143,8 +141,7 @@ const translations = {
     'settings.themeDescription': 'Escolha entre os temas disponíveis para sua experiência.',
     'settings.themeDark': 'Dark',
     'settings.themeLight': 'Claro',
-    'settings.themeConductor': 'Conductor',
-    'settings.themeConductorWhite': 'Condutor (Branco)',
+    'settings.themeGraphite': 'Grafite (Cinza Escuro)',
     'settings.providersTitle': 'Provedores de IA',
     'settings.providersDescription': 'Configure seus provedores de IA para usar nos chats',
     'settings.addProvider': 'Adicionar Provedor',
@@ -229,8 +226,7 @@ const translations = {
     'settings.themeDescription': 'Elige uno de los temas disponibles para tu experiencia.',
     'settings.themeDark': 'Tonos oscuros',
     'settings.themeLight': 'Claro',
-    'settings.themeConductor': 'Conductor',
-    'settings.themeConductorWhite': 'Conductor (Blanco)',
+    'settings.themeGraphite': 'Grafito (Gris Oscuro)',
     'settings.providersTitle': 'Proveedores de IA',
     'settings.providersDescription': 'Configura tus proveedores de IA para usarlos en los chats',
     'settings.addProvider': 'Agregar Proveedor',

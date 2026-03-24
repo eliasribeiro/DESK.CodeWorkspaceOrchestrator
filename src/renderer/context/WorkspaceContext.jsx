@@ -6,7 +6,7 @@ import {
 } from '@lib/providerApi';
 
 const WorkspaceContext = createContext(null);
-export const SUPPORTED_THEMES = ['dark', 'light'];
+export const SUPPORTED_THEMES = ['dark', 'light', 'graphite'];
 
 const defaultPreferences = {
   projects: [],
@@ -256,9 +256,9 @@ export function WorkspaceProvider({ children }) {
   }, []);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    if (theme === 'dark') {
-      document.documentElement.classList.add('dark');
+    document.documentElement.classList.remove(...SUPPORTED_THEMES);
+    if (theme && theme !== 'light') {
+      document.documentElement.classList.add(theme);
     }
   }, [theme]);
 
