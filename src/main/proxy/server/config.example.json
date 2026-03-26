@@ -17,6 +17,12 @@
   "webuiPassword": "",
   "_webuiPassword_comment": "Optional password to protect WebUI. Can also use WEBUI_PASSWORD env var.",
 
+  "oauthClientId": "",
+  "_oauthClientId_comment": "Google OAuth client ID. Can also use OAUTH_CLIENT_ID env var.",
+
+  "oauthClientSecret": "",
+  "_oauthClientSecret_comment": "Google OAuth client secret. Can also use OAUTH_CLIENT_SECRET env var.",
+
   "port": 8080,
   "debug": false,
   "logLevel": "info",

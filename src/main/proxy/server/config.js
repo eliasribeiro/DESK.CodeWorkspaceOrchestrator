@@ -32,6 +32,8 @@ function deepMerge(target, source) {
 const DEFAULT_CONFIG = {
     apiKey: '',
     webuiPassword: '',
+    oauthClientId: '',
+    oauthClientSecret: '',
     debug: false,
     devMode: false,
     logLevel: 'info',
@@ -124,6 +126,8 @@ function loadConfig() {
         // Environment overrides
         if (process.env.API_KEY) config.apiKey = process.env.API_KEY;
         if (process.env.WEBUI_PASSWORD) config.webuiPassword = process.env.WEBUI_PASSWORD;
+        if (process.env.OAUTH_CLIENT_ID) config.oauthClientId = process.env.OAUTH_CLIENT_ID;
+        if (process.env.OAUTH_CLIENT_SECRET) config.oauthClientSecret = process.env.OAUTH_CLIENT_SECRET;
         if (process.env.DEBUG === 'true') config.debug = true;
         if (process.env.DEV_MODE === 'true') config.devMode = true;
 
@@ -145,6 +149,7 @@ export function getPublicConfig() {
     // Redact sensitive values
     if (publicConfig.webuiPassword) publicConfig.webuiPassword = '********';
     if (publicConfig.apiKey) publicConfig.apiKey = '********';
+    if (publicConfig.oauthClientSecret) publicConfig.oauthClientSecret = '********';
 
     return publicConfig;
 }

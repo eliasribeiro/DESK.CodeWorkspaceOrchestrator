@@ -19,6 +19,15 @@ import { logger } from '../utils/logger.js';
 import { throttledFetch } from '../utils/helpers.js';
 import { onboardUser, getDefaultTierId } from '../account-manager/onboarding.js';
 
+function assertOAuthConfig(requireSecret = true) {
+    if (!OAUTH_CONFIG.clientId) {
+        throw new Error('OAuth client ID não configurado. Defina OAUTH_CLIENT_ID ou oauthClientId no config.json.');
+    }
+    if (requireSecret && !OAUTH_CONFIG.clientSecret) {
+        throw new Error('OAuth client secret não configurado. Defina OAUTH_CLIENT_SECRET ou oauthClientSecret no config.json.');
+    }
+}
+
 /**
  * Parse refresh token parts (aligned with opencode-antigravity-auth)
  * Format: refreshToken|projectId|managedProjectId
@@ -67,6 +76,7 @@ function generatePKCE() {
  * @returns {{url: string, verifier: string, state: string}} Auth URL and PKCE data
  */
 export function getAuthorizationUrl(customRedirectUri = null) {
+    assertOAuthConfig(false);
     const { verifier, challenge } = generatePKCE();
     const state = crypto.randomBytes(16).toString('hex');
 
@@ -355,6 +365,7 @@ Option 4: Exclude port from reservation (run as Administrator)
  * @returns {Promise<{accessToken: string, refreshToken: string, expiresIn: number}>} OAuth tokens
  */
 export async function exchangeCode(code, verifier) {
+    assertOAuthConfig();
     const response = await throttledFetch(OAUTH_CONFIG.tokenUrl, {
         method: 'POST',
         headers: {
@@ -400,6 +411,7 @@ export async function exchangeCode(code, verifier) {
  * @returns {Promise<{accessToken: string, expiresIn: number}>} New access token
  */
 export async function refreshAccessToken(compositeRefresh) {
+    assertOAuthConfig();
     // Parse the composite refresh token to extract the actual OAuth token
     const parts = parseRefreshParts(compositeRefresh);
 

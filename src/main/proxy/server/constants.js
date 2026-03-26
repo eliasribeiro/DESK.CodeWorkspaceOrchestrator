@@ -253,8 +253,8 @@ const OAUTH_CALLBACK_PORT = parseInt(process.env.OAUTH_CALLBACK_PORT || '51121',
 const OAUTH_CALLBACK_FALLBACK_PORTS = [51122, 51123, 51124, 51125, 51126];
 
 export const OAUTH_CONFIG = {
-    clientId: process.env.OAUTH_CLIENT_ID || '',
-    clientSecret: process.env.OAUTH_CLIENT_SECRET || '',
+    clientId: config?.oauthClientId || '',
+    clientSecret: config?.oauthClientSecret || '',
     authUrl: 'https://accounts.google.com/o/oauth2/v2/auth',
     tokenUrl: 'https://oauth2.googleapis.com/token',
     userInfoUrl: 'https://www.googleapis.com/oauth2/v1/userinfo',
