@@ -23,6 +23,9 @@ const defaultPreferences = {
   selectedProvider: '',
   selectedChatId: null,
   selectedWorkspace: null,
+  proxyPort: 8080,
+  proxyAutoStart: false,
+  proxyStrategy: 'hybrid',
 };
 
 function normalizeProvider(provider = {}) {
@@ -68,6 +71,11 @@ function normalizePreferences(preferences = {}) {
       typeof preferences.selectedWorkspace.workspace === 'object'
         ? preferences.selectedWorkspace
         : null,
+    proxyPort: Number.isFinite(preferences?.proxyPort) ? preferences.proxyPort : defaultPreferences.proxyPort,
+    proxyAutoStart: Boolean(preferences?.proxyAutoStart),
+    proxyStrategy: ['sticky', 'round-robin', 'hybrid'].includes(preferences?.proxyStrategy)
+      ? preferences.proxyStrategy
+      : defaultPreferences.proxyStrategy,
   };
 }
 
@@ -140,6 +148,9 @@ export function WorkspaceProvider({ children }) {
   const [aiProviders, setAiProviders] = useState(defaultPreferences.aiProviders);
   const [theme, setTheme] = useState(defaultPreferences.theme);
   const [language, setLanguage] = useState(defaultPreferences.language);
+  const [proxyPort, setProxyPort] = useState(defaultPreferences.proxyPort);
+  const [proxyAutoStart, setProxyAutoStart] = useState(defaultPreferences.proxyAutoStart);
+  const [proxyStrategy, setProxyStrategy] = useState(defaultPreferences.proxyStrategy);
   const [activeSessionsCount, setActiveSessionsCount] = useState(0);
   const [workspaceViews, setWorkspaceViews] = useState({});
   const [filePreview, setFilePreview] = useState({
@@ -218,6 +229,9 @@ export function WorkspaceProvider({ children }) {
       setSelectedEditor(preferences.selectedEditor);
       setSelectedProvider(preferences.selectedProvider);
       setSelectedChatId(preferences.selectedChatId);
+      setProxyPort(preferences.proxyPort);
+      setProxyAutoStart(preferences.proxyAutoStart);
+      setProxyStrategy(preferences.proxyStrategy);
 
       const restoredWorkspace = preferences.selectedWorkspace;
       const workspaceStillExists =
@@ -282,6 +296,9 @@ export function WorkspaceProvider({ children }) {
       selectedProvider,
       selectedChatId,
       selectedWorkspace,
+      proxyPort,
+      proxyAutoStart,
+      proxyStrategy,
     });
 
     const electronPreferencesApi = window.electronAPI?.preferences;
@@ -316,6 +333,9 @@ export function WorkspaceProvider({ children }) {
     selectedProvider,
     selectedChatId,
     selectedWorkspace,
+    proxyPort,
+    proxyAutoStart,
+    proxyStrategy,
   ]);
 
   const generateId = () => `id-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -696,6 +716,12 @@ export function WorkspaceProvider({ children }) {
     filePreview,
     openFilePreview,
     closeFilePreview,
+    proxyPort,
+    setProxyPort,
+    proxyAutoStart,
+    setProxyAutoStart,
+    proxyStrategy,
+    setProxyStrategy,
   };
 
   return (

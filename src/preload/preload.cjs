@@ -57,6 +57,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
     onError: (callback) => subscribe('terminal:error', callback),
   },
 
+  proxy: {
+    start: (options) => ipcRenderer.invoke('proxy:start', options),
+    stop: () => ipcRenderer.invoke('proxy:stop'),
+    restart: (options) => ipcRenderer.invoke('proxy:restart', options),
+    getStatus: () => ipcRenderer.invoke('proxy:getStatus'),
+    getHealth: () => ipcRenderer.invoke('proxy:getHealth'),
+    getAccounts: () => ipcRenderer.invoke('proxy:getAccounts'),
+    getModels: () => ipcRenderer.invoke('proxy:getModels'),
+    addAccount: () => ipcRenderer.invoke('proxy:addAccount'),
+    removeAccount: (email) => ipcRenderer.invoke('proxy:removeAccount', email),
+    onStatusChange: (callback) => subscribe('proxy:statusChange', callback),
+  },
+
   devTools: {
     toggle: () => ipcRenderer.send('devtools:toggle'),
   },

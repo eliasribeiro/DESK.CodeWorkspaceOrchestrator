@@ -5,6 +5,7 @@ import { SUPPORTED_THEMES, useWorkspace } from '@context/WorkspaceContext';
 import { getThemeOptions, languageOptions } from '@utils/i18n';
 import { getProviderApiTypeLabel } from '@lib/providerApi';
 import { ProviderModal } from './ProviderModal';
+import { ProxySettingsTab } from './ProxySettingsTab';
 import { Button } from '@components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@components/ui/tabs';
@@ -22,6 +23,12 @@ export function SettingsScreen() {
     setTheme,
     language,
     setLanguage,
+    proxyPort,
+    setProxyPort,
+    proxyAutoStart,
+    setProxyAutoStart,
+    proxyStrategy,
+    setProxyStrategy,
     t,
   } = useWorkspace();
 
@@ -84,6 +91,7 @@ export function SettingsScreen() {
           <TabsList className="w-fit">
             <TabsTrigger value="geral">{t('settings.general')}</TabsTrigger>
             <TabsTrigger value="provedores">{t('settings.providers')}</TabsTrigger>
+            <TabsTrigger value="proxy">Antigravity Proxy</TabsTrigger>
           </TabsList>
 
           <TabsContent value="geral" className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
@@ -291,6 +299,17 @@ export function SettingsScreen() {
                 </CardContent>
               </Card>
             </motion.div>
+          </TabsContent>
+
+          <TabsContent value="proxy" className="min-h-0 flex-1 overflow-y-auto scrollbar-thin">
+            <ProxySettingsTab
+              proxyPort={proxyPort}
+              onProxyPortChange={setProxyPort}
+              proxyAutoStart={proxyAutoStart}
+              onProxyAutoStartChange={setProxyAutoStart}
+              proxyStrategy={proxyStrategy}
+              onProxyStrategyChange={setProxyStrategy}
+            />
           </TabsContent>
         </Tabs>
       </div>

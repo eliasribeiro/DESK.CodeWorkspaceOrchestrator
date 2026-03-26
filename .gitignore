@@ -35,6 +35,26 @@ desktop.ini
 # Vite
 *.local
 
+# Credenciais / chaves (não commitar)
+config.json
+src/main/proxy/server/config.json
+accounts.json
+usage-history.json
+claude-presets.json
+.claude/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.der
+*.crt
+*.cer
+credentials*.json
+service-account*.json
+oauth*.json
+
 # Electron
 *.asar
 .cwo/

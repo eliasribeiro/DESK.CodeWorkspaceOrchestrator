@@ -32,8 +32,12 @@
     "@radix-ui/react-tooltip": "^1.2.8",
     "@xterm/addon-fit": "^0.11.0",
     "@xterm/xterm": "^6.0.0",
+    "async-mutex": "^0.5.0",
+    "better-sqlite3": "^12.8.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "cors": "^2.8.6",
+    "express": "^5.2.1",
     "jsonc-parser": "^3.3.1",
     "lottie-react": "^2.4.1",
     "lucide-react": "^0.577.0",
@@ -42,7 +46,8 @@
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "simple-git": "^3.32.3",
-    "tailwind-merge": "^3.5.0"
+    "tailwind-merge": "^3.5.0",
+    "undici": "^7.24.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.2.1",

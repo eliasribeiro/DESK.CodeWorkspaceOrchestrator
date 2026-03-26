@@ -22,7 +22,8 @@ function getDefaultWorkspaceView() {
 function getSessionTitle(session) {
   const editorLabelMap = {
     codex: 'Codex',
-    'claude-code': 'Claude (P)',
+    'claude-code': 'Claude',
+    'claude-code-proxy': 'Claude',
     'claude-code-native': 'Claude',
     'gemini-cli': 'Gemini',
     'qwen-code': 'Qwen',
@@ -66,7 +67,7 @@ export function WorkspaceChatArea() {
     closeFilePreview,
   } = useWorkspace();
   const [isStartingSession, setIsStartingSession] = useState(false);
-  const [selectedEditor, setSelectedEditor] = useState('claude-code-native');
+  const [selectedEditor, setSelectedEditor] = useState('claude-code');
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [selectedModelLocal, setSelectedModelLocal] = useState('');
   const [yoloMode, setYoloMode] = useState(false);
@@ -82,7 +83,7 @@ export function WorkspaceChatArea() {
     return enabledProviders.find((provider) => provider.id === selectedProviderId) || null;
   }, [enabledProviders, selectedProviderId]);
   const isSelectedProviderCompatible = useMemo(() => (
-    selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli'
+    selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code' || selectedEditor === 'gemini-cli'
       ? true
       : providerSupportsEditor(selectedProvider, selectedEditor)
   ), [selectedEditor, selectedProvider]);
@@ -120,13 +121,25 @@ export function WorkspaceChatArea() {
   }, [sessions.length, setActiveSessionsCount]);
 
   useEffect(() => {
-    if (!selectedProviderId && enabledProviders.length > 0) {
-      setSelectedProviderId(enabledProviders[0].id);
+    if (!selectedProviderId) {
+      if (selectedEditor === 'claude-code') {
+        setSelectedProviderId('claude-native');
+      } else if (enabledProviders.length > 0) {
+        setSelectedProviderId(enabledProviders[0].id);
+      }
     }
-  }, [enabledProviders, selectedProviderId]);
+  }, [enabledProviders, selectedProviderId, selectedEditor]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli') {
+    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'opcode') {
+      return;
+    }
+
+    if (selectedEditor === 'claude-code') {
+      const validClaudeProviders = ['claude-native', 'claude-proxy', ...enabledProviders.map(p => p.id)];
+      if (!validClaudeProviders.includes(selectedProviderId)) {
+        setSelectedProviderId('claude-native');
+      }
       return;
     }
 
@@ -141,7 +154,7 @@ export function WorkspaceChatArea() {
   }, [enabledProviders, selectedEditor, selectedProviderId]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli') {
+    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'opcode') {
       if (selectedModelLocal !== '') {
         setSelectedModelLocal('');
         setSelectedModel('');
@@ -165,7 +178,7 @@ export function WorkspaceChatArea() {
   }, [isSelectedProviderCompatible, selectedEditor, selectedProvider, selectedProviderModels]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'claude-code' || selectedEditor === 'claude-code-native') {
+    if (selectedEditor === 'codex' || selectedEditor === 'claude-code') {
       setYoloMode(true);
     } else {
       setYoloMode(false);
@@ -392,7 +405,7 @@ export function WorkspaceChatArea() {
       return;
     }
 
-    if (selectedEditor !== 'codex' && selectedEditor !== 'qwen-code' && selectedEditor !== 'claude-code-native' && selectedEditor !== 'gemini-cli' && !isSelectedProviderCompatible) {
+    if (selectedEditor !== 'codex' && selectedEditor !== 'qwen-code' && selectedEditor !== 'claude-code' && selectedEditor !== 'gemini-cli' && !isSelectedProviderCompatible) {
       updateWorkspaceView((currentView) => ({
         ...currentView,
         terminalError: 'O provedor selecionado nao e compativel com o editor atual.',
@@ -402,20 +415,44 @@ export function WorkspaceChatArea() {
 
     setIsStartingSession(true);
 
+    let finalEditor = selectedEditor;
+    let finalProvider = null;
+    let finalModel = selectedModelLocal;
+
+    if (selectedEditor === 'claude-code') {
+      if (selectedProviderId === 'claude-native') {
+        finalEditor = 'claude-code-native';
+        finalModel = '';
+      } else if (selectedProviderId === 'claude-proxy') {
+        finalEditor = 'claude-code-proxy';
+        finalModel = '';
+      } else {
+        finalProvider = selectedProvider ? {
+          id: selectedProvider.id,
+          name: selectedProvider.name,
+          apiType: selectedProvider.apiType || 'openai',
+          baseUrl: selectedProvider.baseUrl,
+          apiKey: selectedProvider.apiKey,
+        } : null;
+      }
+    } else if (['codex', 'qwen-code', 'gemini-cli'].includes(selectedEditor)) {
+      finalModel = '';
+    } else {
+      finalProvider = selectedProvider ? {
+        id: selectedProvider.id,
+        name: selectedProvider.name,
+        apiType: selectedProvider.apiType || 'openai',
+        baseUrl: selectedProvider.baseUrl,
+        apiKey: selectedProvider.apiKey,
+      } : null;
+    }
+
     try {
       const result = await window.electronAPI.terminal.launchSession({
         workspacePath,
-        editor: selectedEditor,
-        provider: selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli'
-          ? null
-          : {
-            id: selectedProvider?.id || '',
-            name: selectedProvider?.name || '',
-            apiType: selectedProvider?.apiType || 'openai',
-            baseUrl: selectedProvider?.baseUrl || '',
-            apiKey: selectedProvider?.apiKey || '',
-          },
-        model: selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code-native' || selectedEditor === 'gemini-cli' ? '' : selectedModelLocal,
+        editor: finalEditor,
+        provider: finalProvider,
+        model: finalModel,
         yoloMode,
         cols: isGridMode ? 56 : 120,
         rows: isGridMode ? 18 : 32,
@@ -527,6 +564,22 @@ export function WorkspaceChatArea() {
         isRunning={isStartingSession}
         sessionCount={sessions.length}
       />
+
+      {selectedEditor === 'claude-code' && selectedProviderId === 'claude-proxy' && (
+        <div className="flex shrink-0 items-center justify-between px-6 py-2.5 bg-[color:var(--bg-surface)] border-b border-[color:var(--border-color)]">
+          <div className="flex items-center gap-2">
+            <span className="flex h-2 w-2 rounded-full bg-[color:var(--success-color)] shadow-[0_0_6px_rgba(16,185,129,0.3)]"></span>
+            <span className="text-[0.85rem] font-medium text-[color:var(--text-secondary)]">Antigravity Proxy selecionado para conectar o Claude.</span>
+          </div>
+          <button
+            onClick={() => window.electronAPI.shell.openExternal('http://localhost:8080')}
+            className="text-[0.85rem] font-medium text-[color:var(--text-primary)] hover:underline flex items-center gap-1.5 transition-colors"
+          >
+            Abrir proxy no navegador (Localhost:8080)
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 5l9-9m0 0h-5m5 0v5" /></svg>
+          </button>
+        </div>
+      )}
 
       <div className="flex-1 min-h-0 relative">
         {showTerminal ? (

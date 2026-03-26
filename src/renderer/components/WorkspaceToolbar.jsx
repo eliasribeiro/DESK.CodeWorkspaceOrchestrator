@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 
 const editorOptions = [
-  { value: 'claude-code-native', label: 'Claude Code' },
-  { value: 'claude-code', label: 'Claude Code (Provider)' },
+  { value: 'claude-code', label: 'Claude Code' },
   { value: 'codex', label: 'Codex' },
   { value: 'gemini-cli', label: 'Gemini CLI' },
   { value: 'qwen-code', label: 'Qwen Code' },
@@ -163,7 +162,7 @@ export function WorkspaceToolbar({
   const { aiProviders } = useWorkspace();
 
   const providerOptions = useMemo(() => {
-    return aiProviders
+    const baseProviders = aiProviders
       .filter((provider) => provider.enabled !== false)
       .filter((provider) => provider.name || provider.baseUrl)
       .map((provider) => ({
@@ -173,23 +172,31 @@ export function WorkspaceToolbar({
           ? provider.models.split(',').map((model) => model.trim()).filter(Boolean)
           : [],
       }));
-  }, [aiProviders]);
+
+    if (editor === 'claude-code') {
+      return [
+        { value: 'claude-native', label: 'Padrão (Claude)', models: [] },
+        { value: 'claude-proxy', label: 'Antigravity (Proxy)', models: [] },
+        ...baseProviders,
+      ];
+    }
+    return baseProviders;
+  }, [aiProviders, editor]);
 
   const currentProvider = providerOptions.find((providerOption) => providerOption.value === selectedProvider);
   const isCodexSelected = editor === 'codex';
   const isClaudeSelected = editor === 'claude-code';
-  const isClaudeNativeSelected = editor === 'claude-code-native';
   const isGeminiSelected = editor === 'gemini-cli';
   const isQwenSelected = editor === 'qwen-code';
   const isOpenCodeSelected = editor === 'opcode';
-  const showYolo = isCodexSelected || isClaudeSelected || isClaudeNativeSelected || isQwenSelected || isGeminiSelected;
-  const requiresProvider = !isCodexSelected && !isQwenSelected && !isClaudeNativeSelected && !isGeminiSelected;
+  const showYolo = isCodexSelected || isClaudeSelected || isQwenSelected || isGeminiSelected;
+  const requiresProvider = !isCodexSelected && !isQwenSelected && !isGeminiSelected && !isOpenCodeSelected;
   const isLaunchDisabled =
-    isRunning || sessionCount >= 8 || (requiresProvider ? !selectedProvider || !selectedModel : false);
+    isRunning || sessionCount >= 8 || (requiresProvider ? !selectedProvider || (!selectedModel && !['claude-native', 'claude-proxy'].includes(selectedProvider)) : false);
 
   const currentActionLabel = isCodexSelected
     ? 'Run Codex'
-    : isClaudeSelected || isClaudeNativeSelected
+    : isClaudeSelected
       ? 'Run Claude'
       : isGeminiSelected
         ? 'Run Gemini'

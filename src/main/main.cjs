@@ -10,6 +10,9 @@ const {
   modify: modifyJsonc,
   applyEdits,
 } = require('jsonc-parser');
+const { ProxyManager } = require('./proxy/proxy-manager.cjs');
+
+const proxyManager = new ProxyManager();
 
 let mainWindow = null;
 
@@ -43,6 +46,9 @@ const defaultUserPreferences = {
   selectedProvider: '',
   selectedChatId: null,
   selectedWorkspace: null,
+  proxyPort: 8080,
+  proxyAutoStart: false,
+  proxyStrategy: 'hybrid',
 };
 
 function normalizeProviderApiType(apiType) {
@@ -741,9 +747,47 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
   }
 
   if (editor === 'claude-code-native') {
+    const claudeDir = path.join(workspacePath, '.claude');
+    const settingsPath = path.join(claudeDir, 'settings.json');
+    try {
+      if (fs.existsSync(settingsPath)) {
+        fs.unlinkSync(settingsPath);
+      }
+    } catch (_) { /* ignore */ }
+
     return {
       command: yoloMode ? 'claude --dangerously-skip-permissions' : 'claude',
       envOverrides: {},
+    };
+  }
+
+  if (editor === 'claude-code-proxy') {
+    const proxyStatus = proxyManager.getStatus();
+    if (!proxyStatus.running) {
+      throw new Error('O servidor proxy nao esta rodando. Inicie-o nas configuracoes (Settings > Proxy).');
+    }
+
+    // Delete existing .claude/settings.json for a clean slate
+    const claudeDir = path.join(workspacePath, '.claude');
+    const settingsPath = path.join(claudeDir, 'settings.json');
+    try {
+      if (fs.existsSync(settingsPath)) {
+        fs.unlinkSync(settingsPath);
+      }
+    } catch (_) { /* ignore */ }
+
+    return {
+      command: yoloMode ? 'claude --dangerously-skip-permissions' : 'claude',
+      envOverrides: {
+        ANTHROPIC_AUTH_TOKEN: 'test',
+        ANTHROPIC_BASE_URL: `http://localhost:${proxyStatus.port}`,
+        ANTHROPIC_MODEL: model || 'claude-sonnet-4-6-thinking',
+        ANTHROPIC_DEFAULT_OPUS_MODEL: 'claude-opus-4-6-thinking',
+        ANTHROPIC_DEFAULT_SONNET_MODEL: 'claude-sonnet-4-6-thinking',
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: 'claude-sonnet-4-6',
+        CLAUDE_CODE_SUBAGENT_MODEL: 'claude-sonnet-4-6-thinking',
+        API_TIMEOUT_MS: '3000000',
+      },
     };
   }
 
@@ -889,6 +933,7 @@ function createWindow() {
   mainWindow.on('closed', () => {
     cleanupTerminalProcesses();
     cleanupEmbeddedSessions();
+    proxyManager.stop().catch(() => {});
     mainWindow = null;
   });
 }
@@ -1687,6 +1732,14 @@ function setupIpcHandlers() {
         return { success: false, error: 'Workspace nao e um repositorio Git valido' };
       }
 
+      // Remove .claude/settings.json before committing to avoid leaking provider config
+      try {
+        const claudeSettingsPath = path.join(worktreePath, '.claude', 'settings.json');
+        if (fs.existsSync(claudeSettingsPath)) {
+          fs.unlinkSync(claudeSettingsPath);
+        }
+      } catch (_) { /* ignore */ }
+
       await git.add(['-A']);
       const status = await git.status();
       if (status.isClean()) {
@@ -1766,6 +1819,14 @@ function setupIpcHandlers() {
         return { success: false, error: 'Workspace nao e um repositorio Git valido' };
       }
 
+      // Remove .claude/settings.json before committing to avoid leaking provider config
+      try {
+        const claudeSettingsPath = path.join(worktreePath, '.claude', 'settings.json');
+        if (fs.existsSync(claudeSettingsPath)) {
+          fs.unlinkSync(claudeSettingsPath);
+        }
+      } catch (_) { /* ignore */ }
+
       await git.add(['-A']);
       const status = await git.status();
       if (status.isClean()) {
@@ -1827,6 +1888,14 @@ function setupIpcHandlers() {
       if (sourceBranch === 'main') {
         return { success: false, error: 'O workspace ja esta na branch main' };
       }
+
+      // Remove .claude/settings.json before committing to avoid leaking provider config
+      try {
+        const claudeSettingsPath = path.join(worktreePath, '.claude', 'settings.json');
+        if (fs.existsSync(claudeSettingsPath)) {
+          fs.unlinkSync(claudeSettingsPath);
+        }
+      } catch (_) { /* ignore */ }
 
       await worktreeGit.add(['-A']);
       const worktreeStatus = await worktreeGit.status();
@@ -2252,6 +2321,90 @@ function setupIpcHandlers() {
   });
 }
 
+function setupProxyIpcHandlers() {
+  ipcMain.handle('proxy:start', async (_event, options = {}) => {
+    try {
+      const result = await proxyManager.start(options);
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('proxy:stop', async () => {
+    try {
+      const result = await proxyManager.stop();
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('proxy:restart', async (_event, options = {}) => {
+    try {
+      const result = await proxyManager.restart(options);
+      return result;
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('proxy:getStatus', () => {
+    return proxyManager.getStatus();
+  });
+
+  ipcMain.handle('proxy:getHealth', async () => {
+    try {
+      return await proxyManager.getHealth();
+    } catch (error) {
+      return { status: 'error', error: error.message };
+    }
+  });
+
+  ipcMain.handle('proxy:getAccounts', async () => {
+    try {
+      return await proxyManager.getAccounts();
+    } catch (error) {
+      return { status: 'error', error: error.message, accounts: [] };
+    }
+  });
+
+  ipcMain.handle('proxy:getModels', async () => {
+    try {
+      return await proxyManager.getModels();
+    } catch (error) {
+      return { data: [], error: error.message };
+    }
+  });
+
+  ipcMain.handle('proxy:addAccount', async () => {
+    try {
+      const status = proxyManager.getStatus();
+      if (!status.running) {
+        return { success: false, error: 'Proxy is not running' };
+      }
+      // Open the proxy WebUI accounts page in the default browser
+      await shell.openExternal(`http://localhost:${status.port}/#accounts`);
+      return { success: true, message: 'Opened account management in browser' };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  ipcMain.handle('proxy:removeAccount', async (_event, email) => {
+    try {
+      const status = proxyManager.getStatus();
+      if (!status.running) {
+        return { success: false, error: 'Proxy is not running' };
+      }
+      // Delegate to proxy API
+      return await proxyManager._proxyRequest(`/api/accounts/${encodeURIComponent(email)}`, 'DELETE');
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+}
+
 function setupGlobalShortcuts() {
   app.on('browser-window-created', (_event, window) => {
     window.webContents.on('before-input-event', (_beforeInputEvent, input) => {
@@ -2266,10 +2419,32 @@ function setupGlobalShortcuts() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   setupGlobalShortcuts();
   createWindow();
   setupIpcHandlers();
+  setupProxyIpcHandlers();
+
+  // Register proxy status change listener to notify renderer
+  proxyManager.onStatusChange((status) => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send('proxy:statusChange', status);
+    }
+  });
+
+  // Auto-start proxy if configured
+  try {
+    const { preferences } = loadUserPreferences();
+    if (preferences.proxyAutoStart) {
+      console.log('[Main] Auto-starting proxy...');
+      await proxyManager.start({
+        port: preferences.proxyPort || 8080,
+        strategy: preferences.proxyStrategy || 'hybrid',
+      });
+    }
+  } catch (error) {
+    console.error('[Main] Failed to auto-start proxy:', error);
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
