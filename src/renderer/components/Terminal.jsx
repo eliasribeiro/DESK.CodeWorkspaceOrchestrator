@@ -40,12 +40,26 @@ export function Terminal({
   onFocus,
   onSessionExit,
   onHeaderContextMenu,
+  isActive = false,
 }) {
   const containerRef = useRef(null);
   const terminalRef = useRef(null);
   const fitAddonRef = useRef(null);
   const [localError, setLocalError] = useState('');
   const baseFontSize = compact ? 11.5 : 13;
+
+  const focusTerminal = () => {
+    const terminal = terminalRef.current;
+    if (!terminal) {
+      onFocus?.();
+      return;
+    }
+
+    onFocus?.();
+    window.requestAnimationFrame(() => {
+      terminal.focus();
+    });
+  };
 
   useEffect(() => {
     if (!containerRef.current || !session?.sessionId) {
@@ -273,6 +287,20 @@ export function Terminal({
     setLocalError(errorMessage || '');
   }, [errorMessage]);
 
+  useEffect(() => {
+    if (!isActive || !terminalRef.current) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      terminalRef.current?.focus();
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [isActive]);
+
   const statusClassName =
     session?.status === 'exited'
       ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
@@ -285,7 +313,7 @@ export function Terminal({
           ? 'bg-[color:var(--bg-surface)]'
           : 'border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-sm'
       }`}
-      onMouseDown={() => onFocus?.()}
+      onMouseDown={focusTerminal}
     >
       {!embedded && (
         <header

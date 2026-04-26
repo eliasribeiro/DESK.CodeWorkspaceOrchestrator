@@ -869,27 +869,38 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
             <div className="flex-1 min-h-0">
               {isGridMode ? (
                 <div className={`grid h-full min-h-0 gap-0 ${getGridColumnsClass(sessions.length)} ${getGridRowsClass(sessions.length)}`}>
-                  {sessions.map((session) => (
-                    <div key={session.sessionId} className="overflow-hidden border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] transition-all duration-300 flex flex-col">
-                      <Terminal
-                        session={session}
-                        workspaceName={workspace.name}
-                        workspacePath={workspacePath}
-                        title={getSessionTitle(session)}
-                        statusLabel={getSessionStatusLabel(session)}
-                        errorMessage=""
-                        compact
-                        showClear={false}
-                        zoomLevel={getSessionZoomLevel(session.sessionId)}
-                        onZoomIn={() => handleAdjustTerminalZoom(session.sessionId, 1)}
-                        onZoomOut={() => handleAdjustTerminalZoom(session.sessionId, -1)}
-                        onClose={() => handleCloseTerminal(session.sessionId)}
-                        onSessionExit={() => {}}
-                        onFocus={() => handleFocusSession(session.sessionId)}
-                        onHeaderContextMenu={(event) => handleOpenTerminalTabContextMenu(event, session.sessionId)}
-                      />
-                    </div>
-                  ))}
+                  {sessions.map((session) => {
+                    const isActive = session.sessionId === activeSession?.sessionId;
+                    return (
+                      <div
+                        key={session.sessionId}
+                        className={`overflow-hidden border bg-[color:var(--bg-surface)] transition-all duration-200 flex flex-col ${
+                          isActive
+                            ? 'border-[color:var(--text-primary)] shadow-[inset_0_0_0_1px_var(--text-primary)]'
+                            : 'border-[color:var(--border-color)]'
+                        }`}
+                      >
+                        <Terminal
+                          session={session}
+                          workspaceName={workspace.name}
+                          workspacePath={workspacePath}
+                          title={getSessionTitle(session)}
+                          statusLabel={getSessionStatusLabel(session)}
+                          errorMessage=""
+                          compact
+                          showClear={false}
+                          zoomLevel={getSessionZoomLevel(session.sessionId)}
+                          onZoomIn={() => handleAdjustTerminalZoom(session.sessionId, 1)}
+                          onZoomOut={() => handleAdjustTerminalZoom(session.sessionId, -1)}
+                          onClose={() => handleCloseTerminal(session.sessionId)}
+                          onSessionExit={() => {}}
+                          onFocus={() => handleFocusSession(session.sessionId)}
+                          onHeaderContextMenu={(event) => handleOpenTerminalTabContextMenu(event, session.sessionId)}
+                          isActive={isActive}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : activeSession ? (
                 <div className="h-full min-h-0 overflow-hidden border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] flex flex-col transition-all duration-300">
@@ -958,6 +969,7 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
                       onClose={() => handleCloseTerminal(activeSession.sessionId)}
                       onSessionExit={() => {}}
                       onFocus={() => handleFocusSession(activeSession.sessionId)}
+                      isActive
                     />
                   </div>
                 </div>
