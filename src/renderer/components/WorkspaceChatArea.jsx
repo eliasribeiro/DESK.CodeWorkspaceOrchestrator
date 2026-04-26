@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceToolbar } from '@components/WorkspaceToolbar';
 import { Terminal } from '@components/Terminal';
 import { WorkspaceFilePreviewModal } from '@components/WorkspaceFilePreviewModal';
 import { providerSupportsEditor } from '@lib/providerApi';
+import { getEnabledCliOptions } from '@lib/cliCatalog';
 
-const MAX_TERMINAL_SESSIONS = 8;
+const MAX_TERMINAL_SESSIONS = 12;
 const TERMINAL_MIN_ZOOM_LEVEL = -4;
 const TERMINAL_MAX_ZOOM_LEVEL = 8;
 
@@ -16,6 +17,20 @@ function getDefaultWorkspaceView() {
     activeSessionId: '',
     terminalError: '',
     terminalZoomBySession: {},
+  };
+}
+
+function serializeProviderForLaunch(provider) {
+  if (!provider) {
+    return null;
+  }
+
+  return {
+    id: provider.id,
+    name: provider.name,
+    apiType: provider.apiType || 'openai',
+    baseUrl: provider.baseUrl,
+    apiKey: provider.apiKey,
   };
 }
 
@@ -54,11 +69,17 @@ function getGridRowsClass(sessionCount) {
   return 'grid-rows-2';
 }
 
-export function WorkspaceChatArea() {
+const layoutOptions = [
+  { value: 'tabs', label: 'Abas' },
+  { value: 'grid', label: 'Grade' },
+];
+
+export function WorkspaceChatArea({ isFocusMode = false }) {
   const {
     selectedWorkspace,
     projects,
     aiProviders,
+    enabledCliEditors,
     setSelectedModel,
     setActiveSessionsCount,
     workspaceViews,
@@ -71,6 +92,8 @@ export function WorkspaceChatArea() {
   const [selectedProviderId, setSelectedProviderId] = useState('');
   const [selectedModelLocal, setSelectedModelLocal] = useState('');
   const [yoloMode, setYoloMode] = useState(false);
+  const [terminalTabContextMenu, setTerminalTabContextMenu] = useState(null);
+  const terminalTabContextMenuRef = useRef(null);
   const workspace = selectedWorkspace?.workspace;
   const projectId = selectedWorkspace?.projectId;
   const project = projects.find((item) => item.id === projectId);
@@ -78,12 +101,22 @@ export function WorkspaceChatArea() {
   const enabledProviders = useMemo(() => (
     aiProviders.filter((provider) => provider.enabled !== false)
   ), [aiProviders]);
+  const availableEditorOptions = useMemo(
+    () => getEnabledCliOptions(enabledCliEditors),
+    [enabledCliEditors],
+  );
+  const availableEditorIds = useMemo(
+    () => availableEditorOptions.map((option) => option.value),
+    [availableEditorOptions],
+  );
 
   const selectedProvider = useMemo(() => {
     return enabledProviders.find((provider) => provider.id === selectedProviderId) || null;
   }, [enabledProviders, selectedProviderId]);
   const isSelectedProviderCompatible = useMemo(() => (
-    selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'claude-code' || selectedEditor === 'gemini-cli'
+    !selectedEditor
+      ? false
+      : selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli'
       ? true
       : providerSupportsEditor(selectedProvider, selectedEditor)
   ), [selectedEditor, selectedProvider]);
@@ -102,6 +135,7 @@ export function WorkspaceChatArea() {
   const showTerminal = sessions.length > 0;
   const terminalError = currentWorkspaceView.terminalError || '';
   const isGridMode = currentWorkspaceView.layoutMode === 'grid';
+  const showYoloToggle = selectedEditor === 'codex' || selectedEditor === 'claude-code';
   const projectLabel = project?.name || 'Projeto';
   const workspacePathLabel = useMemo(() => {
     if (!workspacePath) {
@@ -117,44 +151,152 @@ export function WorkspaceChatArea() {
   }, [workspacePath, closeFilePreview]);
 
   useEffect(() => {
+    if (!terminalTabContextMenu) {
+      return undefined;
+    }
+
+    const handlePointerDownOutside = (event) => {
+      if (terminalTabContextMenuRef.current?.contains(event.target)) {
+        return;
+      }
+
+      setTerminalTabContextMenu(null);
+    };
+
+    const handleEscapeKey = (event) => {
+      if (event.key === 'Escape') {
+        setTerminalTabContextMenu(null);
+      }
+    };
+
+    const closeContextMenu = () => {
+      setTerminalTabContextMenu(null);
+    };
+
+    document.addEventListener('mousedown', handlePointerDownOutside);
+    document.addEventListener('keydown', handleEscapeKey);
+    window.addEventListener('resize', closeContextMenu);
+    window.addEventListener('scroll', closeContextMenu, true);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDownOutside);
+      document.removeEventListener('keydown', handleEscapeKey);
+      window.removeEventListener('resize', closeContextMenu);
+      window.removeEventListener('scroll', closeContextMenu, true);
+    };
+  }, [terminalTabContextMenu]);
+
+  useEffect(() => {
     setActiveSessionsCount(sessions.length);
   }, [sessions.length, setActiveSessionsCount]);
 
   useEffect(() => {
+    if (availableEditorIds.length === 0) {
+      if (selectedEditor !== '') {
+        setSelectedEditor('');
+      }
+      if (selectedProviderId !== '') {
+        setSelectedProviderId('');
+      }
+      return;
+    }
+
+    if (!availableEditorIds.includes(selectedEditor)) {
+      setSelectedEditor(availableEditorIds[0]);
+    }
+  }, [availableEditorIds, selectedEditor, selectedProviderId]);
+
+  useEffect(() => {
+    if (!selectedEditor) {
+      return;
+    }
+
     if (!selectedProviderId) {
       if (selectedEditor === 'claude-code') {
         setSelectedProviderId('claude-native');
-      } else if (enabledProviders.length > 0) {
-        setSelectedProviderId(enabledProviders[0].id);
+      } else if (selectedEditor === 'codex') {
+        setSelectedProviderId('codex-native');
+      } else {
+        const compatibleProvider = enabledProviders.find((provider) => providerSupportsEditor(provider, selectedEditor));
+        if (compatibleProvider) {
+          setSelectedProviderId(compatibleProvider.id);
+        }
       }
     }
   }, [enabledProviders, selectedProviderId, selectedEditor]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'opcode') {
+    if (!selectedEditor) {
+      if (selectedProviderId !== '') {
+        setSelectedProviderId('');
+      }
+      return;
+    }
+
+    if (selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli') {
       return;
     }
 
     if (selectedEditor === 'claude-code') {
-      const validClaudeProviders = ['claude-native', 'claude-proxy', ...enabledProviders.map(p => p.id)];
+      const validClaudeProviders = [
+        'claude-native',
+        'claude-proxy',
+        ...enabledProviders
+          .filter((provider) => providerSupportsEditor(provider, selectedEditor))
+          .map((provider) => provider.id),
+      ];
       if (!validClaudeProviders.includes(selectedProviderId)) {
         setSelectedProviderId('claude-native');
       }
       return;
     }
 
-    if (enabledProviders.length === 0) {
+    if (selectedEditor === 'codex') {
+      const validCodexProviders = [
+        'codex-native',
+        ...enabledProviders
+          .filter((provider) => providerSupportsEditor(provider, selectedEditor))
+          .map((provider) => provider.id),
+      ];
+      if (!validCodexProviders.includes(selectedProviderId)) {
+        setSelectedProviderId('codex-native');
+      }
+      return;
+    }
+
+    const compatibleProviders = enabledProviders.filter((provider) => providerSupportsEditor(provider, selectedEditor));
+
+    if (compatibleProviders.length === 0) {
       setSelectedProviderId('');
       return;
     }
 
-    if (!enabledProviders.some((provider) => provider.id === selectedProviderId)) {
-      setSelectedProviderId(enabledProviders[0].id);
+    if (!compatibleProviders.some((provider) => provider.id === selectedProviderId)) {
+      setSelectedProviderId(compatibleProviders[0].id);
     }
   }, [enabledProviders, selectedEditor, selectedProviderId]);
 
   useEffect(() => {
-    if (selectedEditor === 'codex' || selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'opcode') {
+    if (!selectedEditor) {
+      if (selectedModelLocal !== '') {
+        setSelectedModelLocal('');
+        setSelectedModel('');
+      }
+      return;
+    }
+
+    if (selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli') {
+      if (selectedModelLocal !== '') {
+        setSelectedModelLocal('');
+        setSelectedModel('');
+      }
+      return;
+    }
+
+    if (
+      (selectedEditor === 'claude-code' && ['claude-native', 'claude-proxy'].includes(selectedProviderId))
+      || (selectedEditor === 'codex' && selectedProviderId === 'codex-native')
+    ) {
       if (selectedModelLocal !== '') {
         setSelectedModelLocal('');
         setSelectedModel('');
@@ -242,7 +384,7 @@ export function WorkspaceChatArea() {
           ...current,
           [workspacePath]: {
             ...(current[workspacePath] || getDefaultWorkspaceView()),
-            terminalError: error.message || 'Erro ao carregar sessoes do terminal',
+            terminalError: error.message || 'Erro ao carregar sessões do terminal',
           },
         }));
       }
@@ -372,6 +514,16 @@ export function WorkspaceChatArea() {
     });
   };
 
+  const clearSessions = () => {
+    updateWorkspaceView((currentView) => ({
+      ...currentView,
+      sessions: [],
+      activeSessionId: '',
+      terminalZoomBySession: {},
+      terminalError: '',
+    }));
+  };
+
   if (!selectedWorkspace || !workspace) {
     return (
       <div className="flex-1 flex items-center justify-center bg-[color:var(--bg-body)]">
@@ -392,12 +544,14 @@ export function WorkspaceChatArea() {
     );
   }
 
-  const handleLaunchEditor = async () => {
+  const handleLaunchEditor = async (requestedLaunchCount = 1) => {
     if (isStartingSession) {
       return;
     }
 
-    if (sessions.length >= MAX_TERMINAL_SESSIONS) {
+    const availableLaunchSlots = MAX_TERMINAL_SESSIONS - sessions.length;
+
+    if (availableLaunchSlots <= 0) {
       updateWorkspaceView((currentView) => ({
         ...currentView,
         terminalError: `Limite de ${MAX_TERMINAL_SESSIONS} terminais por workspace atingido. Encerre um terminal para abrir outro.`,
@@ -405,10 +559,15 @@ export function WorkspaceChatArea() {
       return;
     }
 
-    if (selectedEditor !== 'codex' && selectedEditor !== 'qwen-code' && selectedEditor !== 'claude-code' && selectedEditor !== 'gemini-cli' && !isSelectedProviderCompatible) {
+    if (
+      selectedEditor !== 'qwen-code'
+      && selectedEditor !== 'gemini-cli'
+      && !(selectedEditor === 'codex' && selectedProviderId === 'codex-native')
+      && !isSelectedProviderCompatible
+    ) {
       updateWorkspaceView((currentView) => ({
         ...currentView,
-        terminalError: 'O provedor selecionado nao e compativel com o editor atual.',
+        terminalError: 'O provedor selecionado não é compatível com o editor atual.',
       }));
       return;
     }
@@ -427,28 +586,24 @@ export function WorkspaceChatArea() {
         finalEditor = 'claude-code-proxy';
         finalModel = '';
       } else {
-        finalProvider = selectedProvider ? {
-          id: selectedProvider.id,
-          name: selectedProvider.name,
-          apiType: selectedProvider.apiType || 'openai',
-          baseUrl: selectedProvider.baseUrl,
-          apiKey: selectedProvider.apiKey,
-        } : null;
+        finalProvider = serializeProviderForLaunch(selectedProvider);
       }
-    } else if (['codex', 'qwen-code', 'gemini-cli'].includes(selectedEditor)) {
+    } else if (selectedEditor === 'codex') {
+      if (selectedProviderId === 'codex-native') {
+        finalModel = '';
+      } else {
+        finalProvider = serializeProviderForLaunch(selectedProvider);
+      }
+    } else if (['qwen-code', 'gemini-cli'].includes(selectedEditor)) {
       finalModel = '';
     } else {
-      finalProvider = selectedProvider ? {
-        id: selectedProvider.id,
-        name: selectedProvider.name,
-        apiType: selectedProvider.apiType || 'openai',
-        baseUrl: selectedProvider.baseUrl,
-        apiKey: selectedProvider.apiKey,
-      } : null;
+      finalProvider = serializeProviderForLaunch(selectedProvider);
     }
 
+    const launchCount = Math.max(1, Math.min(requestedLaunchCount || 1, availableLaunchSlots));
+
     try {
-      const result = await window.electronAPI.terminal.launchSession({
+      const launchOptions = {
         workspacePath,
         editor: finalEditor,
         provider: finalProvider,
@@ -456,21 +611,43 @@ export function WorkspaceChatArea() {
         yoloMode,
         cols: isGridMode ? 56 : 120,
         rows: isGridMode ? 18 : 32,
-      });
+      };
+      let latestSessions = sessions;
+      let latestSession = null;
+      let launchError = '';
+      let successCount = 0;
 
-      if (!result.success || !result.session) {
+      for (let index = 0; index < launchCount; index += 1) {
+        const result = await window.electronAPI.terminal.launchSession(launchOptions);
+
+        if (!result.success || !result.session) {
+          launchError = result.error || 'Erro ao iniciar o editor';
+          break;
+        }
+
+        successCount += 1;
+        latestSession = result.session;
+        latestSessions = result.sessions?.length ? result.sessions : [...latestSessions, result.session];
+      }
+
+      if (successCount === 0 || !latestSession) {
         updateWorkspaceView((currentView) => ({
           ...currentView,
-          terminalError: result.error || 'Erro ao iniciar o editor',
+          terminalError: launchError || 'Erro ao iniciar o editor',
         }));
         return;
       }
 
+      const terminalError =
+        launchError && successCount < launchCount
+          ? `${successCount} de ${launchCount} terminais foram abertos. ${launchError}`
+          : '';
+
       updateWorkspaceView((currentView) => ({
         ...currentView,
-        sessions: result.sessions?.length ? result.sessions : [...currentView.sessions, result.session],
-        activeSessionId: result.session.sessionId,
-        terminalError: '',
+        sessions: latestSessions,
+        activeSessionId: latestSession.sessionId,
+        terminalError,
       }));
     } catch (error) {
       console.error('Erro ao executar editor:', error);
@@ -497,6 +674,31 @@ export function WorkspaceChatArea() {
     }
   };
 
+  const handleCloseAllTerminals = async () => {
+    if (!workspacePath || sessions.length === 0) {
+      setTerminalTabContextMenu(null);
+      return;
+    }
+
+    setTerminalTabContextMenu(null);
+
+    try {
+      const result = await window.electronAPI.terminal.closeWorkspaceSessions({ workspacePath });
+
+      if (!result?.success) {
+        throw new Error(result?.error || 'Não foi possível fechar os terminais');
+      }
+
+      clearSessions();
+    } catch (error) {
+      console.error('Erro ao encerrar todos os terminais:', error);
+      updateWorkspaceView((currentView) => ({
+        ...currentView,
+        terminalError: error.message || 'Não foi possível fechar os terminais',
+      }));
+    }
+  };
+
   const handleFocusSession = (sessionId) => {
     updateWorkspaceView((currentView) => ({
       ...currentView,
@@ -505,80 +707,160 @@ export function WorkspaceChatArea() {
     }));
   };
 
+  const handleOpenTerminalTabContextMenu = (event, sessionId) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (sessionId) {
+      handleFocusSession(sessionId);
+    }
+
+    const menuWidth = 220;
+    const menuHeight = 52;
+    const nextX = Math.min(event.clientX, Math.max(12, window.innerWidth - menuWidth - 12));
+    const nextY = Math.min(event.clientY, Math.max(12, window.innerHeight - menuHeight - 12));
+
+    setTerminalTabContextMenu({
+      x: Math.max(12, nextX),
+      y: Math.max(12, nextY),
+    });
+  };
+
   return (
     <div className="flex-1 flex flex-col bg-[color:var(--bg-body)]">
-      <header className="h-[60px] px-6 flex items-center justify-between border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] backdrop-blur-xl z-40 transition-all">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-md flex items-center justify-center bg-[color:var(--text-primary)] text-[color:var(--bg-body)]">
-            <svg className="w-5 h-5 text-[color:var(--bg-body)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
-          </div>
-          <div>
-            <p className="font-display font-medium text-[1.1rem] text-[color:var(--text-primary)] tracking-tight">
-              {projectLabel}
-            </p>
-          </div>
-        </div>
+      {!isFocusMode && (
+        <>
+          <header className="h-[60px] px-6 flex items-center justify-between border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] backdrop-blur-xl z-40 transition-all">
+            <div className="flex items-center gap-3">
+              <div className="h-9 w-9 rounded-md flex items-center justify-center bg-[color:var(--text-primary)] text-[color:var(--bg-body)]">
+                <svg className="w-5 h-5 text-[color:var(--bg-body)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>
+              </div>
+              <div>
+                <p className="font-display font-medium text-[1.1rem] text-[color:var(--text-primary)] tracking-tight">
+                  {projectLabel}
+                </p>
+              </div>
+            </div>
 
-        <div className="flex items-center gap-3">
-          <div
-            className="hidden md:flex max-w-[280px] items-center gap-2 rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-1.5 text-[0.85rem] font-medium text-[color:var(--text-secondary)] transition-all"
-            title={workspace.path}
-          >
-            <svg className="w-4 h-4 text-[color:var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            <span className="truncate">{workspacePathLabel}</span>
-          </div>
-          <button
-            onClick={() => window.electronAPI.shell.openPath(workspace.path)}
-            className="p-2 rounded-md hover:bg-[color:var(--border-color)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
-            title="Abrir pasta no explorador"
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-1.405-1.405A2 2 0 0010 6z" />
-            </svg>
-          </button>
-        </div>
-      </header>
+            <div className="flex items-center gap-3">
+              <div className="hidden md:flex items-center gap-2">
+                {showYoloToggle && (
+                  <button
+                    type="button"
+                    onClick={() => setYoloMode((current) => !current)}
+                    role="switch"
+                    aria-checked={yoloMode}
+                    className={`inline-flex h-8 items-center gap-2 rounded-[8px] border px-3 text-[0.8rem] font-semibold transition-colors ${
+                      yoloMode
+                        ? 'border-[color:var(--text-primary)] bg-[color:var(--text-primary)] text-[color:var(--bg-body)]'
+                        : 'border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-secondary)] hover:border-[color:var(--text-tertiary)] hover:text-[color:var(--text-primary)]'
+                    }`}
+                    title="Alternar YOLO"
+                  >
+                    <span>YOLO</span>
+                    <span
+                      className={`relative inline-block h-4.5 w-8 shrink-0 rounded-full transition-colors ${
+                        yoloMode ? 'bg-[color:var(--bg-body)]/80' : 'bg-[color:var(--border-color)]'
+                      }`}
+                    >
+                      <span
+                        className={`absolute top-[2px] left-[2px] h-3.5 w-3.5 rounded-full shadow-sm transition-transform ${
+                          yoloMode
+                            ? 'translate-x-[14px] bg-[color:var(--text-primary)]'
+                            : 'translate-x-0 bg-[color:var(--text-tertiary)]'
+                        }`}
+                      />
+                    </span>
+                  </button>
+                )}
+                <div className="inline-flex shrink-0 rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-1 shadow-sm">
+                  {layoutOptions.map((option) => {
+                    const isActive = currentWorkspaceView.layoutMode === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          updateWorkspaceView((currentView) => ({
+                            ...currentView,
+                            layoutMode: option.value,
+                          }));
+                        }}
+                        className={`inline-flex h-[24px] items-center gap-1.5 rounded-[6px] px-2.5 text-[0.78rem] font-medium transition ${
+                          isActive
+                            ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] shadow-sm'
+                            : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/30 hover:text-[color:var(--text-primary)]'
+                        }`}
+                        title={option.label}
+                        aria-pressed={isActive}
+                      >
+                        {option.value === 'tabs' ? (
+                          <svg className="h-[13px] w-[13px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M4 7h6l2 2h8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
+                          </svg>
+                        ) : (
+                          <svg className="h-[13px] w-[13px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8" d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div
+                className="hidden md:flex max-w-[280px] items-center gap-2 rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-1.5 text-[0.85rem] font-medium text-[color:var(--text-secondary)] transition-all"
+                title={workspace.path}
+              >
+                <svg className="w-4 h-4 text-[color:var(--text-tertiary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <span className="truncate">{workspacePathLabel}</span>
+              </div>
+              <button
+                onClick={() => window.electronAPI.shell.openPath(workspace.path)}
+                className="p-2 rounded-md hover:bg-[color:var(--border-color)] text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)] transition-colors"
+                title="Abrir pasta no explorador"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5l-1.405-1.405A2 2 0 0010 6z" />
+                </svg>
+              </button>
+            </div>
+          </header>
 
-      <WorkspaceToolbar
-        editor={selectedEditor}
-        onEditorChange={setSelectedEditor}
-        selectedProvider={selectedProviderId}
-        onProviderChange={setSelectedProviderId}
-        selectedModel={selectedModelLocal}
-        onModelChange={(model) => {
-          setSelectedModelLocal(model);
-          setSelectedModel(model);
-        }}
-        yoloMode={yoloMode}
-        onToggleYolo={() => setYoloMode((current) => !current)}
-        layoutMode={currentWorkspaceView.layoutMode}
-        onLayoutChange={(layoutMode) => {
-          updateWorkspaceView((currentView) => ({
-            ...currentView,
-            layoutMode,
-          }));
-        }}
-        onLaunch={handleLaunchEditor}
-        isRunning={isStartingSession}
-        sessionCount={sessions.length}
-      />
+          <WorkspaceToolbar
+            editor={selectedEditor}
+            onEditorChange={setSelectedEditor}
+            selectedProvider={selectedProviderId}
+            onProviderChange={setSelectedProviderId}
+            selectedModel={selectedModelLocal}
+            onModelChange={(model) => {
+              setSelectedModelLocal(model);
+              setSelectedModel(model);
+            }}
+            onLaunch={handleLaunchEditor}
+            isRunning={isStartingSession}
+            sessionCount={sessions.length}
+            maxSessionCount={MAX_TERMINAL_SESSIONS}
+          />
 
-      {selectedEditor === 'claude-code' && selectedProviderId === 'claude-proxy' && (
-        <div className="flex shrink-0 items-center justify-between px-6 py-2.5 bg-[color:var(--bg-surface)] border-b border-[color:var(--border-color)]">
-          <div className="flex items-center gap-2">
-            <span className="flex h-2 w-2 rounded-full bg-[color:var(--success-color)] shadow-[0_0_6px_rgba(16,185,129,0.3)]"></span>
-            <span className="text-[0.85rem] font-medium text-[color:var(--text-secondary)]">Antigravity Proxy selecionado para conectar o Claude.</span>
-          </div>
-          <button
-            onClick={() => window.electronAPI.shell.openExternal('http://localhost:8080')}
-            className="text-[0.85rem] font-medium text-[color:var(--text-primary)] hover:underline flex items-center gap-1.5 transition-colors"
-          >
-            Abrir proxy no navegador (Localhost:8080)
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 5l9-9m0 0h-5m5 0v5" /></svg>
-          </button>
-        </div>
+          {selectedEditor === 'claude-code' && selectedProviderId === 'claude-proxy' && (
+            <div className="flex shrink-0 items-center justify-between px-6 py-2.5 bg-[color:var(--bg-surface)] border-b border-[color:var(--border-color)]">
+              <div className="flex items-center gap-2">
+                <span className="flex h-2 w-2 rounded-full bg-[color:var(--success-color)] shadow-[0_0_6px_rgba(16,185,129,0.3)]"></span>
+                <span className="text-[0.85rem] font-medium text-[color:var(--text-secondary)]">Antigravity Proxy selecionado para conectar o Claude.</span>
+              </div>
+              <button
+                onClick={() => window.electronAPI.shell.openExternal('http://localhost:8080')}
+                className="text-[0.85rem] font-medium text-[color:var(--text-primary)] hover:underline flex items-center gap-1.5 transition-colors"
+              >
+                Abrir proxy no navegador (Localhost:8080)
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 5l9-9m0 0h-5m5 0v5" /></svg>
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       <div className="flex-1 min-h-0 relative">
@@ -604,6 +886,7 @@ export function WorkspaceChatArea() {
                         onClose={() => handleCloseTerminal(session.sessionId)}
                         onSessionExit={() => {}}
                         onFocus={() => handleFocusSession(session.sessionId)}
+                        onHeaderContextMenu={(event) => handleOpenTerminalTabContextMenu(event, session.sessionId)}
                       />
                     </div>
                   ))}
@@ -618,6 +901,7 @@ export function WorkspaceChatArea() {
                           <button
                             key={session.sessionId}
                             onClick={() => handleFocusSession(session.sessionId)}
+                            onContextMenu={(event) => handleOpenTerminalTabContextMenu(event, session.sessionId)}
                             className={`group relative min-w-0 max-w-xs flex items-center gap-2.5 rounded-t-[8px] border-t border-x px-4 py-2 text-left text-[0.95rem] font-medium transition-all duration-200 ${
                               isActive
                                 ? 'border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-primary)] font-semibold z-10'
@@ -709,6 +993,29 @@ export function WorkspaceChatArea() {
             file={filePreview.file}
             onClose={closeFilePreview}
           />
+        )}
+
+        {terminalTabContextMenu && showTerminal && !isGridMode && (
+          <div
+            ref={terminalTabContextMenuRef}
+            className="fixed z-[80] min-w-[220px] overflow-hidden rounded-[10px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] p-1 shadow-2xl"
+            style={{
+              left: `${terminalTabContextMenu.x}px`,
+              top: `${terminalTabContextMenu.y}px`,
+            }}
+            role="menu"
+            aria-label="Menu de contexto das abas do terminal"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="flex w-full items-center rounded-[8px] px-3 py-2 text-left text-[0.92rem] text-[color:var(--danger-color)] transition-colors hover:bg-[color:var(--danger-color)]/10"
+              onClick={handleCloseAllTerminals}
+              role="menuitem"
+            >
+              Fechar todas as abas
+            </button>
+          </div>
         )}
       </div>
     </div>

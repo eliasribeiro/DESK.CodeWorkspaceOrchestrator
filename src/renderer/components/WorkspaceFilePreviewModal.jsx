@@ -72,7 +72,7 @@ export function WorkspaceFilePreviewModal({ file, onClose }) {
                 type="button"
                 onClick={onClose}
                 className="ml-2 inline-flex h-10 w-10 items-center justify-center rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-surface)] hover:text-[color:var(--text-primary)]"
-                aria-label="Fechar visualizacao do arquivo"
+                aria-label="Fechar visualização do arquivo"
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />

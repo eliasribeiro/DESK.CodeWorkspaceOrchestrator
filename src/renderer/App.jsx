@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { TitleBar } from '@components/TitleBar';
 import { Sidebar } from '@components/Sidebar';
@@ -27,6 +27,47 @@ function WorkspaceContent() {
     closeDialog,
   } = useWorkspace();
   const [isResizingSecondary, setIsResizingSecondary] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const previousSidebarStateRef = useRef({
+    showPrimary: true,
+    showSecondary: false,
+  });
+
+  const toggleFocusMode = useCallback(() => {
+    setIsFocusMode((current) => {
+      const next = !current;
+
+      if (next) {
+        previousSidebarStateRef.current = {
+          showPrimary: showPrimarySidebar,
+          showSecondary: showSecondarySidebar,
+        };
+        setShowPrimarySidebar(false);
+        setShowSecondarySidebar(false);
+      } else {
+        setShowPrimarySidebar(previousSidebarStateRef.current.showPrimary);
+        setShowSecondarySidebar(previousSidebarStateRef.current.showSecondary);
+      }
+
+      return next;
+    });
+  }, [showPrimarySidebar, showSecondarySidebar, setShowPrimarySidebar, setShowSecondarySidebar]);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key !== 'F11') {
+        return;
+      }
+
+      event.preventDefault();
+      toggleFocusMode();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [toggleFocusMode]);
 
   useEffect(() => {
     if (!isResizingSecondary) {
@@ -60,10 +101,12 @@ function WorkspaceContent() {
         onTogglePrimary={() => setShowPrimarySidebar(!showPrimarySidebar)}
         showSecondary={showSecondarySidebar}
         onToggleSecondary={() => setShowSecondarySidebar(!showSecondarySidebar)}
+        isFocusMode={isFocusMode}
+        onToggleFocusMode={toggleFocusMode}
       />
 
       <div className="relative flex flex-1 overflow-hidden">
-        {showPrimarySidebar && <Sidebar />}
+        {showPrimarySidebar && !isFocusMode && <Sidebar />}
 
         <main className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-[color:var(--bg-body)] transition-colors duration-400">
           <AnimatePresence mode="wait">
@@ -78,7 +121,7 @@ function WorkspaceContent() {
               {isSettingsOpen ? (
                 <SettingsScreen />
               ) : selectedWorkspace ? (
-                <WorkspaceChatArea />
+                <WorkspaceChatArea isFocusMode={isFocusMode} />
               ) : activeScreen === 'home' ? (
                 <HomeScreen />
               ) : (
@@ -88,7 +131,7 @@ function WorkspaceContent() {
           </AnimatePresence>
         </main>
 
-        {showSecondarySidebar && !isSettingsOpen && (
+        {showSecondarySidebar && !isSettingsOpen && !isFocusMode && (
           <div className="relative border-l border-[color:var(--border-color)] bg-[color:var(--bg-surface)] transition-colors duration-400" style={{ width: secondarySidebarWidth }}>
             <div className="h-full overflow-hidden">
               <SecondarySidebar />
@@ -107,20 +150,22 @@ function WorkspaceContent() {
         )}
       </div>
 
-      <footer className="h-8 border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-4 flex items-center justify-between text-[10px] uppercase font-mono tracking-widest text-[color:var(--text-tertiary)] transition-colors duration-400">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center gap-2 border border-[color:var(--border-color)] px-2 py-0.5 rounded-full">
-            <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success-color)] shadow-[0_0_8px_currentColor]"></span>
-            System Online
-          </span>
-          {selectedWorkspace && (
-            <span className="rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-2 py-0.5">
-              Sessions: {activeSessionsCount}/8
+      {!isFocusMode && (
+        <footer className="h-8 border-t border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-4 flex items-center justify-between text-[10px] uppercase font-mono tracking-widest text-[color:var(--text-tertiary)] transition-colors duration-400">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-2 border border-[color:var(--border-color)] px-2 py-0.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-[color:var(--success-color)] shadow-[0_0_8px_currentColor]"></span>
+              System Online
             </span>
-          )}
-        </div>
-        <span>CWO v1.0.0</span>
-      </footer>
+            {selectedWorkspace && (
+              <span className="rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-2 py-0.5">
+                Sessions: {activeSessionsCount}/12
+              </span>
+            )}
+          </div>
+          <span>CWO v1.0.0</span>
+        </footer>
+      )}
 
       <AppDialog
         isOpen={dialogState.isOpen}

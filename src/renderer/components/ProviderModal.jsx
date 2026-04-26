@@ -5,6 +5,12 @@ import {
   PROVIDER_API_TYPES,
   getProviderApiTypeLabel,
 } from '@lib/providerApi';
+import {
+  createOpenCodeGoPresetProvider,
+  isOpenCodeGoBaseUrl,
+  normalizeProviderBaseUrl,
+  OPENCODE_GO_CHAT_COMPLETIONS_URL,
+} from '@lib/opencodeGo';
 
 export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
   const { addProvider, updateProvider, language } = useWorkspace();
@@ -69,20 +75,35 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const normalizedFormData = {
+      ...formData,
+      baseUrl: normalizeProviderBaseUrl(formData.baseUrl),
+    };
 
     if (editingProvider) {
       // Atualizar provedor existente
-      updateProvider(editingProvider.id, formData);
+      updateProvider(editingProvider.id, normalizedFormData);
     } else {
       // Criar novo provedor
       const newProvider = {
         id: `prov-${Date.now()}`,
-        ...formData
+        ...normalizedFormData
       };
       addProvider(newProvider);
     }
 
     onClose();
+  };
+
+  const handleApplyOpenCodeGoPreset = () => {
+    const preset = createOpenCodeGoPresetProvider();
+    setFormData((prev) => ({
+      ...prev,
+      name: prev.name || preset.name,
+      apiType: preset.apiType,
+      baseUrl: preset.baseUrl,
+      models: prev.models || preset.models,
+    }));
   };
 
   if (!isOpen) return null;
@@ -114,6 +135,26 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="rounded-[14px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-3.5 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-[0.85rem] font-semibold text-[color:var(--text-primary)]">
+                  Preset OpenCode Go
+                </p>
+                <p className="mt-1 text-[0.8rem] text-[color:var(--text-tertiary)]">
+                  Preenche a configuracao recomendada para usar a assinatura Go com OpenCode, Codex e Claude Code.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleApplyOpenCodeGoPreset}
+                className="inline-flex items-center justify-center rounded-[10px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-2 text-[0.85rem] font-semibold text-[color:var(--text-secondary)] transition-colors hover:border-[color:var(--primary-color)] hover:text-[color:var(--primary-color)]"
+              >
+                Usar preset
+              </button>
+            </div>
+          </div>
+
           <div className="space-y-1.5">
             <label className="text-[0.85rem] font-bold text-[color:var(--text-tertiary)] uppercase ml-1">
               Nome do Provedor
@@ -159,7 +200,9 @@ export function ProviderModal({ isOpen, onClose, editingProvider = null }) {
               required
             />
             <p className="text-[0.8rem] text-[color:var(--text-tertiary)] ml-1">
-              {formData.apiType === PROVIDER_API_TYPES.ANTHROPIC
+              {isOpenCodeGoBaseUrl(formData.baseUrl)
+                ? `Use ${OPENCODE_GO_CHAT_COMPLETIONS_URL} como referencia do endpoint e salve a base como https://opencode.ai/zen/go/v1.`
+                : formData.apiType === PROVIDER_API_TYPES.ANTHROPIC
                 ? 'Use a base que exponha /models no formato Anthropic, por exemplo https://api.anthropic.com/v1.'
                 : 'Use a base compatível com OpenAI, por exemplo http://localhost:11434/v1.'}
             </p>

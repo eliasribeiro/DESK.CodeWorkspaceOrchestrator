@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronRight, Folder, MoreVertical, Plus, Trash2 } from 'lucide-react';
+import { ChevronRight, Folder, GitBranch, Terminal, Trash2 } from 'lucide-react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { WorkspaceItem } from './WorkspaceItem';
 import { generateRandomName } from '@utils/nameGenerator';
@@ -10,6 +10,7 @@ export function ProjectItem({ project }) {
     toggleProjectExpanded,
     removeProject,
     addWorkspace,
+    selectWorkspace,
     selectedWorkspace,
     showConfirm,
     showAlert
@@ -117,6 +118,17 @@ export function ProjectItem({ project }) {
     }
   };
 
+  const handleOpenProjectRoot = (e) => {
+    e.stopPropagation();
+    selectWorkspace(project.id, {
+      name: project.name,
+      path: project.path,
+      branch: '',
+      isCurrent: true,
+      isProjectRoot: true,
+    });
+  };
+
   return (
     <li className="select-none w-full border-b border-[color:var(--border-color)] last:border-b-0 py-1.5 transition-colors">
       {/* Header do Projeto */}
@@ -149,12 +161,19 @@ export function ProjectItem({ project }) {
           showActions ? "opacity-100" : "opacity-0"
         )}>
           <button
+            onClick={handleOpenProjectRoot}
+            className="p-1.5 rounded-md text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)] hover:text-[color:var(--text-primary)] transition-colors"
+            title="Abrir raiz do projeto"
+          >
+            <Terminal className="h-3.5 w-3.5" />
+          </button>
+          <button
             onClick={handleCreateWorkspace}
             disabled={isCreatingWorkspace}
             className="p-1.5 rounded-md text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)] hover:text-[color:var(--text-primary)] transition-colors disabled:opacity-50"
             title="Create new workspace"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <GitBranch className="h-3.5 w-3.5" />
           </button>
           <button
             onClick={handleRemove}

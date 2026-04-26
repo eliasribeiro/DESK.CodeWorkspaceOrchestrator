@@ -1,18 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useWorkspace } from '@context/WorkspaceContext';
-
-const editorOptions = [
-  { value: 'claude-code', label: 'Claude Code' },
-  { value: 'codex', label: 'Codex' },
-  { value: 'gemini-cli', label: 'Gemini CLI' },
-  { value: 'qwen-code', label: 'Qwen Code' },
-  { value: 'opcode', label: 'OpenCode' },
-];
-
-const layoutOptions = [
-  { value: 'tabs', label: 'Abas' },
-  { value: 'grid', label: 'Grade' },
-];
+import { providerSupportsEditor } from '@lib/providerApi';
+import { getEnabledCliOptions } from '@lib/cliCatalog';
 
 function SearchableSelect({
   value,
@@ -151,19 +140,25 @@ export function WorkspaceToolbar({
   onProviderChange,
   selectedModel,
   onModelChange,
-  yoloMode,
-  onToggleYolo,
-  layoutMode,
-  onLayoutChange,
   onLaunch,
   isRunning,
   sessionCount = 0,
+  maxSessionCount = 12,
 }) {
-  const { aiProviders } = useWorkspace();
+  const { aiProviders, enabledCliEditors } = useWorkspace();
+  const [isLaunchMenuOpen, setIsLaunchMenuOpen] = useState(false);
+  const [selectedLaunchCount, setSelectedLaunchCount] = useState(1);
+  const [cliInstallations, setCliInstallations] = useState(null);
+  const launchMenuRef = useRef(null);
+  const launchCountOptions = useMemo(() => Array.from({ length: maxSessionCount }, (_, index) => ({
+    value: index + 1,
+    label: `${index + 1}x`,
+  })), [maxSessionCount]);
 
   const providerOptions = useMemo(() => {
     const baseProviders = aiProviders
       .filter((provider) => provider.enabled !== false)
+      .filter((provider) => providerSupportsEditor(provider, editor))
       .filter((provider) => provider.name || provider.baseUrl)
       .map((provider) => ({
         value: provider.id,
@@ -180,43 +175,149 @@ export function WorkspaceToolbar({
         ...baseProviders,
       ];
     }
+
+    if (editor === 'codex') {
+      return [
+        { value: 'codex-native', label: 'Padrão (Codex CLI)', models: [] },
+        ...baseProviders,
+      ];
+    }
+
     return baseProviders;
   }, [aiProviders, editor]);
+  const availableEditorOptions = useMemo(
+    () => getEnabledCliOptions(enabledCliEditors),
+    [enabledCliEditors],
+  );
+  const hasSelectedEditor = Boolean(editor);
 
-  const currentProvider = providerOptions.find((providerOption) => providerOption.value === selectedProvider);
+  const currentProvider = providerOptions.find((providerOption) => providerOption.value === selectedProvider) || null;
+  const currentEditorOption = availableEditorOptions.find((editorOption) => editorOption.value === editor) || null;
   const isCodexSelected = editor === 'codex';
   const isClaudeSelected = editor === 'claude-code';
   const isGeminiSelected = editor === 'gemini-cli';
   const isQwenSelected = editor === 'qwen-code';
   const isOpenCodeSelected = editor === 'opcode';
-  const showYolo = isCodexSelected || isClaudeSelected || isQwenSelected || isGeminiSelected;
-  const requiresProvider = !isCodexSelected && !isQwenSelected && !isGeminiSelected && !isOpenCodeSelected;
-  const isLaunchDisabled =
-    isRunning || sessionCount >= 8 || (requiresProvider ? !selectedProvider || (!selectedModel && !['claude-native', 'claude-proxy'].includes(selectedProvider)) : false);
+  const requiresProvider = hasSelectedEditor && !isQwenSelected && !isGeminiSelected;
+  const isCodexNativeSelected = isCodexSelected && selectedProvider === 'codex-native';
+  const providerAllowsEmptyModel = (
+    isClaudeSelected && ['claude-native', 'claude-proxy'].includes(selectedProvider)
+  ) || isCodexNativeSelected;
+  const availableLaunchSlots = Math.max(0, maxSessionCount - sessionCount);
+  const currentCliStatus = Array.isArray(cliInstallations)
+    ? cliInstallations.find((item) => item.id === editor) || null
+    : null;
+  const selectedEditorInstalled = !hasSelectedEditor
+    ? false
+    : cliInstallations === null
+      ? true
+      : Boolean(currentCliStatus?.installed);
+  const currentActionLabel = !hasSelectedEditor
+    ? 'Nenhum CLI habilitado'
+    : isCodexSelected
+      ? 'Run Codex'
+      : isClaudeSelected
+        ? 'Run Claude'
+        : isGeminiSelected
+          ? 'Run Gemini'
+          : isQwenSelected
+            ? 'Run Qwen'
+            : isOpenCodeSelected
+              ? 'Run OpenCode'
+              : 'Run';
+  const currentEditorLabel = currentEditorOption?.label || currentActionLabel.replace(/^Run\s+/, '').trim() || 'CLI';
+  let launchDisabledReason = '';
 
-  const currentActionLabel = isCodexSelected
-    ? 'Run Codex'
-    : isClaudeSelected
-      ? 'Run Claude'
-      : isGeminiSelected
-        ? 'Run Gemini'
-        : isQwenSelected
-          ? 'Run Qwen'
-          : isOpenCodeSelected
-            ? 'Run OpenCode'
-            : 'Run';
+  if (!hasSelectedEditor) {
+    launchDisabledReason = 'Nenhum CLI está habilitado nas preferências.';
+  } else if (!selectedEditorInstalled) {
+    launchDisabledReason = `${currentEditorLabel} não está instalado ou não foi encontrado no PATH.`;
+  } else if (isRunning) {
+    launchDisabledReason = 'Já existe uma abertura em andamento.';
+  } else if (availableLaunchSlots <= 0) {
+    launchDisabledReason = `Limite de ${maxSessionCount} terminais por workspace atingido.`;
+  } else if (requiresProvider && !selectedProvider) {
+    launchDisabledReason = 'Selecione um provedor.';
+  } else if (requiresProvider && !providerAllowsEmptyModel && !selectedModel) {
+    launchDisabledReason = 'Selecione um modelo.';
+  }
+
+  const isLaunchDisabled = Boolean(launchDisabledReason);
+  const launchButtonTitle = isLaunchDisabled
+    ? launchDisabledReason
+    : `Abrir ${selectedLaunchCount} instancia${selectedLaunchCount > 1 ? 's' : ''}`;
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadCliInstallations = async () => {
+      try {
+        const result = await window.electronAPI?.cli?.listSupported?.();
+        if (!isMounted) {
+          return;
+        }
+
+        setCliInstallations(result?.success && Array.isArray(result.items) ? result.items : []);
+      } catch (_error) {
+        if (isMounted) {
+          setCliInstallations([]);
+        }
+      }
+    };
+
+    loadCliInstallations();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (launchMenuRef.current && !launchMenuRef.current.contains(event.target)) {
+        setIsLaunchMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (availableLaunchSlots <= 0) {
+      setIsLaunchMenuOpen(false);
+      return;
+    }
+
+    if (selectedLaunchCount > availableLaunchSlots) {
+      setSelectedLaunchCount(availableLaunchSlots);
+    }
+  }, [availableLaunchSlots, selectedLaunchCount]);
+
+  const handleLaunch = () => {
+    if (isLaunchDisabled) {
+      return;
+    }
+
+    onLaunch?.(Math.min(selectedLaunchCount, availableLaunchSlots));
+  };
 
   return (
     <div className="relative z-30 border-b border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-6 py-3 backdrop-blur transition-colors">
-      <div className="flex flex-col gap-3">
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
           <div className="relative min-w-0">
             <select
               value={editor}
               onChange={(event) => onEditorChange?.(event.target.value)}
-              className="h-10 w-full appearance-none rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 pr-10 text-[0.95rem] font-medium text-[color:var(--text-secondary)] shadow-sm outline-none transition hover:border-[color:var(--text-primary)] focus:border-[color:var(--text-primary)]"
+              disabled={availableEditorOptions.length === 0}
+              className="h-10 w-full appearance-none rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] px-3 pr-10 text-[0.95rem] font-medium text-[color:var(--text-secondary)] shadow-sm outline-none transition hover:border-[color:var(--text-primary)] focus:border-[color:var(--text-primary)] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {editorOptions.map((editorOption) => (
+              {availableEditorOptions.length === 0 && (
+                <option value="">Nenhum CLI habilitado</option>
+              )}
+              {availableEditorOptions.map((editorOption) => (
                 <option key={editorOption.value} value={editorOption.value}>
                   {editorOption.label}
                 </option>
@@ -268,106 +369,106 @@ export function WorkspaceToolbar({
 
           {!requiresProvider && <div className="hidden md:block" />}
 
-          <button
-            onClick={onLaunch}
-            disabled={isLaunchDisabled}
-            className={`inline-flex h-10 w-full items-center justify-center gap-2 rounded-[8px] px-4 text-[0.95rem] font-semibold transition ${
-              isLaunchDisabled
-                ? 'cursor-not-allowed border border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-tertiary)]'
-                : 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] hover:opacity-90'
-            }`}
-          >
-            {isRunning ? (
-              <>
-                <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  />
-                </svg>
-                Abrindo...
-              </>
-            ) : (
-              <>
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-                {currentActionLabel}
-              </>
-            )}
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 border-t border-[color:var(--border-color)] pt-4 mt-1 md:grid-cols-2">
-          <div className="flex min-w-0 items-center gap-3">
-            <span className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--text-secondary)]">
-              Layout
-            </span>
-            <div className="inline-flex shrink-0 rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-1 shadow-sm">
-              {layoutOptions.map((option) => {
-                const isActive = layoutMode === option.value;
-                return (
-                  <button
-                    key={option.value}
-                    onClick={() => onLayoutChange?.(option.value)}
-                    className={`inline-flex h-[28px] items-center gap-2 rounded-[6px] px-3 text-[0.85rem] font-medium transition ${
-                      isActive
-                        ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] shadow-sm'
-                        : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/30 hover:text-[color:var(--text-primary)]'
-                    }`}
-                    title={option.label}
-                    aria-pressed={isActive}
-                  >
-                    {option.value === 'tabs' ? (
-                      <svg className="h-[14px] w-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 7h6l2 2h8v8a2 2 0 01-2 2H6a2 2 0 01-2-2V7z" />
-                      </svg>
-                    ) : (
-                      <svg className="h-[14px] w-[14px]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M4 4h7v7H4V4zm9 0h7v7h-7V4zM4 13h7v7H4v-7zm9 0h7v7h-7v-7z" />
-                      </svg>
-                    )}
-                    {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {showYolo && (
+          <div ref={launchMenuRef} className="relative flex w-full min-w-0" title={launchButtonTitle}>
             <button
               type="button"
-              onClick={onToggleYolo}
-              role="switch"
-              aria-checked={yoloMode}
-              className={`ml-auto inline-flex h-10 w-full max-w-[200px] items-center justify-between gap-3 rounded-[8px] border px-3 py-2 transition shadow-sm ${
-                yoloMode
-                  ? 'border-[color:var(--text-primary)] bg-[color:var(--text-primary)] text-[color:var(--bg-body)]'
-                  : 'border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-secondary)] hover:border-[color:var(--text-tertiary)] hover:text-[color:var(--text-primary)]'
+              onClick={handleLaunch}
+              disabled={isLaunchDisabled}
+              title={launchButtonTitle}
+              className={`inline-flex h-10 min-w-0 flex-1 items-center justify-center gap-2 rounded-l-[8px] border px-4 text-[0.95rem] font-semibold transition ${
+                isLaunchDisabled
+                  ? 'cursor-not-allowed border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-tertiary)]'
+                  : 'border-[color:var(--text-primary)] bg-[color:var(--text-primary)] text-[color:var(--bg-body)] hover:opacity-90'
               }`}
             >
-              <span className="flex flex-col text-left leading-none">
-                <span className="text-[11px] font-bold uppercase tracking-[0.1em]">YOLO Mode</span>
-                <span className="mt-1 text-[10px] font-medium opacity-80">{yoloMode ? 'Ativo' : 'Inativo'}</span>
-              </span>
-              <span
-                className={`relative inline-block h-6 w-11 shrink-0 rounded-full transition-colors ${
-                  yoloMode ? 'bg-[color:var(--bg-body)]' : 'bg-[color:var(--border-color)]'
-                }`}
-              >
-                <span
-                  className={`absolute top-[2px] left-[2px] h-5 w-5 rounded-full shadow-sm transition-transform ${
-                    yoloMode ? 'translate-x-[22px] bg-[color:var(--text-primary)]' : 'translate-x-0 bg-[color:var(--text-tertiary)]'
-                  }`}
-                />
-              </span>
+              {isRunning ? (
+                <>
+                  <svg className="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    />
+                  </svg>
+                  Abrindo...
+                </>
+              ) : (
+                <>
+                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="truncate">{currentActionLabel}</span>
+                </>
+              )}
             </button>
-          )}
 
-          {!showYolo && <div />}
-        </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (isLaunchDisabled) {
+                  return;
+                }
+
+                setIsLaunchMenuOpen((current) => !current);
+              }}
+              disabled={isLaunchDisabled}
+              aria-haspopup="menu"
+              aria-expanded={isLaunchMenuOpen}
+              title={launchButtonTitle}
+              className={`inline-flex h-10 shrink-0 items-center gap-2 rounded-r-[8px] border border-l-0 px-3 text-[0.95rem] font-semibold transition ${
+                isLaunchDisabled
+                  ? 'cursor-not-allowed border-[color:var(--border-color)] bg-[color:var(--bg-body)] text-[color:var(--text-tertiary)]'
+                  : 'border-[color:var(--text-primary)] bg-[color:var(--text-primary)] text-[color:var(--bg-body)] hover:opacity-90'
+              }`}
+            >
+              <span>{selectedLaunchCount}x</span>
+              <svg className={`h-4 w-4 transition-transform ${isLaunchMenuOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {isLaunchMenuOpen && !isLaunchDisabled && (
+              <div className="absolute right-0 top-full z-40 mt-1 min-w-[96px] overflow-hidden rounded-[8px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-lg">
+                <div className="py-1">
+                  {launchCountOptions.map((option) => {
+                    const isUnavailable = option.value > availableLaunchSlots;
+                    const isSelected = option.value === selectedLaunchCount;
+
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => {
+                          if (isUnavailable) {
+                            return;
+                          }
+
+                          setSelectedLaunchCount(option.value);
+                          setIsLaunchMenuOpen(false);
+                        }}
+                        disabled={isUnavailable}
+                        className={`flex w-full items-center justify-between px-3 py-2 text-left text-[0.95rem] transition-colors ${
+                          isUnavailable
+                            ? 'cursor-not-allowed text-[color:var(--text-tertiary)] opacity-50'
+                            : isSelected
+                              ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] font-medium'
+                              : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/30 hover:text-[color:var(--text-primary)]'
+                        }`}
+                      >
+                        <span>{option.label}</span>
+                        {isSelected && !isUnavailable && (
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
       </div>
     </div>
   );

@@ -1,3 +1,5 @@
+import { normalizeProviderBaseUrl } from '@lib/opencodeGo';
+
 export const PROVIDER_API_TYPES = {
   OPENAI: 'openai',
   ANTHROPIC: 'anthropic',
@@ -7,10 +9,6 @@ export function normalizeProviderApiType(apiType) {
   return apiType === PROVIDER_API_TYPES.ANTHROPIC
     ? PROVIDER_API_TYPES.ANTHROPIC
     : PROVIDER_API_TYPES.OPENAI;
-}
-
-function normalizeBaseUrl(baseUrl) {
-  return String(baseUrl || '').trim().replace(/\/+$/, '');
 }
 
 export function getProviderApiTypeLabel(apiType, language = 'en') {
@@ -34,7 +32,7 @@ export function getProviderApiTypeLabel(apiType, language = 'en') {
 }
 
 export function getProviderModelsEndpoint(provider = {}) {
-  const normalizedBaseUrl = normalizeBaseUrl(provider.baseUrl);
+  const normalizedBaseUrl = normalizeProviderBaseUrl(provider.baseUrl);
   if (!normalizedBaseUrl) {
     return '';
   }
@@ -89,18 +87,22 @@ export async function fetchModelsFromProvider(provider = {}) {
 }
 
 export function providerSupportsEditor(provider, editor) {
-  if (editor === 'codex' || editor === 'qwen-code' || editor === 'claude-code-native' || editor === 'gemini-cli') {
+  if (editor === 'qwen-code' || editor === 'claude-code-native' || editor === 'gemini-cli') {
     return true;
   }
 
   if (!provider || typeof provider !== 'object') {
-    return editor !== 'claude-code' && editor !== 'opcode';
+    return editor !== 'claude-code' && editor !== 'opcode' && editor !== 'codex';
   }
 
   const apiType = normalizeProviderApiType(provider.apiType);
 
+  if (editor === 'codex') {
+    return apiType === PROVIDER_API_TYPES.OPENAI;
+  }
+
   if (editor === 'claude-code') {
-    return apiType === PROVIDER_API_TYPES.ANTHROPIC;
+    return apiType === PROVIDER_API_TYPES.ANTHROPIC || apiType === PROVIDER_API_TYPES.OPENAI;
   }
 
   if (editor === 'opcode') {

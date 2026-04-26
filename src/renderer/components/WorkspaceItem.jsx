@@ -45,27 +45,27 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
 
       if (hasPendingWork) {
         shouldRemove = await showConfirm({
-          title: 'Discard uncommitted work?',
-          message: `The workspace "${workspace.name}" has uncommitted changes. Are you sure you want to discard them?`,
-          confirmText: 'Discard',
-          cancelText: 'Cancel',
+          title: 'Descartar alterações não commitadas?',
+          message: `O workspace "${workspace.name}" possui alterações não commitadas. Tem certeza de que deseja descartá-las?`,
+          confirmText: 'Descartar',
+          cancelText: 'Cancelar',
           variant: 'danger',
         });
       } else {
         shouldRemove = await showConfirm({
-          title: 'Remove workspace?',
-          message: `Are you sure you want to remove the workspace "${workspace.name}"?`,
-          confirmText: 'Remove',
-          cancelText: 'Cancel',
+          title: 'Remover workspace?',
+          message: `Tem certeza de que deseja remover o workspace "${workspace.name}"?`,
+          confirmText: 'Remover',
+          cancelText: 'Cancelar',
           variant: 'danger',
         });
       }
     } catch (_error) {
       shouldRemove = await showConfirm({
-        title: 'Confirm removal',
-        message: `Could not validate the commit status of "${workspace.name}". Proceed with removal?`,
-        confirmText: 'Remove',
-        cancelText: 'Cancel',
+        title: 'Confirmar remoção',
+        message: `Não foi possível validar o status de commit de "${workspace.name}". Deseja continuar com a remoção?`,
+        confirmText: 'Remover',
+        cancelText: 'Cancelar',
         variant: 'danger',
       });
     }
@@ -90,7 +90,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       });
 
       if (!closeSessionsResult?.success) {
-        throw new Error(closeSessionsResult?.error || 'Could not close terminals');
+        throw new Error(closeSessionsResult?.error || 'Não foi possível fechar os terminais');
       }
 
       await new Promise((resolve) => setTimeout(resolve, 700));
@@ -103,10 +103,10 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       if (!result.success && result.canKillBlockingProcesses && Array.isArray(result.blockingProcesses) && result.blockingProcesses.length > 0) {
         const processDescription = formatBlockingProcesses(result.blockingProcesses);
         const shouldKillProcess = await showConfirm({
-          title: 'Blocking processes found',
-          message: `We found processes blocking the removal of "${workspace.name}".\n\n${processDescription}\n\nDo you want to force kill these processes?`,
-          confirmText: 'Kill and remove',
-          cancelText: 'Cancel',
+          title: 'Processos bloqueando a remoção',
+          message: `Encontramos processos bloqueando a remoção de "${workspace.name}".\n\n${processDescription}\n\nDeseja encerrar esses processos à força?`,
+          confirmText: 'Encerrar e remover',
+          cancelText: 'Cancelar',
           variant: 'danger',
         });
 
@@ -116,7 +116,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
           });
 
           if (!killResult?.success) {
-            throw new Error(`Could not kill processes.`);
+            throw new Error('Não foi possível encerrar os processos.');
           }
 
           await new Promise((resolve) => setTimeout(resolve, 500));
@@ -134,13 +134,13 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
         removeWorkspace(projectId, workspace.name, workspace.path);
         if (onDeleted) onDeleted();
       } else {
-        throw new Error(result.error || 'Unknown error');
+        throw new Error(result.error || 'Erro desconhecido');
       }
     } catch (error) {
       await showAlert({
-        title: 'Error removing workspace',
-        message: error.message || 'Unknown error',
-        confirmText: 'Dismiss',
+        title: 'Erro ao remover workspace',
+        message: error.message || 'Erro desconhecido',
+        confirmText: 'Fechar',
         variant: 'danger',
       });
     } finally {
@@ -169,9 +169,9 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
 
     if (!isValidWorkspaceName(nextName)) {
       await showAlert({
-        title: 'Invalid workspace name',
-        message: 'Use only letters, numbers, hyphens, and underscores.',
-        confirmText: 'Got it',
+        title: 'Nome de workspace inválido',
+        message: 'Use apenas letras, números, hífens e underscores.',
+        confirmText: 'Entendi',
         variant: 'danger',
       });
       return;
@@ -186,7 +186,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       });
 
       if (!result.success || !result.workspace) {
-        throw new Error(result.error || 'Failed to rename workspace');
+        throw new Error(result.error || 'Falha ao renomear workspace');
       }
 
       renameWorkspace(projectId, workspace.path, result.workspace);
@@ -194,9 +194,9 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
       setIsEditing(false);
     } catch (error) {
       await showAlert({
-        title: 'Failed to rename workspace',
-        message: error.message || 'Unknown error',
-        confirmText: 'Dismiss',
+        title: 'Falha ao renomear workspace',
+        message: error.message || 'Erro desconhecido',
+        confirmText: 'Fechar',
         variant: 'danger',
       });
     } finally {
@@ -277,7 +277,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
               ? "hover:bg-[color:var(--bg-body)]/20 text-[color:var(--bg-body)]/70 hover:text-[color:var(--bg-body)]" 
               : "hover:bg-[color:var(--border-color)] text-[color:var(--text-tertiary)] hover:text-[color:var(--text-primary)]"
           )}
-          title="Rename"
+          title="Renomear"
         >
           <Pencil className="h-3 w-3" />
         </button>
@@ -290,7 +290,7 @@ export function WorkspaceItem({ workspace, projectId, projectPath, onDeleted, on
               ? "hover:bg-red-500/20 text-[color:var(--bg-body)]/70 hover:text-red-300" 
               : "hover:bg-red-500/10 text-[color:var(--text-tertiary)] hover:text-red-500"
           )}
-          title="Remove"
+          title="Remover"
         >
           <Trash2 className="h-3 w-3" />
         </button>

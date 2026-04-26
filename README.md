@@ -20,12 +20,29 @@ A interface do aplicativo suporta nativamente 3 idiomas. Você pode ler a docume
 ## 🚀 Funcionalidades
 
 - ✅ **Múltiplos Provedores de IA**: Conecte-se facilmente a diversos provedores (OpenAI, Anthropic, Ollama, etc) e gerencie os seus modelos em uma única interface.
+- ✅ **OpenCode Go**: Configure o plano Go da OpenCode para usar modelos abertos no OpenCode, Codex e Claude Code com um único endpoint compatível com OpenAI.
 - ✅ Janela frameless com barra de título customizada
 - ✅ Controles de janela (minimizar, maximizar/restaurar, fechar)
 - ✅ Alternância de tema claro/escuro com persistência
 - ✅ Atalho F12 para DevTools
 - ✅ Interface moderna e responsiva com Tailwind CSS
 - ✅ Build otimizado com Vite
+
+## OpenCode Go
+
+1. Abra `Configurações > Provedores`.
+2. Clique em `Novo Provedor` e use o preset `OpenCode Go`.
+3. Cole sua chave de API do OpenCode Zen.
+4. Opcionalmente use `Buscar Modelos` para carregar a lista atual.
+5. Selecione o provedor no workspace e escolha um modelo compatível.
+
+Configuração usada pelo preset:
+
+- Base URL: `https://opencode.ai/zen/go/v1`
+- Endpoint de referência: `https://opencode.ai/zen/go/v1/chat/completions`
+- Tipo de API: `Compatível com OpenAI`
+
+O plano OpenCode Go custa US$ 5 no primeiro mês e depois US$ 10/mês. Os limites atuais são baseados em valor de uso: US$ 12 por janela de 5 horas, US$ 30 por semana e US$ 60 por mês, variando conforme o modelo escolhido.
 
 ## 📁 Estrutura do Projeto
 

@@ -120,6 +120,18 @@ function loadConfig() {
                  const fileContent = fs.readFileSync(localConfigPath, 'utf8');
                  const userConfig = JSON.parse(fileContent);
                  config = deepMerge(DEFAULT_CONFIG, userConfig);
+             } else {
+                 // In a packaged Electron app, CWD is not the app directory.
+                 // Look for config.json relative to this file's location (app root).
+                 // Path: src/main/proxy/server/config.js -> 4 levels up to app root
+                 const thisDir = path.dirname(new URL(import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+                 const appRootConfigPath = path.resolve(thisDir, '..', '..', '..', '..', 'config.json');
+                 if (fs.existsSync(appRootConfigPath)) {
+                     const fileContent = fs.readFileSync(appRootConfigPath, 'utf8');
+                     const userConfig = JSON.parse(fileContent);
+                     config = deepMerge(DEFAULT_CONFIG, userConfig);
+                     logger.info(`[Config] Loaded bundled config from ${appRootConfigPath}`);
+                 }
              }
         }
 

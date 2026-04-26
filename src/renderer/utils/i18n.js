@@ -18,7 +18,7 @@ const translations = {
   en: {
     'app.title': 'Code Workspace Orchestrator',
     'app.ready': 'Ready',
-    'app.sessions': 'Sessions: {count}/8',
+    'app.sessions': 'Sessions: {count}/12',
     'titlebar.togglePrimary': 'Toggle Primary Sidebar (Ctrl+B)',
     'titlebar.toggleSecondary': 'Toggle Secondary Sidebar',
     'titlebar.themeSelector': 'Theme selector',
@@ -104,7 +104,7 @@ const translations = {
   pt: {
     'app.title': 'Code Workspace Orchestrator',
     'app.ready': 'Pronto',
-    'app.sessions': 'Sessões: {count}/8',
+    'app.sessions': 'Sessões: {count}/12',
     'titlebar.togglePrimary': 'Alternar Barra Lateral Primária (Ctrl+B)',
     'titlebar.toggleSecondary': 'Alternar Barra Lateral Secundária',
     'home.subtitle': 'Gerencie seus projetos e chats em um só lugar',
@@ -189,7 +189,7 @@ const translations = {
   es: {
     'app.title': 'Code Workspace Orchestrator',
     'app.ready': 'Listo',
-    'app.sessions': 'Sesiones: {count}/8',
+    'app.sessions': 'Sesiones: {count}/12',
     'titlebar.togglePrimary': 'Alternar barra lateral primaria (Ctrl+B)',
     'titlebar.toggleSecondary': 'Alternar barra lateral secundaria',
     'home.subtitle': 'Administra tus proyectos y chats en un solo lugar',

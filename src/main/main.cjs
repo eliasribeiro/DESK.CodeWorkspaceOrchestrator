@@ -11,8 +11,10 @@ const {
   applyEdits,
 } = require('jsonc-parser');
 const { ProxyManager } = require('./proxy/proxy-manager.cjs');
+const { OpenAIToAnthropicAdapterRegistry } = require('./openai-to-anthropic-adapter.cjs');
 
 const proxyManager = new ProxyManager();
+const openAiClaudeAdapterRegistry = new OpenAIToAnthropicAdapterRegistry();
 
 let mainWindow = null;
 
@@ -21,6 +23,15 @@ const embeddedTerminalSessions = new Map();
 const embeddedTerminalSessionsById = new Map();
 const USER_PREFERENCES_FILENAME = 'preferences.json';
 const SUPPORTED_LANGUAGES = ['en', 'pt', 'es'];
+const SUPPORTED_CLI_EDITORS = [
+  { id: 'claude-code', label: 'Claude Code', command: 'claude', versionArgsList: [['--version'], ['version'], ['-v']] },
+  { id: 'codex', label: 'Codex', command: 'codex', versionArgsList: [['--version'], ['version'], ['-v']] },
+  { id: 'gemini-cli', label: 'Gemini CLI', command: 'gemini', versionArgsList: [['--version'], ['version'], ['-v']] },
+  { id: 'qwen-code', label: 'Qwen Code', command: 'qwen', versionArgsList: [['--version'], ['version'], ['-v']] },
+  { id: 'opcode', label: 'OpenCode', command: 'opencode', versionArgsList: [['--version'], ['version'], ['-v']] },
+];
+const DEFAULT_ENABLED_CLI_EDITORS = SUPPORTED_CLI_EDITORS.map((editor) => editor.id);
+const CLI_VERSION_TIMEOUT_MS = 5000;
 const WORKSPACE_LOCK_ERROR_PATTERNS = [
   'permission denied',
   'access is denied',
@@ -49,6 +60,7 @@ const defaultUserPreferences = {
   proxyPort: 8080,
   proxyAutoStart: false,
   proxyStrategy: 'hybrid',
+  enabledCliEditors: DEFAULT_ENABLED_CLI_EDITORS,
 };
 
 function normalizeProviderApiType(apiType) {
@@ -91,6 +103,17 @@ function getDefaultLanguage() {
   return 'en';
 }
 
+function normalizeEnabledCliEditors(value) {
+  if (!Array.isArray(value)) {
+    return [...DEFAULT_ENABLED_CLI_EDITORS];
+  }
+
+  const supportedCliIds = new Set(DEFAULT_ENABLED_CLI_EDITORS);
+  return value.filter((editorId, index) => (
+    supportedCliIds.has(editorId) && value.indexOf(editorId) === index
+  ));
+}
+
 function generateSessionId() {
   return `term-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
@@ -101,14 +124,27 @@ function delay(ms) {
   });
 }
 
-function runChildProcess(command, args = []) {
+function runChildProcess(command, args = [], options = {}) {
+  const timeoutMs = Number.isFinite(options?.timeoutMs) ? options.timeoutMs : 0;
+  const shell = Boolean(options?.shell);
+
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       windowsHide: true,
       stdio: ['ignore', 'pipe', 'pipe'],
+      shell,
     });
     let stdout = '';
     let stderr = '';
+    let settled = false;
+    let timeoutHandle = null;
+
+    const cleanup = () => {
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+        timeoutHandle = null;
+      }
+    };
 
     child.stdout.on('data', (chunk) => {
       stdout += chunk.toString();
@@ -119,16 +155,45 @@ function runChildProcess(command, args = []) {
     });
 
     child.on('error', (error) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
       reject(error);
     });
 
     child.on('close', (code) => {
+      if (settled) {
+        return;
+      }
+      settled = true;
+      cleanup();
       resolve({
         code,
         stdout,
         stderr,
+        timedOut: false,
       });
     });
+
+    if (timeoutMs > 0) {
+      timeoutHandle = setTimeout(() => {
+        if (settled) {
+          return;
+        }
+
+        settled = true;
+        cleanup();
+        child.kill();
+        resolve({
+          code: null,
+          stdout,
+          stderr,
+          timedOut: true,
+        });
+      }, timeoutMs);
+    }
   });
 }
 
@@ -155,6 +220,19 @@ function normalizeTerminalBuffer(buffer = '') {
   }
 
   return buffer.slice(buffer.length - maxLength);
+}
+
+function normalizeProviderBaseUrl(baseUrl = '') {
+  const trimmed = String(baseUrl || '').trim().replace(/\/+$/, '');
+  if (!trimmed) {
+    return '';
+  }
+
+  if (trimmed.endsWith('/chat/completions')) {
+    return trimmed.slice(0, -'/chat/completions'.length);
+  }
+
+  return trimmed;
 }
 
 function ensureDirectory(directoryPath) {
@@ -258,7 +336,7 @@ function buildPullRequestUrl(repositoryUrl, branchName) {
 async function resolveCurrentBranch(git) {
   const branchName = String((await git.raw(['rev-parse', '--abbrev-ref', 'HEAD'])).trim());
   if (!branchName || branchName === 'HEAD') {
-    throw new Error('Workspace nao esta em uma branch valida');
+    throw new Error('Workspace não está em uma branch válida');
   }
 
   return branchName;
@@ -310,6 +388,12 @@ function normalizeUserPreferences(value = {}) {
     selectedEditor: typeof value?.selectedEditor === 'string' ? value.selectedEditor : defaultUserPreferences.selectedEditor,
     selectedProvider: typeof value?.selectedProvider === 'string' ? value.selectedProvider : '',
     selectedChatId: typeof value?.selectedChatId === 'string' ? value.selectedChatId : null,
+    proxyPort: Number.isFinite(value?.proxyPort) ? value.proxyPort : defaultUserPreferences.proxyPort,
+    proxyAutoStart: Boolean(value?.proxyAutoStart),
+    proxyStrategy: ['sticky', 'round-robin', 'hybrid'].includes(value?.proxyStrategy)
+      ? value.proxyStrategy
+      : defaultUserPreferences.proxyStrategy,
+    enabledCliEditors: normalizeEnabledCliEditors(value?.enabledCliEditors),
     selectedWorkspace:
       value?.selectedWorkspace &&
       typeof value.selectedWorkspace === 'object' &&
@@ -318,6 +402,165 @@ function normalizeUserPreferences(value = {}) {
       typeof value.selectedWorkspace.workspace === 'object'
         ? value.selectedWorkspace
         : null,
+  };
+}
+
+function extractCliVersion(output = '') {
+  const text = String(output || '').trim();
+  if (!text) {
+    return '';
+  }
+
+  const versionMatch = text.match(/\d+\.\d+\.\d+(?:[-+._a-zA-Z0-9]*)?/);
+  if (versionMatch) {
+    return versionMatch[0];
+  }
+
+  const firstLine = text.split(/\r?\n/).map((line) => line.trim()).find(Boolean) || '';
+  return firstLine.slice(0, 80);
+}
+
+function quotePosixShellArg(value = '') {
+  return `'${String(value || '').replace(/'/g, `'\\''`)}'`;
+}
+
+function quoteWindowsShellArg(value = '') {
+  const text = String(value || '');
+  if (!text) {
+    return '""';
+  }
+
+  return /[\s"&^|<>]/.test(text)
+    ? `"${text.replace(/"/g, '""')}"`
+    : text;
+}
+
+function pickWindowsCommandCandidate(candidates = []) {
+  const extensionPriority = new Map([
+    ['.exe', 0],
+    ['.cmd', 1],
+    ['.bat', 2],
+    ['.com', 3],
+  ]);
+
+  return [...candidates]
+    .sort((left, right) => {
+      const leftPriority = extensionPriority.get(path.extname(left).toLowerCase()) ?? 99;
+      const rightPriority = extensionPriority.get(path.extname(right).toLowerCase()) ?? 99;
+      return leftPriority - rightPriority;
+    })[0] || '';
+}
+
+async function resolveCliExecutable(command) {
+  if (!command) {
+    return '';
+  }
+
+  try {
+    if (process.platform === 'win32') {
+      const result = await runChildProcess('where.exe', [command], { timeoutMs: CLI_VERSION_TIMEOUT_MS });
+      if (result.code !== 0 && !result.stdout.trim()) {
+        return '';
+      }
+
+      const candidates = Array.from(new Set(
+        `${result.stdout || ''}\n${result.stderr || ''}`
+          .split(/\r?\n/)
+          .map((line) => line.trim().replace(/^"|"$/g, ''))
+          .filter(Boolean),
+      ));
+
+      return pickWindowsCommandCandidate(candidates);
+    }
+
+    const shellPath = process.env.SHELL || '/bin/sh';
+    const result = await runChildProcess(shellPath, ['-lc', `command -v ${quotePosixShellArg(command)}`], {
+      timeoutMs: CLI_VERSION_TIMEOUT_MS,
+    });
+
+    if (result.code !== 0) {
+      return '';
+    }
+
+    return String(result.stdout || '')
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .find(Boolean) || '';
+  } catch (_error) {
+    return '';
+  }
+}
+
+async function runCliProbe(commandPath, args = []) {
+  if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(commandPath)) {
+    const commandLine = [
+      quoteWindowsShellArg(commandPath),
+      ...args.map((arg) => quoteWindowsShellArg(arg)),
+    ].join(' ');
+
+    return runChildProcess('cmd.exe', ['/d', '/s', '/c', commandLine], {
+      timeoutMs: CLI_VERSION_TIMEOUT_MS,
+    });
+  }
+
+  return runChildProcess(commandPath, args, { timeoutMs: CLI_VERSION_TIMEOUT_MS });
+}
+
+async function detectCliVersion(editor) {
+  const versionArgsCandidates = Array.isArray(editor?.versionArgsList) && editor.versionArgsList.length > 0
+    ? editor.versionArgsList
+    : [['--version']];
+  const commandPath = await resolveCliExecutable(editor.command);
+  const installDirectory = commandPath ? path.dirname(commandPath) : '';
+
+  if (!commandPath) {
+    return {
+      id: editor.id,
+      label: editor.label,
+      command: editor.command,
+      installed: false,
+      version: '',
+      commandPath: '',
+      installDirectory: '',
+    };
+  }
+
+  for (const args of versionArgsCandidates) {
+    try {
+      const result = await runCliProbe(commandPath, args);
+      if (result.code !== 0) {
+        continue;
+      }
+
+      const rawOutput = `${result.stdout || ''}\n${result.stderr || ''}`.trim();
+      const version = extractCliVersion(rawOutput);
+
+      if (version) {
+        return {
+          id: editor.id,
+          label: editor.label,
+          command: editor.command,
+          installed: true,
+          version,
+          commandPath,
+          installDirectory,
+        };
+      }
+    } catch (error) {
+      if (error?.code === 'ENOENT') {
+        break;
+      }
+    }
+  }
+
+  return {
+    id: editor.id,
+    label: editor.label,
+    command: editor.command,
+    installed: true,
+    version: '',
+    commandPath,
+    installDirectory,
   };
 }
 
@@ -369,6 +612,16 @@ function updateJsoncFile(filePath, buildUpdates) {
   });
 
   fs.writeFileSync(filePath, content.endsWith('\n') ? content : `${content}\n`, 'utf8');
+}
+
+function sanitizeIdentifier(value = '', fallback = 'provider') {
+  const normalized = String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+
+  return normalized || fallback;
 }
 
 function sendTerminalEvent(channel, payload) {
@@ -629,7 +882,7 @@ async function deleteBranchIfExists(git, branchName) {
 
   const localBranchesAfter = await git.branchLocal();
   if (localBranchesAfter.all.includes(normalizedBranchName)) {
-    throw new Error(`Nao foi possivel remover a branch "${normalizedBranchName}"`);
+    throw new Error(`Não foi possível remover a branch "${normalizedBranchName}"`);
   }
 }
 
@@ -718,17 +971,39 @@ async function killProcessTreeByPid(pid) {
   const killResult = await runChildProcess('taskkill', ['/PID', String(pid), '/T', '/F']);
   if (killResult.code !== 0) {
     const message = String(killResult.stderr || killResult.stdout || '').trim();
-    throw new Error(message || `Nao foi possivel encerrar o processo ${pid}`);
+    throw new Error(message || `Não foi possível encerrar o processo ${pid}`);
   }
 }
 
-function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yoloMode }) {
+async function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yoloMode }) {
   const providerApiType = normalizeProviderApiType(provider?.apiType);
 
   if (editor === 'codex') {
+    if (!provider?.baseUrl || !provider?.apiKey || !model) {
+      return {
+        command: yoloMode ? 'codex --approval-mode full-auto' : 'codex',
+        envOverrides: {},
+      };
+    }
+
+    const providerKey = sanitizeIdentifier(provider.id || provider.name || 'openai_compatible', 'openai_compatible');
+    const providerEnvKey = `${providerKey.toUpperCase()}_API_KEY`;
+
     return {
-      command: yoloMode ? 'codex --yolo' : 'codex',
-      envOverrides: {},
+      command: [
+        'codex',
+        yoloMode ? '--approval-mode full-auto' : '',
+        `--model ${model}`,
+        `--config preferred_auth_method='apikey'`,
+        `--config model_provider='${providerKey}'`,
+        `--config model_providers.${providerKey}.name='${String(provider.name || 'Provider').replace(/'/g, "\\'")}'`,
+        `--config model_providers.${providerKey}.base_url='${normalizeProviderBaseUrl(provider.baseUrl)}'`,
+        `--config model_providers.${providerKey}.env_key='${providerEnvKey}'`,
+        `--config model_providers.${providerKey}.wire_api='chat'`,
+      ].filter(Boolean).join(' '),
+      envOverrides: {
+        [providerEnvKey]: provider.apiKey,
+      },
     };
   }
 
@@ -764,7 +1039,7 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
   if (editor === 'claude-code-proxy') {
     const proxyStatus = proxyManager.getStatus();
     if (!proxyStatus.running) {
-      throw new Error('O servidor proxy nao esta rodando. Inicie-o nas configuracoes (Settings > Proxy).');
+      throw new Error('O servidor proxy não está rodando. Inicie-o nas configurações (Settings > Proxy).');
     }
 
     // Delete existing .claude/settings.json for a clean slate
@@ -796,6 +1071,29 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
   }
 
   if (editor === 'claude-code') {
+    if (providerApiType === 'openai') {
+      const adapter = await openAiClaudeAdapterRegistry.ensureServer({
+        baseUrl: provider.baseUrl,
+        apiKey: provider.apiKey,
+        model,
+        providerName: provider.name || 'OpenAI-compatible',
+      });
+
+      return {
+        command: yoloMode ? 'claude --dangerously-skip-permissions' : 'claude',
+        envOverrides: {
+          ANTHROPIC_BASE_URL: `http://${adapter.host}:${adapter.port}`,
+          ANTHROPIC_AUTH_TOKEN: 'opencode-go',
+          ANTHROPIC_MODEL: model,
+          ANTHROPIC_SMALL_FAST_MODEL: model,
+          ANTHROPIC_DEFAULT_SONNET_MODEL: model,
+          ANTHROPIC_DEFAULT_OPUS_MODEL: model,
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: model,
+          API_TIMEOUT_MS: '3000000',
+        },
+      };
+    }
+
     const claudeDir = path.join(workspacePath, '.claude');
     const settingsPath = path.join(claudeDir, 'settings.json');
 
@@ -823,7 +1121,7 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
   }
 
   if (editor === 'opcode') {
-    const providerId = provider.id || 'workspace-provider';
+    const providerId = sanitizeIdentifier(provider.id || provider.name || 'workspace-provider', 'workspace-provider');
     const modelKey = `${providerId}/${model}`;
     const configPath = path.join(workspacePath, 'opencode.jsonc');
     const providerPackage = providerApiType === 'anthropic'
@@ -848,7 +1146,7 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
             name: provider.name || provider.baseUrl || providerId,
             options: {
               ...(existingProviderConfig.options || {}),
-              baseURL: provider.baseUrl,
+              baseURL: normalizeProviderBaseUrl(provider.baseUrl),
               apiKey: provider.apiKey,
             },
             models: {
@@ -879,7 +1177,7 @@ function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yo
     };
   }
 
-  throw new Error(`Editor nao suportado: ${editor}`);
+  throw new Error(`Editor não suportado: ${editor}`);
 }
 
 function cleanupTerminalProcesses() {
@@ -933,6 +1231,7 @@ function createWindow() {
   mainWindow.on('closed', () => {
     cleanupTerminalProcesses();
     cleanupEmbeddedSessions();
+    openAiClaudeAdapterRegistry.stopAll().catch(() => {});
     proxyManager.stop().catch(() => {});
     mainWindow = null;
   });
@@ -972,7 +1271,7 @@ function readTextFileIfExists(filePath) {
 
   const content = fs.readFileSync(filePath, 'utf8');
   if (content.includes('\u0000')) {
-    throw new Error('Arquivo binario nao suportado na visualizacao');
+    throw new Error('Arquivo binário não suportado na visualização');
   }
 
   return normalizeTextContent(content);
@@ -1163,12 +1462,12 @@ function setupIpcHandlers() {
         preferences: result.preferences,
       };
     } catch (error) {
-      console.error('Erro ao carregar preferencias:', error);
+      console.error('Erro ao carregar preferências:', error);
       return {
         success: false,
         exists: false,
         preferences: { ...defaultUserPreferences },
-        error: error.message || 'Erro ao carregar preferencias',
+        error: error.message || 'Erro ao carregar preferências',
       };
     }
   });
@@ -1178,10 +1477,27 @@ function setupIpcHandlers() {
       saveUserPreferences(preferences);
       return { success: true };
     } catch (error) {
-      console.error('Erro ao salvar preferencias:', error);
+      console.error('Erro ao salvar preferências:', error);
       return {
         success: false,
-        error: error.message || 'Erro ao salvar preferencias',
+        error: error.message || 'Erro ao salvar preferências',
+      };
+    }
+  });
+
+  ipcMain.handle('cli:listSupported', async () => {
+    try {
+      const items = await Promise.all(SUPPORTED_CLI_EDITORS.map((editor) => detectCliVersion(editor)));
+      return {
+        success: true,
+        items,
+      };
+    } catch (error) {
+      console.error('Erro ao detectar CLIs suportados:', error);
+      return {
+        success: false,
+        items: [],
+        error: error.message || 'Erro ao detectar CLIs suportados',
       };
     }
   });
@@ -1203,15 +1519,15 @@ function setupIpcHandlers() {
   ipcMain.handle('git:createWorktree', async (_event, { projectPath, worktreeName }) => {
     try {
       if (!mainWindow) {
-        return { success: false, error: 'Janela nao disponivel' };
+        return { success: false, error: 'Janela não disponível' };
       }
 
       if (!projectPath) {
-        return { success: false, error: 'Caminho do projeto nao fornecido' };
+        return { success: false, error: 'Caminho do projeto não fornecido' };
       }
 
       if (!worktreeName) {
-        return { success: false, error: 'Nome do workspace nao fornecido' };
+        return { success: false, error: 'Nome do workspace não fornecido' };
       }
 
       const cwoPath = path.join(projectPath, '.cwo');
@@ -1236,7 +1552,7 @@ function setupIpcHandlers() {
       if (!isRepo) {
         return {
           success: false,
-          error: 'A pasta do projeto nao e um repositorio Git valido',
+          error: 'A pasta do projeto não é um repositório Git válido',
         };
       }
 
@@ -1270,11 +1586,11 @@ function setupIpcHandlers() {
   ipcMain.handle('git:listWorktrees', async (_event, { projectPath }) => {
     try {
       if (!projectPath) {
-        return { success: false, error: 'Caminho do projeto nao fornecido' };
+        return { success: false, error: 'Caminho do projeto não fornecido' };
       }
 
       if (!fs.existsSync(projectPath)) {
-        return { success: false, error: 'Caminho do projeto nao encontrado', worktrees: [] };
+        return { success: false, error: 'Caminho do projeto não encontrado', worktrees: [] };
       }
 
       const git = simpleGit(projectPath);
@@ -1427,7 +1743,7 @@ function setupIpcHandlers() {
         : [];
 
       if (ids.length === 0) {
-        return { success: false, error: 'Nenhum PID valido foi informado', killed: [], failed: [] };
+        return { success: false, error: 'Nenhum PID válido foi informado', killed: [], failed: [] };
       }
 
       const uniqueIds = Array.from(new Set(ids));
@@ -1451,7 +1767,7 @@ function setupIpcHandlers() {
         killed,
         failed,
         error: failed.length > 0
-          ? 'Nao foi possivel encerrar todos os processos informados'
+          ? 'Não foi possível encerrar todos os processos informados'
           : null,
       };
     } catch (error) {
@@ -1497,7 +1813,7 @@ function setupIpcHandlers() {
       const currentBranchName = (await worktreeGit.raw(['rev-parse', '--abbrev-ref', 'HEAD'])).trim();
 
       if (!currentBranchName || currentBranchName === 'HEAD') {
-        return { success: false, error: 'Workspace nao esta em uma branch valida para renomeacao' };
+        return { success: false, error: 'Workspace não está em uma branch válida para renomeação' };
       }
 
       const localBranches = await git.branchLocal();
@@ -1538,17 +1854,17 @@ function setupIpcHandlers() {
   ipcMain.handle('git:getWorktreeChanges', async (_event, { worktreePath }) => {
     try {
       if (!worktreePath) {
-        return { success: false, error: 'Caminho do workspace nao fornecido', files: [] };
+        return { success: false, error: 'Caminho do workspace não fornecido', files: [] };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco', files: [] };
+        return { success: false, error: 'Workspace não encontrado no disco', files: [] };
       }
 
       const git = simpleGit(worktreePath);
       const isRepo = await git.checkIsRepo();
       if (!isRepo) {
-        return { success: false, error: 'Workspace nao e um repositorio Git valido', files: [] };
+        return { success: false, error: 'Workspace não é um repositório Git válido', files: [] };
       }
 
       const [unstagedRaw, stagedRaw, status] = await Promise.all([
@@ -1601,10 +1917,10 @@ function setupIpcHandlers() {
         files,
       };
     } catch (error) {
-      console.error('Erro ao obter alteracoes do workspace:', error);
+      console.error('Erro ao obter alterações do workspace:', error);
       return {
         success: false,
-        error: error.message || 'Erro ao obter alteracoes do workspace',
+        error: error.message || 'Erro ao obter alterações do workspace',
         files: [],
       };
     }
@@ -1613,17 +1929,17 @@ function setupIpcHandlers() {
   ipcMain.handle('git:getWorktreeFilePreview', async (_event, { worktreePath, filePath }) => {
     try {
       if (!worktreePath || !filePath) {
-        return { success: false, error: 'Workspace ou arquivo nao informado', file: null };
+        return { success: false, error: 'Workspace ou arquivo não informado', file: null };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco', file: null };
+        return { success: false, error: 'Workspace não encontrado no disco', file: null };
       }
 
       const git = simpleGit(worktreePath);
       const isRepo = await git.checkIsRepo();
       if (!isRepo) {
-        return { success: false, error: 'Workspace nao e um repositorio Git valido', file: null };
+        return { success: false, error: 'Workspace não é um repositório Git válido', file: null };
       }
 
       const normalizedRelativePath = String(filePath).replace(/\\/g, '/');
@@ -1642,7 +1958,7 @@ function setupIpcHandlers() {
       try {
         currentContent = readTextFileIfExists(absoluteFilePath);
       } catch (error) {
-        return { success: false, error: error.message || 'Nao foi possivel ler o arquivo atual', file: null };
+        return { success: false, error: error.message || 'Não foi possível ler o arquivo atual', file: null };
       }
 
       const diffLines = buildLineDiff(previousContent, currentContent);
@@ -1675,17 +1991,17 @@ function setupIpcHandlers() {
   ipcMain.handle('git:getWorktreeSyncStatus', async (_event, { worktreePath }) => {
     try {
       if (!worktreePath) {
-        return { success: false, error: 'Caminho do workspace nao fornecido', hasPendingWork: true };
+        return { success: false, error: 'Caminho do workspace não fornecido', hasPendingWork: true };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco', hasPendingWork: true };
+        return { success: false, error: 'Workspace não encontrado no disco', hasPendingWork: true };
       }
 
       const git = simpleGit(worktreePath);
       const isRepo = await git.checkIsRepo();
       if (!isRepo) {
-        return { success: false, error: 'Workspace nao e um repositorio Git valido', hasPendingWork: true };
+        return { success: false, error: 'Workspace não é um repositório Git válido', hasPendingWork: true };
       }
 
       const status = await git.status();
@@ -1714,22 +2030,22 @@ function setupIpcHandlers() {
   ipcMain.handle('git:commit', async (_event, { worktreePath, message }) => {
     try {
       if (!worktreePath) {
-        return { success: false, error: 'Caminho do workspace nao fornecido' };
+        return { success: false, error: 'Caminho do workspace não fornecido' };
       }
 
       const commitMessage = String(message || '').trim();
       if (!commitMessage) {
-        return { success: false, error: 'Mensagem de commit nao fornecida' };
+        return { success: false, error: 'Mensagem de commit não fornecida' };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco' };
+        return { success: false, error: 'Workspace não encontrado no disco' };
       }
 
       const git = simpleGit(worktreePath);
       const isRepo = await git.checkIsRepo();
       if (!isRepo) {
-        return { success: false, error: 'Workspace nao e um repositorio Git valido' };
+        return { success: false, error: 'Workspace não é um repositório Git válido' };
       }
 
       // Remove .claude/settings.json before committing to avoid leaking provider config
@@ -1743,7 +2059,7 @@ function setupIpcHandlers() {
       await git.add(['-A']);
       const status = await git.status();
       if (status.isClean()) {
-        return { success: false, error: 'Nao ha alteracoes para commit' };
+        return { success: false, error: 'Não há alterações para commit' };
       }
 
       const result = await git.commit(commitMessage);
@@ -1765,17 +2081,17 @@ function setupIpcHandlers() {
   ipcMain.handle('git:push', async (_event, { worktreePath }) => {
     try {
       if (!worktreePath) {
-        return { success: false, error: 'Caminho do workspace nao fornecido' };
+        return { success: false, error: 'Caminho do workspace não fornecido' };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco' };
+        return { success: false, error: 'Workspace não encontrado no disco' };
       }
 
       const git = simpleGit(worktreePath);
       const isRepo = await git.checkIsRepo();
       if (!isRepo) {
-        return { success: false, error: 'Workspace nao e um repositorio Git valido' };
+        return { success: false, error: 'Workspace não é um repositório Git válido' };
       }
 
       const pushResult = await pushCurrentBranch(git);
@@ -1801,22 +2117,22 @@ function setupIpcHandlers() {
   ipcMain.handle('git:commitAndPush', async (_event, { worktreePath, message }) => {
     try {
       if (!worktreePath) {
-        return { success: false, error: 'Caminho do workspace nao fornecido' };
+        return { success: false, error: 'Caminho do workspace não fornecido' };
       }
 
       const commitMessage = String(message || '').trim();
       if (!commitMessage) {
-        return { success: false, error: 'Mensagem de commit nao fornecida' };
+        return { success: false, error: 'Mensagem de commit não fornecida' };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco' };
+        return { success: false, error: 'Workspace não encontrado no disco' };
       }
 
       const git = simpleGit(worktreePath);
       const isRepo = await git.checkIsRepo();
       if (!isRepo) {
-        return { success: false, error: 'Workspace nao e um repositorio Git valido' };
+        return { success: false, error: 'Workspace não é um repositório Git válido' };
       }
 
       // Remove .claude/settings.json before committing to avoid leaking provider config
@@ -1830,7 +2146,7 @@ function setupIpcHandlers() {
       await git.add(['-A']);
       const status = await git.status();
       if (status.isClean()) {
-        return { success: false, error: 'Nao ha alteracoes para commit' };
+        return { success: false, error: 'Não há alterações para commit' };
       }
 
       const result = await git.commit(commitMessage);
@@ -1861,15 +2177,15 @@ function setupIpcHandlers() {
   ipcMain.handle('git:mergeToMain', async (_event, { projectPath, worktreePath, message }) => {
     try {
       if (!projectPath || !worktreePath) {
-        return { success: false, error: 'Caminho do projeto ou do workspace nao fornecido' };
+        return { success: false, error: 'Caminho do projeto ou do workspace não fornecido' };
       }
 
       if (!fs.existsSync(projectPath)) {
-        return { success: false, error: 'Projeto principal nao encontrado no disco' };
+        return { success: false, error: 'Projeto principal não encontrado no disco' };
       }
 
       if (!fs.existsSync(worktreePath)) {
-        return { success: false, error: 'Workspace nao encontrado no disco' };
+        return { success: false, error: 'Workspace não encontrado no disco' };
       }
 
       const commitMessage = String(message || '').trim();
@@ -1881,7 +2197,7 @@ function setupIpcHandlers() {
       ]);
 
       if (!isWorktreeRepo || !isMainRepo) {
-        return { success: false, error: 'Projeto ou workspace nao e um repositorio Git valido' };
+        return { success: false, error: 'Projeto ou workspace não é um repositório Git válido' };
       }
 
       const sourceBranch = await resolveCurrentBranch(worktreeGit);
@@ -1917,7 +2233,7 @@ function setupIpcHandlers() {
       if (!mainStatus.isClean()) {
         return {
           success: false,
-          error: 'O projeto principal possui alteracoes locais. Limpe a main antes de executar o merge automatico',
+          error: 'O projeto principal possui alterações locais. Limpe a main antes de executar o merge automático',
         };
       }
 
@@ -1939,7 +2255,7 @@ function setupIpcHandlers() {
     } catch (error) {
       return {
         success: false,
-        error: error.message || 'Erro ao executar merge automatico com a main',
+        error: error.message || 'Erro ao executar merge automático com a main',
       };
     }
   });
@@ -1951,7 +2267,7 @@ function setupIpcHandlers() {
   ipcMain.handle('shell:openExternal', async (_event, value) => {
     const url = String(value || '').trim();
     if (!url) {
-      return { success: false, error: 'URL nao informada' };
+      return { success: false, error: 'URL não informada' };
     }
 
     try {
@@ -1960,7 +2276,7 @@ function setupIpcHandlers() {
     } catch (error) {
       return {
         success: false,
-        error: error.message || 'Nao foi possivel abrir URL externa',
+        error: error.message || 'Não foi possível abrir URL externa',
       };
     }
   });
@@ -1969,7 +2285,7 @@ function setupIpcHandlers() {
     const workspacePath = typeof payload === 'string' ? payload : payload?.workspacePath;
 
     if (!workspacePath) {
-      return { success: false, error: 'Workspace nao informado', sessions: [] };
+      return { success: false, error: 'Workspace não informado', sessions: [] };
     }
 
     return {
@@ -1982,7 +2298,7 @@ function setupIpcHandlers() {
     const workspacePath = typeof payload === 'string' ? payload : payload?.workspacePath;
 
     if (!workspacePath) {
-      return { success: false, error: 'Workspace nao informado', closedSessionIds: [] };
+      return { success: false, error: 'Workspace não informado', closedSessionIds: [] };
     }
 
     try {
@@ -2001,10 +2317,10 @@ function setupIpcHandlers() {
         closedSessionIds,
       };
     } catch (error) {
-      console.error('Erro ao encerrar sessoes do workspace:', error);
+      console.error('Erro ao encerrar sessões do workspace:', error);
       return {
         success: false,
-        error: error.message || 'Erro ao encerrar sessoes do workspace',
+        error: error.message || 'Erro ao encerrar sessões do workspace',
         closedSessionIds: [],
       };
     }
@@ -2022,15 +2338,15 @@ function setupIpcHandlers() {
     } = options;
 
     if (!workspacePath) {
-      return { success: false, error: 'Workspace nao informado', session: null, sessions: [] };
+      return { success: false, error: 'Workspace não informado', session: null, sessions: [] };
     }
 
     if (!editor) {
-      return { success: false, error: 'Editor nao informado', session: null, sessions: [] };
+      return { success: false, error: 'Editor não informado', session: null, sessions: [] };
     }
 
     if (!fs.existsSync(workspacePath)) {
-      return { success: false, error: 'Workspace nao encontrado no disco', session: null, sessions: [] };
+      return { success: false, error: 'Workspace não encontrado no disco', session: null, sessions: [] };
     }
 
     try {
@@ -2040,7 +2356,7 @@ function setupIpcHandlers() {
         model,
         yoloMode,
       });
-      const launchConfig = resolveLaunchConfiguration({
+      const launchConfig = await resolveLaunchConfiguration({
         workspacePath,
         editor,
         provider,
@@ -2090,7 +2406,7 @@ function setupIpcHandlers() {
     const session = embeddedTerminalSessionsById.get(sessionId);
 
     if (!session) {
-      return { success: false, error: 'Sessao nao encontrada' };
+      return { success: false, error: 'Sessão não encontrada' };
     }
 
     if (!session.ptyProcess) {
@@ -2111,7 +2427,7 @@ function setupIpcHandlers() {
     const session = embeddedTerminalSessionsById.get(sessionId);
 
     if (!session) {
-      return { success: false, error: 'Sessao nao encontrada' };
+      return { success: false, error: 'Sessão não encontrada' };
     }
 
     if (!session.ptyProcess) {

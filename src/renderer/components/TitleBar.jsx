@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { PanelLeft, PanelRight, Minus, Square, Copy, X, Moon, Sun } from 'lucide-react';
+import { PanelLeft, PanelRight, Minus, Square, Copy, X, Moon, Sun, Focus, FocusIcon } from 'lucide-react';
 import { useWorkspace } from '@context/WorkspaceContext';
 import { cn } from '@lib/utils';
 
@@ -8,6 +8,8 @@ export function TitleBar({
   onTogglePrimary = () => {},
   showSecondary = false,
   onToggleSecondary = () => {},
+  isFocusMode = false,
+  onToggleFocusMode = () => {},
 }) {
   const [isMaximized, setIsMaximized] = useState(false);
   const { theme, setTheme } = useWorkspace();
@@ -34,37 +36,58 @@ export function TitleBar({
 
       <div className="flex min-w-0 flex-1 items-center justify-end gap-1.5">
         <div className="no-drag mr-3">
-          <button
-            onClick={toggleTheme}
-            className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[color:var(--text-secondary)] transition-all hover:bg-[color:var(--border-color)]/50 hover:text-[color:var(--text-primary)]"
-            title="Toggle theme"
-          >
-            {theme === 'dark' ? <Sun className="h-[14px] w-[14px]" /> : <Moon className="h-[14px] w-[14px]" />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggleTheme}
+              className="inline-flex h-[26px] w-[26px] items-center justify-center rounded-lg text-[color:var(--text-secondary)] transition-all hover:bg-[color:var(--border-color)]/50 hover:text-[color:var(--text-primary)]"
+              title="Alternar tema"
+            >
+              {theme === 'dark' ? <Sun className="h-[14px] w-[14px]" /> : <Moon className="h-[14px] w-[14px]" />}
+            </button>
+            <button
+              onClick={onToggleFocusMode}
+              className={cn(
+                'inline-flex h-[26px] items-center justify-center gap-1 rounded-lg px-2 text-[11px] font-medium transition-all duration-300',
+                isFocusMode
+                  ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)] shadow-sm'
+                  : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/50 hover:text-[color:var(--text-primary)]'
+              )}
+              title={isFocusMode ? 'Sair do modo foco (F11)' : 'Entrar no modo foco (F11)'}
+            >
+              {isFocusMode ? <FocusIcon className="h-[13px] w-[13px]" /> : <Focus className="h-[13px] w-[13px]" />}
+              <span>{isFocusMode ? 'Foco' : 'Tela cheia'}</span>
+            </button>
+          </div>
         </div>
 
         <div className="no-drag flex items-center gap-1">
           <button
             className={cn(
               'inline-flex h-[26px] w-[26px] items-center justify-center rounded-lg transition-all duration-300',
-              showPrimary 
+              isFocusMode
+                ? 'cursor-not-allowed opacity-40 text-[color:var(--text-tertiary)]'
+                : showPrimary
                 ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)]' 
                 : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/50 hover:text-[color:var(--text-primary)]'
             )}
             onClick={onTogglePrimary}
-            title="Toggle primary panel"
+            title="Alternar painel esquerdo"
+            disabled={isFocusMode}
           >
             <PanelLeft className="h-[14px] w-[14px]" />
           </button>
           <button
             className={cn(
               'inline-flex h-[26px] w-[26px] items-center justify-center rounded-lg transition-all duration-300',
-              showSecondary 
+              isFocusMode
+                ? 'cursor-not-allowed opacity-40 text-[color:var(--text-tertiary)]'
+                : showSecondary
                 ? 'bg-[color:var(--text-primary)] text-[color:var(--bg-body)]' 
                 : 'text-[color:var(--text-secondary)] hover:bg-[color:var(--border-color)]/50 hover:text-[color:var(--text-primary)]'
             )}
             onClick={onToggleSecondary}
-            title="Toggle secondary panel"
+            title="Alternar painel direito"
+            disabled={isFocusMode}
           >
             <PanelRight className="h-[14px] w-[14px]" />
           </button>

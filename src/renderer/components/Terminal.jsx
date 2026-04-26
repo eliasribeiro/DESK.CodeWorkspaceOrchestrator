@@ -39,6 +39,7 @@ export function Terminal({
   onClose,
   onFocus,
   onSessionExit,
+  onHeaderContextMenu,
 }) {
   const containerRef = useRef(null);
   const terminalRef = useRef(null);
@@ -229,7 +230,7 @@ export function Terminal({
       }
     } catch (error) {
       console.error('Erro ao inicializar terminal embutido:', error);
-      setLocalError(error.message || 'Nao foi possivel inicializar o terminal');
+      setLocalError(error.message || 'Não foi possível inicializar o terminal');
     }
 
     return () => {
@@ -287,7 +288,10 @@ export function Terminal({
       onMouseDown={() => onFocus?.()}
     >
       {!embedded && (
-        <header className={`shrink-0 border-b border-[color:var(--border-color)] bg-[color:var(--bg-body)] ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}>
+        <header
+          className={`shrink-0 border-b border-[color:var(--border-color)] bg-[color:var(--bg-body)] ${compact ? 'px-3 py-2.5' : 'px-4 py-3'}`}
+          onContextMenu={onHeaderContextMenu}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">

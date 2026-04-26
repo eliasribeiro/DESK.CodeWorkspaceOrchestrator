@@ -20,12 +20,27 @@ La interfaz de la aplicación soporta de forma nativa 3 idiomas. Puedes leer la 
 ## 🚀 Funcionalidades
 
 - ✅ **Múltiples Proveedores de IA**: Conéctate fácilmente a varios proveedores (OpenAI, Anthropic, Ollama, etc.) y administra tus modelos, todo en una única interfaz.
+- ✅ **OpenCode Go**: Configura el plan Go de OpenCode para usar modelos abiertos en OpenCode, Codex y Claude Code desde un único endpoint compatible con OpenAI.
 - ✅ Ventana sin bordes con barra de título personalizada
 - ✅ Controles de ventana (minimizar, maximizar/restaurar, cerrar)
 - ✅ Cambio de tema claro/oscuro con persistencia
 - ✅ Atajo F12 para DevTools
 - ✅ Interfaz moderna y responsiva con Tailwind CSS
 - ✅ Build optimizado con Vite
+
+## OpenCode Go
+
+1. Abre `Configuración > Proveedores`.
+2. Haz clic en `Nuevo Proveedor` y usa el preset `OpenCode Go`.
+3. Pega tu API key desde OpenCode Zen.
+4. Opcionalmente usa `Buscar Modelos` para cargar el catálogo actual.
+5. Selecciona el proveedor en el workspace y elige un modelo compatible.
+
+Valores del preset:
+
+- Base URL: `https://opencode.ai/zen/go/v1`
+- Endpoint de referencia: `https://opencode.ai/zen/go/v1/chat/completions`
+- Tipo de API: `Compatible con OpenAI`
 
 ## 📁 Estructura del Proyecto
 

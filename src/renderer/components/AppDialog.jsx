@@ -28,7 +28,7 @@ export function AppDialog({
               </div>
               <div className="space-y-2">
                 <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[color:var(--text-tertiary)]">
-                  {isDanger ? 'Confirmacao critica' : 'Aviso do sistema'}
+                  {isDanger ? 'Confirmação crítica' : 'Aviso do sistema'}
                 </p>
                 <h3 className="font-display text-2xl font-bold tracking-[-0.03em] text-[color:var(--text-primary)]">{title}</h3>
                 <p className="max-w-md text-[0.95rem] leading-6 text-[color:var(--text-secondary)]">{message}</p>

@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'motion/react';
 import { ArrowLeft, Globe2, Palette, PlugZap, RefreshCcw, Pencil, Trash2, Plus } from 'lucide-react';
 import { SUPPORTED_THEMES, useWorkspace } from '@context/WorkspaceContext';
 import { getThemeOptions, languageOptions } from '@utils/i18n';
 import { getProviderApiTypeLabel } from '@lib/providerApi';
+import { SUPPORTED_CLI_EDITORS } from '@lib/cliCatalog';
 import { ProviderModal } from './ProviderModal';
 import { ProxySettingsTab } from './ProxySettingsTab';
 import { Button } from '@components/ui/button';
@@ -23,6 +24,8 @@ export function SettingsScreen() {
     setTheme,
     language,
     setLanguage,
+    enabledCliEditors,
+    setEnabledCliEditors,
     proxyPort,
     setProxyPort,
     proxyAutoStart,
@@ -37,7 +40,47 @@ export function SettingsScreen() {
   const [editingProvider, setEditingProvider] = useState(null);
   const [isFetchingModels, setIsFetchingModels] = useState(false);
   const [expandedModels, setExpandedModels] = useState({});
+  const [cliStatuses, setCliStatuses] = useState([]);
+  const [isLoadingCliStatuses, setIsLoadingCliStatuses] = useState(false);
   const themeOptions = getThemeOptions(t).filter((option) => SUPPORTED_THEMES.includes(option.value));
+  const enabledCliEditorsSet = useMemo(() => new Set(enabledCliEditors), [enabledCliEditors]);
+  const cliCards = cliStatuses.length > 0
+    ? cliStatuses
+    : SUPPORTED_CLI_EDITORS.map((cli) => ({
+      ...cli,
+      id: cli.value,
+      installed: false,
+      version: '',
+      installDirectory: '',
+    }));
+
+  const loadCliStatuses = async () => {
+    setIsLoadingCliStatuses(true);
+    try {
+      const result = await window.electronAPI?.cli?.listSupported?.();
+      if (result?.success && Array.isArray(result.items)) {
+        setCliStatuses(result.items);
+        return;
+      }
+    } catch (error) {
+      console.error('Erro ao detectar CLIs:', error);
+    } finally {
+      setIsLoadingCliStatuses(false);
+    }
+
+    setCliStatuses(SUPPORTED_CLI_EDITORS.map((cli) => ({
+      id: cli.value,
+      label: cli.label,
+      command: cli.command,
+      installed: false,
+      version: '',
+      installDirectory: '',
+    })));
+  };
+
+  useEffect(() => {
+    loadCliStatuses();
+  }, []);
 
   const handleFetchModels = async (provider) => {
     if (!provider.baseUrl || !provider.apiKey) return;
@@ -63,6 +106,21 @@ export function SettingsScreen() {
     if (!models) return [];
     const modelList = models.split(',').filter((item) => item.trim());
     return expandedModels[providerId] || modelList.length <= 6 ? modelList : modelList.slice(0, 6);
+  };
+
+  const handleToggleCli = (cliId, checked) => {
+    setEnabledCliEditors((current) => {
+      const nextSet = new Set(current);
+      if (checked) {
+        nextSet.add(cliId);
+      } else {
+        nextSet.delete(cliId);
+      }
+
+      return SUPPORTED_CLI_EDITORS
+        .map((cli) => cli.value)
+        .filter((value) => nextSet.has(value));
+    });
   };
 
   return (
@@ -161,23 +219,108 @@ export function SettingsScreen() {
 
               <Card className="panel-edge">
                 <CardHeader>
-                  <CardTitle>Operator notes</CardTitle>
-                  <CardDescription>
-                    A nova interface assume o app como uma estação de trabalho: módulos persistentes, alto contraste e foco em operação simultânea.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4 md:grid-cols-2">
-                  {[
-                    ['Shell', 'Navegação, título e barras auxiliares vivem em superfícies translúcidas.'],
-                    ['Workspace', 'A área principal ganha mais contraste para sessões paralelas e inspeção.'],
-                    ['Providers', 'Configuração migra para controles consistentes em Radix e camada shadcn-style.'],
-                    ['Motion', 'Transições curtas e intencionais em vez de microinterações genéricas.'],
-                  ].map(([title, description]) => (
-                    <div key={title} className="rounded-[22px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-5">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[color:var(--text-tertiary)]">{title}</p>
-                      <p className="mt-3 text-[0.85rem] leading-6 text-[color:var(--text-secondary)]">{description}</p>
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <CardTitle>CLIs suportados</CardTitle>
+                      <CardDescription>
+                        Habilite quais CLIs podem aparecer no dropdown operacional e confira a versão detectada no sistema.
+                      </CardDescription>
                     </div>
-                  ))}
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={loadCliStatuses}
+                      disabled={isLoadingCliStatuses}
+                    >
+                      <RefreshCcw className={`h-3.5 w-3.5 ${isLoadingCliStatuses ? 'animate-spin' : ''}`} />
+                      Atualizar
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="rounded-[22px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-5">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-[18px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--accent)]">
+                        <PlugZap className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-[color:var(--text-primary)]">Controle da listagem</p>
+                        <p className="mt-1 text-[0.85rem] leading-6 text-[color:var(--text-secondary)]">
+                          Ao desabilitar um CLI aqui, ele deixa de aparecer no seletor da área de workspace.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {enabledCliEditors.length === 0 && (
+                    <div className="rounded-[18px] border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[0.85rem] text-amber-200">
+                      Nenhum CLI está habilitado. O dropdown operacional ficará vazio até você reativar pelo menos um item.
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    {cliCards.map((cli) => {
+                      const isEnabled = enabledCliEditorsSet.has(cli.id);
+                      return (
+                        <div
+                          key={cli.id}
+                          className="rounded-[22px] border border-[color:var(--border-color)] bg-[color:var(--bg-body)] p-4"
+                        >
+                          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                            <div className="flex min-w-0 items-start gap-4">
+                              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[16px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--accent)]">
+                                <PlugZap className="h-4.5 w-4.5" />
+                              </div>
+                              <div className="min-w-0">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <p className="font-semibold text-[color:var(--text-primary)]">{cli.label}</p>
+                                  <span className={`rounded-full px-2.5 py-1 text-[0.65rem] font-semibold uppercase tracking-[0.18em] ${
+                                    cli.installed
+                                      ? 'border border-emerald-500/20 bg-emerald-500/10 text-emerald-300'
+                                      : 'border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)]'
+                                  }`}>
+                                    {cli.installed ? 'Detectado' : 'Nao detectado'}
+                                  </span>
+                                  {cli.version && (
+                                    <span className="rounded-full border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-2.5 py-1 text-[0.72rem] font-medium text-[color:var(--text-secondary)]">
+                                      {cli.version}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="mt-1 text-[0.82rem] text-[color:var(--text-secondary)]">
+                                  Comando: <span className="font-mono">{cli.command}</span>
+                                </p>
+                                {cli.installDirectory && (
+                                  <p className="mt-1 text-[0.82rem] text-[color:var(--text-secondary)]">
+                                    Instalacao: <span className="font-mono break-all">{cli.installDirectory}</span>
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => handleToggleCli(cli.id, !isEnabled)}
+                              className="flex items-center justify-between gap-3 rounded-[14px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] px-3 py-2 shadow-sm transition-colors hover:border-[color:var(--text-tertiary)] hover:bg-[color:var(--bg-body)]"
+                            >
+                              <div className="text-left">
+                                <p className="text-[0.75rem] font-semibold uppercase tracking-[0.18em] text-[color:var(--text-tertiary)]">Dropdown</p>
+                                <p className="mt-1 text-[0.85rem] font-medium text-[color:var(--text-secondary)]">
+                                  {isEnabled ? 'Visivel' : 'Oculto'}
+                                </p>
+                              </div>
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => handleToggleCli(cli.id, checked)}
+                                onClick={(event) => event.stopPropagation()}
+                              />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </CardContent>
               </Card>
             </motion.div>

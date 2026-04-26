@@ -72,7 +72,8 @@
     "files": [
       "dist/**/*",
       "src/main/**/*",
-      "src/preload/**/*"
+      "src/preload/**/*",
+      "config.json"
     ],
     "win": {
       "target": [

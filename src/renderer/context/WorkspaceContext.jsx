@@ -4,6 +4,10 @@ import {
   fetchModelsFromProvider,
   normalizeProviderApiType,
 } from '@lib/providerApi';
+import {
+  DEFAULT_ENABLED_CLI_EDITORS,
+  normalizeEnabledCliEditors,
+} from '@lib/cliCatalog';
 
 const WorkspaceContext = createContext(null);
 export const SUPPORTED_THEMES = ['dark', 'light', 'graphite'];
@@ -26,6 +30,7 @@ const defaultPreferences = {
   proxyPort: 8080,
   proxyAutoStart: false,
   proxyStrategy: 'hybrid',
+  enabledCliEditors: DEFAULT_ENABLED_CLI_EDITORS,
 };
 
 function normalizeProvider(provider = {}) {
@@ -76,7 +81,25 @@ function normalizePreferences(preferences = {}) {
     proxyStrategy: ['sticky', 'round-robin', 'hybrid'].includes(preferences?.proxyStrategy)
       ? preferences.proxyStrategy
       : defaultPreferences.proxyStrategy,
+    enabledCliEditors: normalizeEnabledCliEditors(preferences?.enabledCliEditors),
   };
+}
+
+function projectContainsWorkspace(project, selection) {
+  if (!project?.id || !selection?.projectId || !selection?.workspace?.path) {
+    return false;
+  }
+
+  if (project.id !== selection.projectId) {
+    return false;
+  }
+
+  if (project.path === selection.workspace.path) {
+    return true;
+  }
+
+  return Array.isArray(project.workspaces)
+    && project.workspaces.some((workspace) => workspace.path === selection.workspace.path);
 }
 
 function readLegacyLocalPreferences() {
@@ -151,6 +174,7 @@ export function WorkspaceProvider({ children }) {
   const [proxyPort, setProxyPort] = useState(defaultPreferences.proxyPort);
   const [proxyAutoStart, setProxyAutoStart] = useState(defaultPreferences.proxyAutoStart);
   const [proxyStrategy, setProxyStrategy] = useState(defaultPreferences.proxyStrategy);
+  const [enabledCliEditors, setEnabledCliEditors] = useState(defaultPreferences.enabledCliEditors);
   const [activeSessionsCount, setActiveSessionsCount] = useState(0);
   const [workspaceViews, setWorkspaceViews] = useState({});
   const [filePreview, setFilePreview] = useState({
@@ -204,7 +228,7 @@ export function WorkspaceProvider({ children }) {
           await electronPreferencesApi.save(nextPreferences);
         }
       } catch (error) {
-        console.error('Erro ao carregar preferencias:', error);
+        console.error('Erro ao carregar preferências:', error);
 
         if (!isMounted) {
           return;
@@ -232,15 +256,12 @@ export function WorkspaceProvider({ children }) {
       setProxyPort(preferences.proxyPort);
       setProxyAutoStart(preferences.proxyAutoStart);
       setProxyStrategy(preferences.proxyStrategy);
+      setEnabledCliEditors(preferences.enabledCliEditors);
 
       const restoredWorkspace = preferences.selectedWorkspace;
       const workspaceStillExists =
         restoredWorkspace &&
-        preferences.projects.some((project) => (
-          project.id === restoredWorkspace.projectId &&
-          Array.isArray(project.workspaces) &&
-          project.workspaces.some((workspace) => workspace.path === restoredWorkspace.workspace?.path)
-        ));
+        preferences.projects.some((project) => projectContainsWorkspace(project, restoredWorkspace));
 
       if (workspaceStillExists) {
         setSelectedWorkspace(restoredWorkspace);
@@ -299,13 +320,14 @@ export function WorkspaceProvider({ children }) {
       proxyPort,
       proxyAutoStart,
       proxyStrategy,
+      enabledCliEditors,
     });
 
     const electronPreferencesApi = window.electronAPI?.preferences;
 
     if (electronPreferencesApi?.save) {
       electronPreferencesApi.save(preferences).catch((error) => {
-        console.error('Erro ao salvar preferencias:', error);
+        console.error('Erro ao salvar preferências:', error);
       });
       return;
     }
@@ -316,7 +338,7 @@ export function WorkspaceProvider({ children }) {
       window.localStorage?.setItem('workspace-theme', theme);
       window.localStorage?.setItem('workspace-language', language);
     } catch (error) {
-      console.error('Erro ao salvar preferencias locais:', error);
+      console.error('Erro ao salvar preferências locais:', error);
     }
   }, [
     projects,
@@ -336,6 +358,7 @@ export function WorkspaceProvider({ children }) {
     proxyPort,
     proxyAutoStart,
     proxyStrategy,
+    enabledCliEditors,
   ]);
 
   const generateId = () => `id-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
@@ -722,6 +745,8 @@ export function WorkspaceProvider({ children }) {
     setProxyAutoStart,
     proxyStrategy,
     setProxyStrategy,
+    enabledCliEditors,
+    setEnabledCliEditors,
   };
 
   return (

@@ -23,6 +23,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     save: (preferences) => ipcRenderer.invoke('preferences:save', preferences),
   },
 
+  cli: {
+    listSupported: () => ipcRenderer.invoke('cli:listSupported'),
+  },
+
   git: {
     createWorktree: (options) => ipcRenderer.invoke('git:createWorktree', options),
     listWorktrees: (options) => ipcRenderer.invoke('git:listWorktrees', options),
