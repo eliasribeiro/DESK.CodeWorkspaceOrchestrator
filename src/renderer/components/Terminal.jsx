@@ -45,32 +45,64 @@ export function Terminal({
   const containerRef = useRef(null);
   const terminalRef = useRef(null);
   const fitAddonRef = useRef(null);
+  const wheelRemainderRef = useRef(0);
+  const isActiveRef = useRef(isActive);
+  const onFocusRef = useRef(onFocus);
   const [localError, setLocalError] = useState('');
   const baseFontSize = compact ? 11.5 : 13;
 
-  const focusTerminal = () => {
-    const terminal = terminalRef.current;
+  const isTerminalFocused = (terminal) => {
+    const activeElement = document.activeElement;
+    if (!terminal || !activeElement) {
+      return false;
+    }
+
+    return terminal.textarea === activeElement || Boolean(terminal.element?.contains(activeElement));
+  };
+
+  const focusTerminal = (terminal = terminalRef.current) => {
     if (!terminal) {
-      onFocus?.();
+      onFocusRef.current?.();
       return;
     }
 
-    onFocus?.();
+    const alreadyFocused = isTerminalFocused(terminal);
+    if (!isActiveRef.current) {
+      onFocusRef.current?.();
+    }
+
+    if (alreadyFocused) {
+      return;
+    }
+
     window.requestAnimationFrame(() => {
-      terminal.focus();
+      if (!isTerminalFocused(terminal)) {
+        terminal.focus();
+      }
     });
   };
+
+  useEffect(() => {
+    isActiveRef.current = isActive;
+  }, [isActive]);
+
+  useEffect(() => {
+    onFocusRef.current = onFocus;
+  }, [onFocus]);
 
   useEffect(() => {
     if (!containerRef.current || !session?.sessionId) {
       return undefined;
     }
 
+    wheelRemainderRef.current = 0;
+
     let terminal = null;
     let fitAddon = null;
     let resizeObserver = null;
     let inputDisposable = null;
     let contextMenuHandler = null;
+    let wheelHandler = null;
     let unsubscribeData = () => {};
     let unsubscribeExit = () => {};
     let unsubscribeError = () => {};
@@ -133,8 +165,10 @@ export function Terminal({
       terminal.open(containerRef.current);
       terminal.write(session.buffer || '');
       fitAddon.fit();
-      terminal.focus();
       terminalRef.current = terminal;
+      if (isActiveRef.current) {
+        focusTerminal(terminal);
+      }
 
       terminal.attachCustomKeyEventHandler((event) => {
         const isCopyShortcut = (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey && event.key.toLowerCase() === 'c';
@@ -158,8 +192,7 @@ export function Terminal({
             }
 
             terminal.paste(text);
-            terminal.focus();
-            onFocus?.();
+            focusTerminal(terminal);
           });
           return false;
         }
@@ -167,30 +200,71 @@ export function Terminal({
         return true;
       });
 
+      terminal.attachCustomWheelEventHandler((event) => {
+        focusTerminal(terminal);
+        if (event.ctrlKey || event.metaKey) {
+          return true;
+        }
+        return false;
+      });
+
       contextMenuHandler = (event) => {
         event.preventDefault();
 
         if (terminal.hasSelection()) {
           void writeClipboardText(terminal.getSelection()).then(() => {
-            terminal.focus();
-            onFocus?.();
+            focusTerminal(terminal);
           });
           return;
         }
 
         void readClipboardText().then((text) => {
           if (!text) {
-            terminal.focus();
-            onFocus?.();
+            focusTerminal(terminal);
             return;
           }
 
           terminal.paste(text);
-          terminal.focus();
-          onFocus?.();
+          focusTerminal(terminal);
         });
       };
       containerRef.current.addEventListener('contextmenu', contextMenuHandler);
+
+      wheelHandler = (event) => {
+        focusTerminal(terminal);
+
+        if (event.ctrlKey || event.metaKey) {
+          return;
+        }
+
+        const lineHeight = terminal.options.fontSize
+          * (typeof terminal.options.lineHeight === 'number' ? terminal.options.lineHeight : 1.35);
+
+        if (!lineHeight || Number.isNaN(lineHeight)) {
+          return;
+        }
+
+        let deltaLines = 0;
+        if (event.deltaMode === 1) {
+          deltaLines = event.deltaY;
+        } else if (event.deltaMode === 2) {
+          deltaLines = event.deltaY * terminal.rows;
+        } else {
+          deltaLines = event.deltaY / lineHeight;
+        }
+
+        const totalLines = wheelRemainderRef.current + deltaLines;
+        const wholeLines = totalLines > 0 ? Math.floor(totalLines) : Math.ceil(totalLines);
+        wheelRemainderRef.current = totalLines - wholeLines;
+
+        if (wholeLines === 0) {
+          return;
+        }
+
+        event.preventDefault();
+        terminal.scrollLines(wholeLines);
+      };
+      containerRef.current.addEventListener('wheel', wheelHandler, { passive: false });
 
       void window.electronAPI?.terminal?.resize?.({
         sessionId: session.sessionId,
@@ -252,6 +326,9 @@ export function Terminal({
       if (contextMenuHandler && containerRef.current) {
         containerRef.current.removeEventListener('contextmenu', contextMenuHandler);
       }
+      if (wheelHandler && containerRef.current) {
+        containerRef.current.removeEventListener('wheel', wheelHandler);
+      }
       unsubscribeData();
       unsubscribeExit();
       unsubscribeError();
@@ -288,18 +365,33 @@ export function Terminal({
   }, [errorMessage]);
 
   useEffect(() => {
-    if (!isActive || !terminalRef.current) {
+    const terminal = terminalRef.current;
+    const fitAddon = fitAddonRef.current;
+    if (!isActive || !terminal || !fitAddon) {
       return;
     }
 
     const frameId = window.requestAnimationFrame(() => {
-      terminalRef.current?.focus();
+      try {
+        fitAddon.fit();
+        void window.electronAPI?.terminal?.resize?.({
+          sessionId: session?.sessionId,
+          cols: terminal.cols,
+          rows: terminal.rows,
+        });
+      } catch (error) {
+        console.error('Erro ao reajustar terminal ativo:', error);
+      }
+
+      if (!isTerminalFocused(terminal)) {
+        terminal.focus();
+      }
     });
 
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [isActive]);
+  }, [isActive, session?.sessionId]);
 
   const statusClassName =
     session?.status === 'exited'
@@ -336,8 +428,7 @@ export function Terminal({
               <button
                 onClick={() => {
                   onZoomOut?.();
-                  terminalRef.current?.focus();
-                  onFocus?.();
+                  focusTerminal();
                 }}
                 className={`rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)] ${compact ? 'h-6 w-6 text-[0.75rem]' : 'h-7 w-7 text-[0.85rem]'} flex items-center justify-center font-semibold`}
                 aria-label="Diminuir zoom do terminal"
@@ -348,8 +439,7 @@ export function Terminal({
               <button
                 onClick={() => {
                   onZoomIn?.();
-                  terminalRef.current?.focus();
-                  onFocus?.();
+                  focusTerminal();
                 }}
                 className={`rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)] ${compact ? 'h-6 w-6 text-[0.75rem]' : 'h-7 w-7 text-[0.85rem]'} flex items-center justify-center font-semibold`}
                 aria-label="Aumentar zoom do terminal"
@@ -361,8 +451,7 @@ export function Terminal({
                 <button
                   onClick={() => {
                     terminalRef.current?.clear();
-                    terminalRef.current?.focus();
-                    onFocus?.();
+                    focusTerminal();
                   }}
                   className={`rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)] ${compact ? 'px-2 py-1 text-[0.65rem]' : 'px-2.5 py-1 text-[0.75rem]'}`}
                 >
@@ -398,8 +487,7 @@ export function Terminal({
           <button
             onClick={() => {
               onZoomOut?.();
-              terminalRef.current?.focus();
-              onFocus?.();
+              focusTerminal();
             }}
             className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-sm text-[0.85rem] font-semibold text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)]"
             aria-label="Diminuir zoom do terminal"
@@ -410,8 +498,7 @@ export function Terminal({
           <button
             onClick={() => {
               onZoomIn?.();
-              terminalRef.current?.focus();
-              onFocus?.();
+              focusTerminal();
             }}
             className="pointer-events-auto flex h-7 w-7 items-center justify-center rounded-[6px] border border-[color:var(--border-color)] bg-[color:var(--bg-surface)] shadow-sm text-[0.85rem] font-semibold text-[color:var(--text-secondary)] transition-colors hover:bg-[color:var(--bg-body)] hover:text-[color:var(--text-primary)]"
             aria-label="Aumentar zoom do terminal"

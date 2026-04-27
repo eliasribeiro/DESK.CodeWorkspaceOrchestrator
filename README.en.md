@@ -6,7 +6,7 @@
 
 # Code Workspace Orchestrator
 
-This is a desktop application to manage terminal coding environments (CLI) such as Claude Code, Codex CLI, Gemini CLI, Qwen CLI, and OpenCode. It integrates with Git worktree so you can increase your productivity by opening multiple terminals and worktrees for parallel development of features in your projects.
+This is a desktop application to manage terminal coding environments (CLI) such as Claude Code, Codex CLI, Gemini CLI, Qwen CLI, OpenCode, and OpenClaude. It integrates with Git worktree so you can increase your productivity by opening multiple terminals and worktrees for parallel development of features in your projects.
 
 Modern desktop application built with **Electron + React + Vite + Tailwind CSS**.
 
@@ -21,6 +21,7 @@ The application interface natively supports 3 languages. You can read the docume
 
 - ✅ **Multiple AI Providers**: Easily connect to various providers (OpenAI, Anthropic, Ollama, etc) and manage your models all in a single interface.
 - ✅ **OpenCode Go**: Configure OpenCode's Go plan to use open coding models with OpenCode, Codex, and Claude Code from a single OpenAI-compatible endpoint.
+- ✅ **OpenClaude CLI**: Run OpenClaude natively in workspaces with automatic PATH detection.
 - ✅ Frameless window with custom title bar
 - ✅ Window controls (minimize, maximize/restore, close)
 - ✅ Light/dark theme toggle with persistence
@@ -41,6 +42,17 @@ Preset values:
 - Base URL: `https://opencode.ai/zen/go/v1`
 - Reference endpoint: `https://opencode.ai/zen/go/v1/chat/completions`
 - API type: `OpenAI-compatible`
+
+## OpenClaude
+
+1. Install the CLI:
+
+```bash
+npm install -g @gitlawb/openclaude
+```
+
+2. In the app, open `Settings > Supported CLIs` and verify `OpenClaude` is detected.
+3. In the workspace, choose `OpenClaude` in the CLI dropdown and click `Run OpenClaude`.
 
 ## 📁 Project Structure
 

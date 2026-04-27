@@ -42,6 +42,7 @@ function getSessionTitle(session) {
     'claude-code-native': 'Claude',
     'gemini-cli': 'Gemini',
     'qwen-code': 'Qwen',
+    openclaude: 'OpenClaude',
     opcode: 'OpenCode',
   };
 
@@ -54,6 +55,17 @@ function getSessionStatusLabel(session) {
   if (session.status === 'exited') return 'encerrada';
   if (session.status === 'starting') return 'iniciando';
   return 'ativa';
+}
+
+function getFirstProviderModel(provider) {
+  if (!provider?.models) {
+    return '';
+  }
+
+  return provider.models
+    .split(',')
+    .map((model) => model.trim())
+    .find(Boolean) || '';
 }
 
 function getGridColumnsClass(sessionCount) {
@@ -116,7 +128,7 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
   const isSelectedProviderCompatible = useMemo(() => (
     !selectedEditor
       ? false
-      : selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli'
+      : selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'openclaude'
       ? true
       : providerSupportsEditor(selectedProvider, selectedEditor)
   ), [selectedEditor, selectedProvider]);
@@ -216,6 +228,8 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
         setSelectedProviderId('claude-native');
       } else if (selectedEditor === 'codex') {
         setSelectedProviderId('codex-native');
+      } else if (selectedEditor === 'openclaude') {
+        setSelectedProviderId('');
       } else {
         const compatibleProvider = enabledProviders.find((provider) => providerSupportsEditor(provider, selectedEditor));
         if (compatibleProvider) {
@@ -233,7 +247,7 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
       return;
     }
 
-    if (selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli') {
+    if (selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'openclaude') {
       return;
     }
 
@@ -285,7 +299,7 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
       return;
     }
 
-    if (selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli') {
+    if (selectedEditor === 'qwen-code' || selectedEditor === 'gemini-cli' || selectedEditor === 'openclaude') {
       if (selectedModelLocal !== '') {
         setSelectedModelLocal('');
         setSelectedModel('');
@@ -456,9 +470,14 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
 
     setWorkspaceViews((current) => {
       const baseView = current[workspacePath] || getDefaultWorkspaceView();
+      const nextView = updater(baseView);
+      if (nextView === baseView) {
+        return current;
+      }
+
       return {
         ...current,
-        [workspacePath]: updater(baseView),
+        [workspacePath]: nextView,
       };
     });
   };
@@ -562,6 +581,7 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
     if (
       selectedEditor !== 'qwen-code'
       && selectedEditor !== 'gemini-cli'
+      && selectedEditor !== 'openclaude'
       && !(selectedEditor === 'codex' && selectedProviderId === 'codex-native')
       && !isSelectedProviderCompatible
     ) {
@@ -594,10 +614,14 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
       } else {
         finalProvider = serializeProviderForLaunch(selectedProvider);
       }
-    } else if (['qwen-code', 'gemini-cli'].includes(selectedEditor)) {
+    } else if (['qwen-code', 'gemini-cli', 'openclaude'].includes(selectedEditor)) {
       finalModel = '';
     } else {
       finalProvider = serializeProviderForLaunch(selectedProvider);
+    }
+
+    if (finalProvider && !finalModel) {
+      finalModel = getFirstProviderModel(finalProvider);
     }
 
     const launchCount = Math.max(1, Math.min(requestedLaunchCount || 1, availableLaunchSlots));
@@ -700,11 +724,17 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
   };
 
   const handleFocusSession = (sessionId) => {
-    updateWorkspaceView((currentView) => ({
-      ...currentView,
-      activeSessionId: sessionId,
-      terminalError: '',
-    }));
+    updateWorkspaceView((currentView) => {
+      if (currentView.activeSessionId === sessionId && !currentView.terminalError) {
+        return currentView;
+      }
+
+      return {
+        ...currentView,
+        activeSessionId: sessionId,
+        terminalError: '',
+      };
+    });
   };
 
   const handleOpenTerminalTabContextMenu = (event, sessionId) => {
@@ -954,23 +984,32 @@ export function WorkspaceChatArea({ isFocusMode = false }) {
                   </div>
 
                   <div className="flex-1 min-h-0 relative">
-                    <Terminal
-                      key={activeSession.sessionId}
-                      session={activeSession}
-                      workspaceName={workspace.name}
-                      workspacePath={workspacePath}
-                      title={getSessionTitle(activeSession)}
-                      statusLabel={getSessionStatusLabel(activeSession)}
-                      errorMessage=""
-                      embedded
-                      zoomLevel={getSessionZoomLevel(activeSession.sessionId)}
-                      onZoomIn={() => handleAdjustTerminalZoom(activeSession.sessionId, 1)}
-                      onZoomOut={() => handleAdjustTerminalZoom(activeSession.sessionId, -1)}
-                      onClose={() => handleCloseTerminal(activeSession.sessionId)}
-                      onSessionExit={() => {}}
-                      onFocus={() => handleFocusSession(activeSession.sessionId)}
-                      isActive
-                    />
+                    {sessions.map((session) => {
+                      const isActive = session.sessionId === activeSession.sessionId;
+                      return (
+                        <div
+                          key={session.sessionId}
+                          className={isActive ? 'h-full min-h-0' : 'hidden'}
+                        >
+                          <Terminal
+                            session={session}
+                            workspaceName={workspace.name}
+                            workspacePath={workspacePath}
+                            title={getSessionTitle(session)}
+                            statusLabel={getSessionStatusLabel(session)}
+                            errorMessage=""
+                            embedded
+                            zoomLevel={getSessionZoomLevel(session.sessionId)}
+                            onZoomIn={() => handleAdjustTerminalZoom(session.sessionId, 1)}
+                            onZoomOut={() => handleAdjustTerminalZoom(session.sessionId, -1)}
+                            onClose={() => handleCloseTerminal(session.sessionId)}
+                            onSessionExit={() => {}}
+                            onFocus={() => handleFocusSession(session.sessionId)}
+                            isActive={isActive}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}

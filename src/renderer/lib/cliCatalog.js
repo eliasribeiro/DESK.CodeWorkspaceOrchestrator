@@ -3,6 +3,7 @@ export const SUPPORTED_CLI_EDITORS = [
   { value: 'codex', label: 'Codex', command: 'codex' },
   { value: 'gemini-cli', label: 'Gemini CLI', command: 'gemini' },
   { value: 'qwen-code', label: 'Qwen Code', command: 'qwen' },
+  { value: 'openclaude', label: 'OpenClaude', command: 'openclaude' },
   { value: 'opcode', label: 'OpenCode', command: 'opencode' },
 ];
 

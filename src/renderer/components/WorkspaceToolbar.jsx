@@ -197,8 +197,9 @@ export function WorkspaceToolbar({
   const isClaudeSelected = editor === 'claude-code';
   const isGeminiSelected = editor === 'gemini-cli';
   const isQwenSelected = editor === 'qwen-code';
+  const isOpenClaudeSelected = editor === 'openclaude';
   const isOpenCodeSelected = editor === 'opcode';
-  const requiresProvider = hasSelectedEditor && !isQwenSelected && !isGeminiSelected;
+  const requiresProvider = hasSelectedEditor && !isQwenSelected && !isGeminiSelected && !isOpenClaudeSelected;
   const isCodexNativeSelected = isCodexSelected && selectedProvider === 'codex-native';
   const providerAllowsEmptyModel = (
     isClaudeSelected && ['claude-native', 'claude-proxy'].includes(selectedProvider)
@@ -222,6 +223,8 @@ export function WorkspaceToolbar({
           ? 'Run Gemini'
           : isQwenSelected
             ? 'Run Qwen'
+            : isOpenClaudeSelected
+              ? 'Run OpenClaude'
             : isOpenCodeSelected
               ? 'Run OpenCode'
               : 'Run';

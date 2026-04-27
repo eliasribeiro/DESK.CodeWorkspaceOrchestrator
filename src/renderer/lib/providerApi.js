@@ -87,7 +87,7 @@ export async function fetchModelsFromProvider(provider = {}) {
 }
 
 export function providerSupportsEditor(provider, editor) {
-  if (editor === 'qwen-code' || editor === 'claude-code-native' || editor === 'gemini-cli') {
+  if (editor === 'qwen-code' || editor === 'claude-code-native' || editor === 'gemini-cli' || editor === 'openclaude') {
     return true;
   }
 

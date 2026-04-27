@@ -6,7 +6,7 @@
 
 # Code Workspace Orchestrator
 
-Esta es una aplicación de escritorio para administrar entornos de codificación de terminal (CLI) como Claude Code, Codex CLI, Gemini CLI, Qwen CLI y OpenCode. Se integra con Git worktree para que puedas aumentar tu productividad abriendo varias terminales y worktrees para el desarrollo en paralelo de funcionalidades en tus proyectos.
+Esta es una aplicación de escritorio para administrar entornos de codificación de terminal (CLI) como Claude Code, Codex CLI, Gemini CLI, Qwen CLI, OpenCode y OpenClaude. Se integra con Git worktree para que puedas aumentar tu productividad abriendo varias terminales y worktrees para el desarrollo en paralelo de funcionalidades en tus proyectos.
 
 Aplicación de escritorio moderna construida con **Electron + React + Vite + Tailwind CSS**.
 
@@ -21,6 +21,7 @@ La interfaz de la aplicación soporta de forma nativa 3 idiomas. Puedes leer la 
 
 - ✅ **Múltiples Proveedores de IA**: Conéctate fácilmente a varios proveedores (OpenAI, Anthropic, Ollama, etc.) y administra tus modelos, todo en una única interfaz.
 - ✅ **OpenCode Go**: Configura el plan Go de OpenCode para usar modelos abiertos en OpenCode, Codex y Claude Code desde un único endpoint compatible con OpenAI.
+- ✅ **OpenClaude CLI**: Ejecuta OpenClaude de forma nativa en workspaces con detección automática en el PATH.
 - ✅ Ventana sin bordes con barra de título personalizada
 - ✅ Controles de ventana (minimizar, maximizar/restaurar, cerrar)
 - ✅ Cambio de tema claro/oscuro con persistencia
@@ -41,6 +42,17 @@ Valores del preset:
 - Base URL: `https://opencode.ai/zen/go/v1`
 - Endpoint de referencia: `https://opencode.ai/zen/go/v1/chat/completions`
 - Tipo de API: `Compatible con OpenAI`
+
+## OpenClaude
+
+1. Instala el CLI:
+
+```bash
+npm install -g @gitlawb/openclaude
+```
+
+2. En la app, abre `Configuración > CLIs soportados` y verifica que `OpenClaude` esté detectado.
+3. En el workspace, selecciona `OpenClaude` en el dropdown de CLI y haz clic en `Run OpenClaude`.
 
 ## 📁 Estructura del Proyecto
 

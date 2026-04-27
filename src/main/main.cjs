@@ -28,6 +28,7 @@ const SUPPORTED_CLI_EDITORS = [
   { id: 'codex', label: 'Codex', command: 'codex', versionArgsList: [['--version'], ['version'], ['-v']] },
   { id: 'gemini-cli', label: 'Gemini CLI', command: 'gemini', versionArgsList: [['--version'], ['version'], ['-v']] },
   { id: 'qwen-code', label: 'Qwen Code', command: 'qwen', versionArgsList: [['--version'], ['version'], ['-v']] },
+  { id: 'openclaude', label: 'OpenClaude', command: 'openclaude', versionArgsList: [['--version'], ['version'], ['-v']] },
   { id: 'opcode', label: 'OpenCode', command: 'opencode', versionArgsList: [['--version'], ['version'], ['-v']] },
 ];
 const DEFAULT_ENABLED_CLI_EDITORS = SUPPORTED_CLI_EDITORS.map((editor) => editor.id);
@@ -233,6 +234,17 @@ function normalizeProviderBaseUrl(baseUrl = '') {
   }
 
   return trimmed;
+}
+
+function resolveFirstProviderModel(provider) {
+  if (!provider?.models) {
+    return '';
+  }
+
+  return String(provider.models)
+    .split(',')
+    .map((entry) => entry.trim())
+    .find(Boolean) || '';
 }
 
 function ensureDirectory(directoryPath) {
@@ -977,9 +989,10 @@ async function killProcessTreeByPid(pid) {
 
 async function resolveLaunchConfiguration({ workspacePath, editor, provider, model, yoloMode }) {
   const providerApiType = normalizeProviderApiType(provider?.apiType);
+  const resolvedModel = String(model || '').trim() || resolveFirstProviderModel(provider);
 
   if (editor === 'codex') {
-    if (!provider?.baseUrl || !provider?.apiKey || !model) {
+    if (!provider?.baseUrl || !provider?.apiKey || !resolvedModel) {
       return {
         command: yoloMode ? 'codex --approval-mode full-auto' : 'codex',
         envOverrides: {},
@@ -993,7 +1006,7 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
       command: [
         'codex',
         yoloMode ? '--approval-mode full-auto' : '',
-        `--model ${model}`,
+        `--model ${resolvedModel}`,
         `--config preferred_auth_method='apikey'`,
         `--config model_provider='${providerKey}'`,
         `--config model_providers.${providerKey}.name='${String(provider.name || 'Provider').replace(/'/g, "\\'")}'`,
@@ -1017,6 +1030,13 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
   if (editor === 'gemini-cli') {
     return {
       command: yoloMode ? 'gemini --yolo' : 'gemini',
+      envOverrides: {},
+    };
+  }
+
+  if (editor === 'openclaude') {
+    return {
+      command: 'openclaude',
       envOverrides: {},
     };
   }
@@ -1066,7 +1086,7 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
     };
   }
 
-  if (!provider?.baseUrl || !provider?.apiKey || !model) {
+  if (!provider?.baseUrl || !provider?.apiKey || !resolvedModel) {
     throw new Error('Provedor e modelo sao obrigatorios para este editor');
   }
 
@@ -1075,7 +1095,7 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
       const adapter = await openAiClaudeAdapterRegistry.ensureServer({
         baseUrl: provider.baseUrl,
         apiKey: provider.apiKey,
-        model,
+        model: resolvedModel,
         providerName: provider.name || 'OpenAI-compatible',
       });
 
@@ -1084,11 +1104,11 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
         envOverrides: {
           ANTHROPIC_BASE_URL: `http://${adapter.host}:${adapter.port}`,
           ANTHROPIC_AUTH_TOKEN: 'opencode-go',
-          ANTHROPIC_MODEL: model,
-          ANTHROPIC_SMALL_FAST_MODEL: model,
-          ANTHROPIC_DEFAULT_SONNET_MODEL: model,
-          ANTHROPIC_DEFAULT_OPUS_MODEL: model,
-          ANTHROPIC_DEFAULT_HAIKU_MODEL: model,
+          ANTHROPIC_MODEL: resolvedModel,
+          ANTHROPIC_SMALL_FAST_MODEL: resolvedModel,
+          ANTHROPIC_DEFAULT_SONNET_MODEL: resolvedModel,
+          ANTHROPIC_DEFAULT_OPUS_MODEL: resolvedModel,
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: resolvedModel,
           API_TIMEOUT_MS: '3000000',
         },
       };
@@ -1104,11 +1124,11 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
         ANTHROPIC_BASE_URL: provider.baseUrl,
         ANTHROPIC_AUTH_TOKEN: provider.apiKey,
         API_TIMEOUT_MS: '3000000',
-        ANTHROPIC_MODEL: model,
-        ANTHROPIC_SMALL_FAST_MODEL: model,
-        ANTHROPIC_DEFAULT_SONNET_MODEL: model,
-        ANTHROPIC_DEFAULT_OPUS_MODEL: model,
-        ANTHROPIC_DEFAULT_HAIKU_MODEL: model,
+        ANTHROPIC_MODEL: resolvedModel,
+        ANTHROPIC_SMALL_FAST_MODEL: resolvedModel,
+        ANTHROPIC_DEFAULT_SONNET_MODEL: resolvedModel,
+        ANTHROPIC_DEFAULT_OPUS_MODEL: resolvedModel,
+        ANTHROPIC_DEFAULT_HAIKU_MODEL: resolvedModel,
       },
     };
 
@@ -1122,7 +1142,7 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
 
   if (editor === 'opcode') {
     const providerId = sanitizeIdentifier(provider.id || provider.name || 'workspace-provider', 'workspace-provider');
-    const modelKey = `${providerId}/${model}`;
+    const modelKey = `${providerId}/${resolvedModel}`;
     const configPath = path.join(workspacePath, 'opencode.jsonc');
     const providerPackage = providerApiType === 'anthropic'
       ? '@ai-sdk/anthropic'
@@ -1151,9 +1171,9 @@ async function resolveLaunchConfiguration({ workspacePath, editor, provider, mod
             },
             models: {
               ...existingModels,
-              [model]: {
-                ...(existingModels[model] || {}),
-                name: model,
+              [resolvedModel]: {
+                ...(existingModels[resolvedModel] || {}),
+                name: resolvedModel,
               },
             },
           },

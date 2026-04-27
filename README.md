@@ -6,7 +6,7 @@
 
 # Code Workspace Orchestrator
 
-Esse é um aplicativo desktop para gerenciar ambientes de codificação de terminal (CLI) como Claude Code, Codex CLI, Gemini CLI, Qwen CLI, OpenCode integrados ao Git worktree de forma que você consiga aumentar sua produtividade abrindo vários terminais e worktrees para desenvolvimento em paralelo de funcionalidades nos seus projetos.
+Esse é um aplicativo desktop para gerenciar ambientes de codificação de terminal (CLI) como Claude Code, Codex CLI, Gemini CLI, Qwen CLI, OpenCode e OpenClaude integrados ao Git worktree de forma que você consiga aumentar sua produtividade abrindo vários terminais e worktrees para desenvolvimento em paralelo de funcionalidades nos seus projetos.
 
 Aplicativo desktop moderno construído com **Electron + React + Vite + Tailwind CSS**.
 
@@ -21,6 +21,7 @@ A interface do aplicativo suporta nativamente 3 idiomas. Você pode ler a docume
 
 - ✅ **Múltiplos Provedores de IA**: Conecte-se facilmente a diversos provedores (OpenAI, Anthropic, Ollama, etc) e gerencie os seus modelos em uma única interface.
 - ✅ **OpenCode Go**: Configure o plano Go da OpenCode para usar modelos abertos no OpenCode, Codex e Claude Code com um único endpoint compatível com OpenAI.
+- ✅ **OpenClaude CLI**: Execute o OpenClaude nativamente no workspace com detecção automática no PATH.
 - ✅ Janela frameless com barra de título customizada
 - ✅ Controles de janela (minimizar, maximizar/restaurar, fechar)
 - ✅ Alternância de tema claro/escuro com persistência
@@ -43,6 +44,17 @@ Configuração usada pelo preset:
 - Tipo de API: `Compatível com OpenAI`
 
 O plano OpenCode Go custa US$ 5 no primeiro mês e depois US$ 10/mês. Os limites atuais são baseados em valor de uso: US$ 12 por janela de 5 horas, US$ 30 por semana e US$ 60 por mês, variando conforme o modelo escolhido.
+
+## OpenClaude
+
+1. Instale o CLI:
+
+```bash
+npm install -g @gitlawb/openclaude
+```
+
+2. No app, vá em `Configurações > CLIs suportados` e confirme que `OpenClaude` foi detectado.
+3. No workspace, selecione `OpenClaude` no dropdown de CLI e clique em `Run OpenClaude`.
 
 ## 📁 Estrutura do Projeto
 
